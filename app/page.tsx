@@ -1,103 +1,195 @@
-import Image from "next/image";
+import Navigation from './components/Navigation';
+import Link from 'next/link';
 
 export default function Home() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
+    <>
+      {/* Hero Section with Background Video and Overlaid Navigation */}
+      <section className="relative min-h-screen flex items-center overflow-hidden">
+        {/* Background video */}
+        <video
+          className="absolute inset-0 w-full h-full object-cover blur-none sm:blur-sm"
+          src="/hero.mp4"
+          autoPlay
+          loop
+          muted
+          playsInline
         />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+        {/* Dark overlay for readability */}
+        <div className="absolute inset-0 bg-black/50" />
+
+        {/* Navigation overlaid */}
+        <Navigation transparent />
+
+        {/* Foreground content */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left Content */}
+            <div className="space-y-8">
+              <div className="space-y-4">
+                <h1 className="text-5xl lg:text-7xl font-bold text-white leading-tight">
+                  Premium
+                  <span className="block text-yellow-400">Clothings & Apparels</span>
+                  <span className="block text-4xl lg:text-5xl font-light">for Everyone</span>
+                </h1>
+                <p className="text-xl text-gray-300 max-w-lg">
+                  Discover the latest trends in fashion with JoanTees. Quality clothing with fast delivery service right to your doorstep.
+                </p>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link
+                  href="/shop"
+                  className="bg-yellow-400 hover:bg-yellow-500 text-black px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                >
+                  Shop Now
+                </Link>
+                <Link
+                  href="/pick-drop"
+                  className="border-2 border-white hover:bg-white hover:text-black text-white px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300"
+                >
+                  Request Pick-Up
+                </Link>
+              </div>
+            </div>
+
+            {/* Right Content - Flipping Clothing Images */}
+            <div className="relative h-96 flex items-center justify-center">
+              <div className="relative w-80 h-80" style={{ perspective: '1000px' }}>
+                {/* Image 1 */}
+                <img 
+                  src="/1.jpg" 
+                  alt="Premium Clothing Collection 1" 
+                  className="absolute inset-0 w-full h-full object-contain shadow-2xl animate-flip-carousel-1"
+                />
+                {/* Image 2 */}
+                <img 
+                  src="/2.jpg" 
+                  alt="Premium Clothing Collection 2" 
+                  className="absolute inset-0 w-full h-full object-contain shadow-2xl animate-flip-carousel-2"
+                />
+                {/* Image 3 */}
+                <img 
+                  src="/3.jpg" 
+                  alt="Premium Clothing Collection 3" 
+                  className="absolute inset-0 w-full h-full object-contain shadow-2xl animate-flip-carousel-3"
+                />
+              </div>
+            </div>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-20 bg-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-white mb-4">Why Choose JoanTees?</h2>
+            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+              We deliver anyday, anytime, anywhere.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center p-8 rounded-2xl hover:shadow-lg transition-shadow duration-300 bg-gray-800 border border-gray-700">
+              <div className="w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center mx-auto mb-6">
+                <span className="text-2xl">🚚</span>
+              </div>
+              <h3 className="text-2xl font-semibold text-white mb-4">Fast Delivery</h3>
+              <p className="text-gray-300">
+                Get your orders delivered quickly with our reliable pick & drop service.
+              </p>
+            </div>
+
+            <div className="text-center p-8 rounded-2xl hover:shadow-lg transition-shadow duration-300 bg-gray-800 border border-gray-700">
+              <div className="w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center mx-auto mb-6">
+                <span className="text-2xl">✨</span>
+              </div>
+              <h3 className="text-2xl font-semibold text-white mb-4">Premium Quality</h3>
+              <p className="text-gray-300">
+                Every piece is carefully selected for quality, comfort, and style.
+              </p>
+            </div>
+
+            <div className="text-center p-8 rounded-2xl hover:shadow-lg transition-shadow duration-300 bg-gray-800 border border-gray-700">
+              <div className="w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center mx-auto mb-6">
+                <span className="text-2xl">💳</span>
+              </div>
+              <h3 className="text-2xl font-semibold text-white mb-4">Easy Orders</h3>
+              <p className="text-gray-300">
+                Track your orders and manage your purchases with our simple interface.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 bg-black text-white border-t border-gray-800">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-4xl font-bold mb-6">Ready to Upgrade Your Wardrobe?</h2>
+          <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
+            Join thousands of satisfied customers who trust JoanTees for their fashion needs.
+          </p>
+          <Link
+            href="/shop"
+            className="bg-yellow-400 hover:bg-yellow-500 text-black px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 transform hover:scale-105 inline-block"
+          >
+            Start Shopping
+          </Link>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center">
+                  <span className="text-black font-bold text-lg">J</span>
+                </div>
+                <span className="text-2xl font-bold">JoanTees</span>
+              </div>
+              <p className="text-gray-400">
+                Premium clothing with fast delivery service.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
+              <ul className="space-y-2">
+                <li><Link href="/shop" className="text-gray-400 hover:text-yellow-400 transition-colors">Shop</Link></li>
+                <li><Link href="/orders" className="text-gray-400 hover:text-yellow-400 transition-colors">Orders</Link></li>
+                <li><Link href="/pick-drop" className="text-gray-400 hover:text-yellow-400 transition-colors">Pick & Drop</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Support</h3>
+              <ul className="space-y-2">
+                <li><Link href="/contact" className="text-gray-400 hover:text-yellow-400 transition-colors">Contact Us</Link></li>
+                <li><Link href="/help" className="text-gray-400 hover:text-yellow-400 transition-colors">Help Center</Link></li>
+                <li><Link href="/returns" className="text-gray-400 hover:text-yellow-400 transition-colors">Returns</Link></li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Connect</h3>
+              <div className="flex space-x-4">
+                <a href="https://vm.tiktok.com/ZMAhGntUb/0" className="text-gray-400 hover:text-yellow-400 transition-colors">Instagram</a>
+                <a href="https://www.instagram.com/p/DOEN1PBCEM0/?igsh=MW5lYjJ1YmZqaWxsOA==" className="text-gray-400 hover:text-yellow-400 transition-colors">TikTok</a>
+                <a href="https://snapchat.com/t/B1sJXJdX" className="text-gray-400 hover:text-yellow-400 transition-colors">Snapchat</a>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+            <p>&copy; {new Date().getFullYear()} JoanTees. All rights reserved.</p>
+          </div>
+        </div>
       </footer>
-    </div>
+    </>
   );
 }

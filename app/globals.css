@@ -1,26 +1,100 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #000000;
+  --foreground: #ffffff;
+  --primary-yellow: #FFD700;
+  --accent-yellow: #FFA500;
+  --dark-gray: #1a1a1a;
+  --light-gray: #f8f9fa;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-primary: var(--primary-yellow);
+  --color-accent: var(--accent-yellow);
+  --color-dark: var(--dark-gray);
+  --color-light: var(--light-gray);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
 }
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary-yellow);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-yellow);
+}
+
+/* Custom flip carousel animation */
+@keyframes flip-carousel-1 {
+  0%, 30% {
+    opacity: 1;
+    transform: rotateY(0deg);
+  }
+  33%, 100% {
+    opacity: 0;
+    transform: rotateY(90deg);
+  }
+}
+
+@keyframes flip-carousel-2 {
+  0%, 30% {
+    opacity: 0;
+    transform: rotateY(-90deg);
+  }
+  33%, 63% {
+    opacity: 1;
+    transform: rotateY(0deg);
+  }
+  66%, 100% {
+    opacity: 0;
+    transform: rotateY(90deg);
+  }
+}
+
+@keyframes flip-carousel-3 {
+  0%, 63% {
+    opacity: 0;
+    transform: rotateY(-90deg);
+  }
+  66%, 96% {
+    opacity: 1;
+    transform: rotateY(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: rotateY(90deg);
+  }
+}
+
+.animate-flip-carousel-1 {
+  animation: flip-carousel-1 9s ease-in-out infinite;
+}
+
+.animate-flip-carousel-2 {
+  animation: flip-carousel-2 9s ease-in-out infinite;
+}
+
+.animate-flip-carousel-3 {
+  animation: flip-carousel-3 9s ease-in-out infinite;
+}
+
