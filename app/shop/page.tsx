@@ -5,12 +5,15 @@ import Navigation from "../components/Navigation";
 import Link from "next/link";
 import { useCart } from "../contexts/CartContext";
 import { useProducts } from "../hooks/useProducts";
+import AddToCartModal from "../components/AddToCartModal";
 
 export default function Shop() {
   const { addToCart } = useCart();
   const { products, loading, error, refetch } = useProducts();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Get unique categories from products
   const categories = useMemo(() => {
@@ -19,6 +22,16 @@ export default function Shop() {
     ];
     return ["All", ...uniqueCategories];
   }, [products]);
+
+  const handleAddToCartClick = (product: any) => {
+    setSelectedProduct(product);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedProduct(null);
+  };
 
   // Filter products based on category and search term
   const filteredProducts = useMemo(() => {
@@ -189,13 +202,7 @@ export default function Shop() {
                         )}
                       </div>
                       <button
-                        onClick={async () => {
-                          const success = await addToCart(product.id, 1);
-                          if (success) {
-                            // Optional: Show success message
-                            console.log("Item added to cart successfully");
-                          }
-                        }}
+                        onClick={() => handleAddToCartClick(product)}
                         disabled={product.stock_quantity === 0}
                         className="w-full bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-black py-3 rounded-full font-semibold transition-colors duration-200"
                       >
@@ -233,6 +240,15 @@ export default function Shop() {
           </div>
         </div>
       </section>
+
+      {/* Add to Cart Modal */}
+      {selectedProduct && (
+        <AddToCartModal
+          product={selectedProduct}
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+        />
+      )}
     </>
   );
 }

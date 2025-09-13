@@ -108,11 +108,11 @@ export default function Navigation({
           <div className="flex items-center space-x-3">
             {/* Cart Icon */}
             <Link
-              href="/checkout"
+              href="/cart"
               className="relative p-2 text-white hover:text-yellow-400 transition-colors duration-200 rounded-full hover:bg-gray-800/50"
               onClick={() => {
                 if (!isAuthenticated) {
-                  setRedirectUrl("/checkout", "checkout");
+                  setRedirectUrl("/cart", "cart");
                 }
               }}
             >
@@ -238,11 +238,11 @@ export default function Navigation({
 
               {/* Cart Link for Mobile */}
               <Link
-                href="/checkout"
+                href="/cart"
                 className="text-white hover:text-yellow-300 transition-colors duration-150 font-medium px-3 py-3 rounded-lg inline-flex items-center hover:bg-gray-800/60 border border-transparent hover:border-gray-700 relative"
                 onClick={() => {
                   if (!isAuthenticated) {
-                    setRedirectUrl("/checkout", "checkout");
+                    setRedirectUrl("/cart", "cart");
                   }
                   setIsMenuOpen(false);
                 }}
