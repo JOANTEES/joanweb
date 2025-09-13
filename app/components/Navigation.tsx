@@ -1,56 +1,68 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import Image from 'next/image';
-import { useState, useEffect, useRef } from 'react';
-import { UserRound, LogOut, User, ShoppingCart } from 'lucide-react';
-import { Home, ShoppingBag, ClipboardList, Truck } from 'lucide-react';
-import { usePathname } from 'next/navigation';
-import { useAuth } from '../contexts/AuthContext';
-import { useCart } from '../contexts/CartContext';
+import Link from "next/link";
+import Image from "next/image";
+import { useState, useEffect, useRef } from "react";
+import { UserRound, LogOut, User, ShoppingCart } from "lucide-react";
+import { Home, ShoppingBag, ClipboardList, Truck } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { useAuth } from "../contexts/AuthContext";
+import { useCart } from "../contexts/CartContext";
 
-export default function Navigation({ transparent = false }: { transparent?: boolean }) {
+export default function Navigation({
+  transparent = false,
+}: {
+  transparent?: boolean;
+}) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const pathname = usePathname();
   const { isAuthenticated, user, logout, setRedirectUrl } = useAuth();
-  const { getTotalItems } = useCart();
+  const { itemCount } = useCart();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsDropdownOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
   const navItems = [
-    { name: 'Home', href: '/', Icon: Home, protected: false },
-    { name: 'Shop', href: '/shop', Icon: ShoppingBag, protected: false },
-    { name: 'Orders', href: '/orders', Icon: ClipboardList, protected: true },
-    { name: 'Pick & Drop', href: '/pick-drop', Icon: Truck, protected: true },
+    { name: "Home", href: "/", Icon: Home, protected: false },
+    { name: "Shop", href: "/shop", Icon: ShoppingBag, protected: false },
+    { name: "Orders", href: "/orders", Icon: ClipboardList, protected: true },
+    { name: "Pick & Drop", href: "/pick-drop", Icon: Truck, protected: true },
   ];
 
   const handleProtectedLinkClick = (href: string) => {
     if (!isAuthenticated) {
       // Determine context based on the href
-      let context: 'generic' | 'checkout' | 'cart' | 'account' | 'protected-page' = 'protected-page';
-      
-      if (href === '/orders' || href === '/profile') {
-        context = 'account';
-      } else if (href.includes('checkout')) {
-        context = 'checkout';
-      } else if (href.includes('cart')) {
-        context = 'cart';
+      let context:
+        | "generic"
+        | "checkout"
+        | "cart"
+        | "account"
+        | "protected-page" = "protected-page";
+
+      if (href === "/orders" || href === "/profile") {
+        context = "account";
+      } else if (href.includes("checkout")) {
+        context = "checkout";
+      } else if (href.includes("cart")) {
+        context = "cart";
       }
-      
+
       setRedirectUrl(href, context);
     }
   };
@@ -64,7 +76,10 @@ export default function Navigation({ transparent = false }: { transparent?: bool
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2 ml-4 sm:ml-6 mt-2 sm:mt-3">
+          <Link
+            href="/"
+            className="flex items-center space-x-2 ml-4 sm:ml-6 mt-2 sm:mt-3"
+          >
             <Image
               src="/logo.png"
               alt="JoanTees logo"
@@ -80,7 +95,7 @@ export default function Navigation({ transparent = false }: { transparent?: bool
             {navItems.map((item) => (
               <Link
                 key={item.name}
-                href={item.protected && !isAuthenticated ? '/login' : item.href}
+                href={item.protected && !isAuthenticated ? "/login" : item.href}
                 onClick={() => handleProtectedLinkClick(item.href)}
                 className="text-white hover:text-yellow-400 transition-colors duration-200 font-medium"
               >
@@ -97,14 +112,14 @@ export default function Navigation({ transparent = false }: { transparent?: bool
               className="relative p-2 text-white hover:text-yellow-400 transition-colors duration-200 rounded-full hover:bg-gray-800/50"
               onClick={() => {
                 if (!isAuthenticated) {
-                  setRedirectUrl('/checkout', 'checkout');
+                  setRedirectUrl("/checkout", "checkout");
                 }
               }}
             >
               <ShoppingCart className="w-6 h-6" />
-              {getTotalItems() > 0 && (
+              {itemCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-yellow-400 text-black text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center min-w-[20px]">
-                  {getTotalItems() > 99 ? '99+' : getTotalItems()}
+                  {itemCount > 99 ? "99+" : itemCount}
                 </span>
               )}
             </Link>
@@ -117,7 +132,7 @@ export default function Navigation({ transparent = false }: { transparent?: bool
                   <UserRound className="w-5 h-5" />
                   <span className="font-medium">{user?.name}</span>
                 </button>
-                
+
                 {isDropdownOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-xl border border-gray-700 py-2 z-50">
                     <div className="px-4 py-2 border-b border-gray-700">
@@ -151,8 +166,8 @@ export default function Navigation({ transparent = false }: { transparent?: bool
                 className="hidden md:inline-flex bg-yellow-400 hover:bg-yellow-500 text-black p-2 rounded-full transition-colors duration-200"
                 onClick={() => {
                   // Store current page for generic login
-                  if (typeof window !== 'undefined') {
-                    setRedirectUrl(window.location.pathname, 'generic');
+                  if (typeof window !== "undefined") {
+                    setRedirectUrl(window.location.pathname, "generic");
                   }
                 }}
               >
@@ -160,7 +175,6 @@ export default function Navigation({ transparent = false }: { transparent?: bool
               </Link>
             )}
 
-          
             {/* Mobile menu button */}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -202,12 +216,18 @@ export default function Navigation({ transparent = false }: { transparent?: bool
                 return (
                   <Link
                     key={item.name}
-                    href={item.protected && !isAuthenticated ? '/login' : item.href}
+                    href={
+                      item.protected && !isAuthenticated ? "/login" : item.href
+                    }
                     onClick={() => {
                       handleProtectedLinkClick(item.href);
                       setIsMenuOpen(false);
                     }}
-                    className={`${isActive ? 'bg-gray-800/80 text-white ring-1 ring-gray-700' : 'text-white/90 hover:text-white hover:bg-gray-800/60'} transition-colors duration-150 font-medium px-3 py-3 rounded-lg inline-flex items-center gap-3 border border-transparent hover:border-gray-700`}
+                    className={`${
+                      isActive
+                        ? "bg-gray-800/80 text-white ring-1 ring-gray-700"
+                        : "text-white/90 hover:text-white hover:bg-gray-800/60"
+                    } transition-colors duration-150 font-medium px-3 py-3 rounded-lg inline-flex items-center gap-3 border border-transparent hover:border-gray-700`}
                   >
                     <ItemIcon className="w-5 h-5" />
                     {item.name}
@@ -215,29 +235,29 @@ export default function Navigation({ transparent = false }: { transparent?: bool
                 );
               })}
               <div className="mt-1 pt-2 border-t border-gray-800/70" />
-              
+
               {/* Cart Link for Mobile */}
               <Link
                 href="/checkout"
                 className="text-white hover:text-yellow-300 transition-colors duration-150 font-medium px-3 py-3 rounded-lg inline-flex items-center hover:bg-gray-800/60 border border-transparent hover:border-gray-700 relative"
                 onClick={() => {
                   if (!isAuthenticated) {
-                    setRedirectUrl('/checkout', 'checkout');
+                    setRedirectUrl("/checkout", "checkout");
                   }
                   setIsMenuOpen(false);
                 }}
               >
                 <div className="relative">
                   <ShoppingCart className="w-5 h-5 mr-2" />
-                  {getTotalItems() > 0 && (
+                  {itemCount > 0 && (
                     <span className="absolute -top-2 -right-2 bg-yellow-400 text-black text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center min-w-[16px]">
-                      {getTotalItems() > 99 ? '99+' : getTotalItems()}
+                      {itemCount > 99 ? "99+" : itemCount}
                     </span>
                   )}
                 </div>
                 Cart
               </Link>
-              
+
               {isAuthenticated ? (
                 <>
                   <div className="px-3 py-2 text-sm text-gray-300">
@@ -269,8 +289,8 @@ export default function Navigation({ transparent = false }: { transparent?: bool
                   className="text-white hover:text-yellow-300 transition-colors duration-150 font-medium px-3 py-3 rounded-lg inline-flex items-center hover:bg-gray-800/60 border border-transparent hover:border-gray-700"
                   onClick={() => {
                     // Store current page for generic login
-                    if (typeof window !== 'undefined') {
-                      setRedirectUrl(window.location.pathname, 'generic');
+                    if (typeof window !== "undefined") {
+                      setRedirectUrl(window.location.pathname, "generic");
                     }
                     setIsMenuOpen(false);
                   }}

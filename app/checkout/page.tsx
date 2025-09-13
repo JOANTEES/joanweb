@@ -1,58 +1,71 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Navigation from '../components/Navigation';
-import { useAuth } from '../contexts/AuthContext';
-import { useCart } from '../contexts/CartContext';
-import { CreditCard, MapPin, User, Lock, ArrowLeft, ShoppingCart, Plus, Minus, X } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import Navigation from "../components/Navigation";
+import { useAuth } from "../contexts/AuthContext";
+import { useCart } from "../contexts/CartContext";
+import {
+  CreditCard,
+  MapPin,
+  User,
+  Lock,
+  ArrowLeft,
+  ShoppingCart,
+  Plus,
+  Minus,
+  X,
+} from "lucide-react";
 
 export default function Checkout() {
   const { isAuthenticated, loading, setRedirectUrl } = useAuth();
-  const { items, getTotalPrice, clearCart, updateQuantity, removeFromCart } = useCart();
+  const { items, totals, clearCart, updateQuantity, removeFromCart } =
+    useCart();
   const router = useRouter();
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    address: '',
-    city: '',
-    zipCode: '',
-    country: 'Ghana',
-    cardNumber: '',
-    expiryDate: '',
-    cvv: '',
-    cardName: ''
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    address: "",
+    city: "",
+    zipCode: "",
+    country: "Ghana",
+    cardNumber: "",
+    expiryDate: "",
+    cvv: "",
+    cardName: "",
   });
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
       // Store current URL for redirect after login with checkout context
-      setRedirectUrl('/checkout', 'checkout');
-      router.push('/login');
+      setRedirectUrl("/checkout", "checkout");
+      router.push("/login");
     }
   }, [isAuthenticated, loading, router, setRedirectUrl]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: e.target.value,
     });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
-    
+
     // Simulate payment processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+
     // Clear cart and redirect to success page
     clearCart();
-    alert('Order placed successfully!');
-    router.push('/orders');
+    alert("Order placed successfully!");
+    router.push("/orders");
     setIsProcessing(false);
   };
 
@@ -80,17 +93,21 @@ export default function Checkout() {
             <div className="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
               <ShoppingCart className="w-12 h-12 text-gray-400" />
             </div>
-            <h1 className="text-2xl font-bold text-white mb-4">Your cart is empty</h1>
-            <p className="text-gray-400 mb-6">Add some items to your cart before checking out.</p>
+            <h1 className="text-2xl font-bold text-white mb-4">
+              Your cart is empty
+            </h1>
+            <p className="text-gray-400 mb-6">
+              Add some items to your cart before checking out.
+            </p>
             <div className="space-y-3">
               <button
-                onClick={() => router.push('/shop')}
+                onClick={() => router.push("/shop")}
                 className="w-full bg-yellow-400 hover:bg-yellow-500 text-black px-6 py-3 rounded-lg font-semibold transition-colors"
               >
                 Continue Shopping
               </button>
               <button
-                onClick={() => router.push('/')}
+                onClick={() => router.push("/")}
                 className="w-full bg-gray-700 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
               >
                 Back to Home
@@ -105,7 +122,7 @@ export default function Checkout() {
   return (
     <>
       <Navigation />
-      
+
       <div className="min-h-screen bg-black py-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
@@ -128,9 +145,11 @@ export default function Checkout() {
               <div className="bg-gray-800 rounded-lg p-6">
                 <div className="flex items-center mb-4">
                   <MapPin className="w-5 h-5 text-yellow-400 mr-2" />
-                  <h2 className="text-xl font-semibold text-white">Shipping Information</h2>
+                  <h2 className="text-xl font-semibold text-white">
+                    Shipping Information
+                  </h2>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -260,7 +279,9 @@ export default function Checkout() {
               <div className="bg-gray-800 rounded-lg p-6">
                 <div className="flex items-center mb-4">
                   <CreditCard className="w-5 h-5 text-yellow-400 mr-2" />
-                  <h2 className="text-xl font-semibold text-white">Payment Information</h2>
+                  <h2 className="text-xl font-semibold text-white">
+                    Payment Information
+                  </h2>
                 </div>
 
                 <div className="mt-4">
@@ -334,21 +355,57 @@ export default function Checkout() {
             {/* Order Summary */}
             <div className="space-y-6">
               <div className="bg-gray-800 rounded-lg p-6">
-                <h2 className="text-xl font-semibold text-white mb-4">Order Summary</h2>
-                
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold text-white">
+                    Order Summary
+                  </h2>
+                  <span className="text-gray-400 text-sm">
+                    {items.length} item{items.length !== 1 ? "s" : ""}
+                  </span>
+                </div>
+
                 <div className="space-y-4">
                   {items.map((item) => (
-                    <div key={item.id} className="flex items-center space-x-4 p-3 bg-gray-700/50 rounded-lg">
+                    <div
+                      key={item.id}
+                      className="flex items-center space-x-4 p-3 bg-gray-700/50 rounded-lg"
+                    >
                       <div className="w-16 h-16 bg-gray-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <span className="text-gray-300 text-xs font-medium">IMG</span>
+                        {item.imageUrl ? (
+                          <img
+                            src={item.imageUrl}
+                            alt={item.productName}
+                            className="w-full h-full object-cover rounded-lg"
+                          />
+                        ) : (
+                          <span className="text-gray-300 text-xs font-medium">
+                            IMG
+                          </span>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-white font-medium truncate">{item.name}</h3>
-                        <p className="text-gray-400 text-sm">₵{item.price.toFixed(2)} each</p>
+                        <h3 className="text-white font-medium truncate">
+                          {item.productName}
+                        </h3>
+                        <p className="text-gray-400 text-sm">
+                          ₵{item.price.toFixed(2)} each
+                        </p>
+                        {item.size && (
+                          <p className="text-gray-500 text-xs">
+                            Size: {item.size}
+                          </p>
+                        )}
+                        {item.color && (
+                          <p className="text-gray-500 text-xs">
+                            Color: {item.color}
+                          </p>
+                        )}
                       </div>
                       <div className="flex items-center space-x-2">
                         <button
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          onClick={() =>
+                            updateQuantity(item.id, item.quantity - 1)
+                          }
                           className="p-1 bg-gray-600 hover:bg-gray-500 rounded-full transition-colors"
                         >
                           <Minus className="w-4 h-4 text-white" />
@@ -357,14 +414,16 @@ export default function Checkout() {
                           {item.quantity}
                         </span>
                         <button
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          onClick={() =>
+                            updateQuantity(item.id, item.quantity + 1)
+                          }
                           className="p-1 bg-gray-600 hover:bg-gray-500 rounded-full transition-colors"
                         >
                           <Plus className="w-4 h-4 text-white" />
                         </button>
                       </div>
                       <div className="text-white font-semibold text-lg min-w-[5rem] text-right">
-                        ₵{(item.price * item.quantity).toFixed(2)}
+                        ₵{item.subtotal.toFixed(2)}
                       </div>
                       <button
                         onClick={() => removeFromCart(item.id)}
@@ -377,9 +436,25 @@ export default function Checkout() {
                 </div>
 
                 <div className="border-t border-gray-700 mt-6 pt-4">
-                  <div className="flex justify-between items-center text-lg font-semibold text-white">
-                    <span>Total</span>
-                    <span>₵{getTotalPrice().toFixed(2)}</span>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center text-gray-300">
+                      <span>Subtotal</span>
+                      <span>₵{totals.subtotal.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-gray-300">
+                      <span>Tax (10%)</span>
+                      <span>₵{totals.tax.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-gray-300">
+                      <span>Shipping</span>
+                      <span>₵{totals.shipping.toFixed(2)}</span>
+                    </div>
+                    <div className="border-t border-gray-600 pt-3">
+                      <div className="flex justify-between items-center text-lg font-semibold text-white">
+                        <span>Total</span>
+                        <span>₵{totals.total.toFixed(2)}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -388,7 +463,7 @@ export default function Checkout() {
                   disabled={isProcessing}
                   className="w-full mt-6 bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-600 text-black py-4 rounded-lg font-semibold transition-colors duration-200"
                 >
-                  {isProcessing ? 'Processing...' : 'Place Order'}
+                  {isProcessing ? "Processing..." : "Place Order"}
                 </button>
               </div>
             </div>

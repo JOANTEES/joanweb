@@ -1,25 +1,48 @@
-'use client';
+"use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
 
 interface User {
+  id: string;
   email: string;
   name: string;
+  phone?: string;
+  address?: string;
+  city?: string;
+  zipCode?: string;
+  country?: string;
 }
 
 interface RedirectContext {
   url: string;
-  context: 'generic' | 'checkout' | 'cart' | 'account' | 'protected-page';
+  context: "generic" | "checkout" | "cart" | "account" | "protected-page";
   timestamp: number;
 }
 
 interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
-  login: (email: string, password: string) => boolean;
+  login: (
+    email: string,
+    password: string
+  ) => Promise<{ success: boolean; message: string }>;
+  register: (
+    email: string,
+    password: string,
+    name: string
+  ) => Promise<{ success: boolean; message: string }>;
   logout: () => void;
   loading: boolean;
-  setRedirectUrl: (url: string, context?: 'generic' | 'checkout' | 'cart' | 'account' | 'protected-page') => void;
+  setRedirectUrl: (
+    url: string,
+    context?: "generic" | "checkout" | "cart" | "account" | "protected-page"
+  ) => void;
   getRedirectUrl: () => string | null;
   getRedirectContext: () => RedirectContext | null;
   clearRedirectUrl: () => void;
@@ -32,81 +55,211 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+
   useEffect(() => {
     // Check if user is authenticated on app load
-    const checkAuth = () => {
-      if (typeof window !== 'undefined') {
-        const authStatus = localStorage.getItem('isAuthenticated');
-        const userEmail = localStorage.getItem('userEmail');
-        const userName = localStorage.getItem('userName');
-        
-        if (authStatus === 'true' && userEmail && userName) {
-          setIsAuthenticated(true);
-          setUser({ email: userEmail, name: userName });
+    const checkAuth = async () => {
+      if (typeof window !== "undefined") {
+        const token = localStorage.getItem("authToken");
+
+        if (token) {
+          try {
+            const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              if (data.user) {
+                // Convert backend user format to frontend format
+                const user = {
+                  id: data.user.id.toString(),
+                  email: data.user.email,
+                  name: `${data.user.first_name} ${data.user.last_name}`.trim(),
+                  phone: data.user.phone || "",
+                  address: data.user.address || "",
+                  city: data.user.city || "",
+                  zipCode: data.user.zipCode || "",
+                  country: data.user.country || "",
+                };
+
+                setIsAuthenticated(true);
+                setUser(user);
+              } else {
+                // Token is invalid, clear it
+                localStorage.removeItem("authToken");
+              }
+            } else {
+              // Token is invalid, clear it
+              localStorage.removeItem("authToken");
+            }
+          } catch (error) {
+            console.error("Error checking auth status:", error);
+            localStorage.removeItem("authToken");
+          }
         }
       }
       setLoading(false);
     };
 
     checkAuth();
-  }, []);
+  }, [API_BASE_URL]);
 
-  const login = (email: string, password: string): boolean => {
-    // Simple authentication logic (in real app, this would be API call)
-    if (email === 'user@joantees.com' && password === 'password123') {
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('isAuthenticated', 'true');
-        localStorage.setItem('userEmail', email);
-        localStorage.setItem('userName', 'John Doe');
+  const login = async (
+    email: string,
+    password: string
+  ): Promise<{ success: boolean; message: string }> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success && data.user && data.token) {
+        // Store token and user data
+        if (typeof window !== "undefined") {
+          localStorage.setItem("authToken", data.token);
+        }
+
+        // Convert backend user format to frontend format
+        const user = {
+          id: data.user.id.toString(),
+          email: data.user.email,
+          name: `${data.user.first_name} ${data.user.last_name}`.trim(),
+          phone: data.user.phone || "",
+          address: data.user.address || "",
+          city: data.user.city || "",
+          zipCode: data.user.zipCode || "",
+          country: data.user.country || "",
+        };
+
+        setIsAuthenticated(true);
+        setUser(user);
+        return { success: true, message: "Login successful" };
+      } else {
+        return { success: false, message: data.message || "Login failed" };
       }
-      
-      setIsAuthenticated(true);
-      setUser({ email, name: 'John Doe' });
-      return true;
+    } catch (error) {
+      console.error("Login error:", error);
+      return { success: false, message: "Network error. Please try again." };
     }
-    return false;
+  };
+
+  const register = async (
+    email: string,
+    password: string,
+    name: string
+  ): Promise<{ success: boolean; message: string }> => {
+    try {
+      // Split the name into first_name and last_name
+      const nameParts = name.trim().split(" ");
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
+
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          first_name: firstName,
+          last_name: lastName,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success && data.user && data.token) {
+        // Store token and user data
+        if (typeof window !== "undefined") {
+          localStorage.setItem("authToken", data.token);
+        }
+
+        // Convert backend user format to frontend format
+        const user = {
+          id: data.user.id.toString(),
+          email: data.user.email,
+          name: `${data.user.first_name} ${data.user.last_name}`.trim(),
+          phone: data.user.phone || "",
+          address: data.user.address || "",
+          city: data.user.city || "",
+          zipCode: data.user.zipCode || "",
+          country: data.user.country || "",
+        };
+
+        setIsAuthenticated(true);
+        setUser(user);
+        return { success: true, message: "Registration successful" };
+      } else {
+        return {
+          success: false,
+          message: data.message || "Registration failed",
+        };
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      return { success: false, message: "Network error. Please try again." };
+    }
   };
 
   const logout = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('isAuthenticated');
-      localStorage.removeItem('userEmail');
-      localStorage.removeItem('userName');
-      localStorage.removeItem('redirectUrl');
-      localStorage.removeItem('redirectContext');
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("authToken");
+      localStorage.removeItem("redirectUrl");
+      localStorage.removeItem("redirectContext");
     }
-    
+
     setIsAuthenticated(false);
     setUser(null);
   };
 
-  const setRedirectUrl = (url: string, context: 'generic' | 'checkout' | 'cart' | 'account' | 'protected-page' = 'generic') => {
-    if (typeof window !== 'undefined') {
+  const setRedirectUrl = (
+    url: string,
+    context:
+      | "generic"
+      | "checkout"
+      | "cart"
+      | "account"
+      | "protected-page" = "generic"
+  ) => {
+    if (typeof window !== "undefined") {
       const redirectContext: RedirectContext = {
         url,
         context,
-        timestamp: Date.now()
+        timestamp: Date.now(),
       };
-      localStorage.setItem('redirectUrl', url);
-      localStorage.setItem('redirectContext', JSON.stringify(redirectContext));
+      localStorage.setItem("redirectUrl", url);
+      localStorage.setItem("redirectContext", JSON.stringify(redirectContext));
     }
   };
 
   const getRedirectUrl = (): string | null => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('redirectUrl');
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("redirectUrl");
     }
     return null;
   };
 
   const getRedirectContext = (): RedirectContext | null => {
-    if (typeof window !== 'undefined') {
-      const contextStr = localStorage.getItem('redirectContext');
+    if (typeof window !== "undefined") {
+      const contextStr = localStorage.getItem("redirectContext");
       if (contextStr) {
         try {
           return JSON.parse(contextStr);
         } catch (error) {
-          console.error('Error parsing redirect context:', error);
+          console.error("Error parsing redirect context:", error);
           return null;
         }
       }
@@ -115,24 +268,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const clearRedirectUrl = () => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('redirectUrl');
-      localStorage.removeItem('redirectContext');
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("redirectUrl");
+      localStorage.removeItem("redirectContext");
     }
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      isAuthenticated, 
-      user, 
-      login, 
-      logout, 
-      loading, 
-      setRedirectUrl, 
-      getRedirectUrl, 
-      getRedirectContext,
-      clearRedirectUrl 
-    }}>
+    <AuthContext.Provider
+      value={{
+        isAuthenticated,
+        user,
+        login,
+        register,
+        logout,
+        loading,
+        setRedirectUrl,
+        getRedirectUrl,
+        getRedirectContext,
+        clearRedirectUrl,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -141,7 +297,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

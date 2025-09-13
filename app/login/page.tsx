@@ -1,91 +1,113 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Navigation from '../components/Navigation';
-import { useAuth } from '../contexts/AuthContext';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Navigation from "../components/Navigation";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function Login() {
   const [isSignUp, setIsSignUp] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [fullName, setFullName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const router = useRouter();
-  const { login, getRedirectUrl, getRedirectContext, clearRedirectUrl } = useAuth();
+  const {
+    login,
+    register,
+    getRedirectUrl,
+    getRedirectContext,
+    clearRedirectUrl,
+  } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
+    setError("");
 
     if (isSignUp) {
       if (password !== confirmPassword) {
-        setError('Passwords do not match');
+        setError("Passwords do not match");
         setIsLoading(false);
         return;
       }
       if (password.length < 6) {
-        setError('Password must be at least 6 characters');
+        setError("Password must be at least 6 characters");
+        setIsLoading(false);
+        return;
+      }
+      if (!fullName.trim()) {
+        setError("Full name is required");
         setIsLoading(false);
         return;
       }
     }
 
-    const success = login(email, password);
-    
-    if (success) {
-      // Get redirect context to determine the best redirect strategy
-      const redirectContext = getRedirectContext();
-      const redirectUrl = getRedirectUrl();
-      
-      if (redirectContext && redirectUrl) {
-        // Clear the redirect URL and redirect based on context
-        clearRedirectUrl();
-        
-        // Smart redirect logic based on context
-        switch (redirectContext.context) {
-          case 'checkout':
-            // If they were trying to checkout, redirect to checkout page
-            router.replace('/checkout');
-            break;
-          case 'cart':
-            // If they were adding to cart, redirect back to the page they were on
-            router.replace(redirectUrl);
-            break;
-          case 'account':
-            // If they were trying to access account features, redirect to profile
-            router.replace('/profile');
-            break;
-          case 'protected-page':
-            // If they were trying to access a protected page, redirect to that page
-            router.replace(redirectUrl);
-            break;
-          case 'generic':
-          default:
-            // For generic login, redirect to homepage (personalized)
-            router.replace('/');
-            break;
-        }
-      } else if (redirectUrl) {
-        // Fallback for backward compatibility
-        clearRedirectUrl();
-        router.replace(redirectUrl);
+    try {
+      let result;
+      if (isSignUp) {
+        result = await register(email, password, fullName);
       } else {
-        // Default redirect to homepage for new users
-        router.replace('/');
+        result = await login(email, password);
       }
-    } else {
-      setError(isSignUp ? 'Registration failed. Please try again.' : 'Invalid email or password');
+
+      if (result.success) {
+        // Get redirect context to determine the best redirect strategy
+        const redirectContext = getRedirectContext();
+        const redirectUrl = getRedirectUrl();
+
+        if (redirectContext && redirectUrl) {
+          // Clear the redirect URL and redirect based on context
+          clearRedirectUrl();
+
+          // Smart redirect logic based on context
+          switch (redirectContext.context) {
+            case "checkout":
+              // If they were trying to checkout, redirect to checkout page
+              router.replace("/checkout");
+              break;
+            case "cart":
+              // If they were adding to cart, redirect back to the page they were on
+              router.replace(redirectUrl);
+              break;
+            case "account":
+              // If they were trying to access account features, redirect to profile
+              router.replace("/profile");
+              break;
+            case "protected-page":
+              // If they were trying to access a protected page, redirect to that page
+              router.replace(redirectUrl);
+              break;
+            case "generic":
+            default:
+              // For generic login, redirect to shop page
+              router.replace("/shop");
+              break;
+          }
+        } else if (redirectUrl) {
+          // Fallback for backward compatibility
+          clearRedirectUrl();
+          router.replace(redirectUrl);
+        } else {
+          // Default redirect to shop page for new users
+          router.replace("/shop");
+        }
+      } else {
+        setError(result.message);
+        setIsLoading(false);
+      }
+    } catch (error) {
+      console.error("Authentication error:", error);
+      setError("An unexpected error occurred. Please try again.");
       setIsLoading(false);
     }
   };
 
   const handleGoogleAuth = () => {
     // Google authentication logic would go here
-    alert('Google authentication coming soon!');
+    alert("Google authentication coming soon!");
   };
 
   return (
@@ -119,10 +141,12 @@ export default function Login() {
                 <span className="text-3xl font-bold text-white">JoanTee</span>
               </div>
               <h1 className="text-2xl font-bold text-white mb-2">
-                {isSignUp ? 'Create Account' : 'Welcome Back'}
+                {isSignUp ? "Create Account" : "Welcome Back"}
               </h1>
               <p className="text-gray-300">
-                {isSignUp ? 'Sign up to get started' : 'Sign in to your account'}
+                {isSignUp
+                  ? "Sign up to get started"
+                  : "Sign in to your account"}
               </p>
             </div>
 
@@ -133,8 +157,8 @@ export default function Login() {
                 onClick={() => setIsSignUp(false)}
                 className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
                   !isSignUp
-                    ? 'bg-yellow-400 text-black'
-                    : 'text-gray-300 hover:text-white'
+                    ? "bg-yellow-400 text-black"
+                    : "text-gray-300 hover:text-white"
                 }`}
               >
                 Sign In
@@ -144,8 +168,8 @@ export default function Login() {
                 onClick={() => setIsSignUp(true)}
                 className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
                   isSignUp
-                    ? 'bg-yellow-400 text-black'
-                    : 'text-gray-300 hover:text-white'
+                    ? "bg-yellow-400 text-black"
+                    : "text-gray-300 hover:text-white"
                 }`}
               >
                 Sign Up
@@ -161,7 +185,10 @@ export default function Login() {
 
               {isSignUp && (
                 <div>
-                  <label htmlFor="fullName" className="block text-sm font-medium text-gray-300 mb-2">
+                  <label
+                    htmlFor="fullName"
+                    className="block text-sm font-medium text-gray-300 mb-2"
+                  >
                     Full Name
                   </label>
                   <input
@@ -177,7 +204,10 @@ export default function Login() {
               )}
 
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-300 mb-2"
+                >
                   Email Address
                 </label>
                 <input
@@ -192,7 +222,10 @@ export default function Login() {
               </div>
 
               <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-300 mb-2"
+                >
                   Password
                 </label>
                 <input
@@ -208,7 +241,10 @@ export default function Login() {
 
               {isSignUp && (
                 <div>
-                  <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-2">
+                  <label
+                    htmlFor="confirmPassword"
+                    className="block text-sm font-medium text-gray-300 mb-2"
+                  >
                     Confirm Password
                   </label>
                   <input
@@ -228,10 +264,13 @@ export default function Login() {
                 disabled={isLoading}
                 className="w-full bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-600 text-black py-3 rounded-lg font-semibold transition-colors duration-200"
               >
-                {isLoading 
-                  ? (isSignUp ? 'Creating Account...' : 'Signing In...') 
-                  : (isSignUp ? 'Create Account' : 'Sign In')
-                }
+                {isLoading
+                  ? isSignUp
+                    ? "Creating Account..."
+                    : "Signing In..."
+                  : isSignUp
+                  ? "Create Account"
+                  : "Sign In"}
               </button>
             </form>
 
@@ -241,7 +280,9 @@ export default function Login() {
                 <div className="w-full border-t border-gray-600"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-gray-800 text-gray-400">Or continue with</span>
+                <span className="px-2 bg-gray-800 text-gray-400">
+                  Or continue with
+                </span>
               </div>
             </div>
 
@@ -270,8 +311,6 @@ export default function Login() {
               </svg>
               Continue with Google
             </button>
-
-           
           </div>
         </div>
       </section>
