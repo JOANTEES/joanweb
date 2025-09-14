@@ -1,56 +1,101 @@
 "use client";
 
 import { useState } from "react";
-import { useDeliveryZones } from "../hooks/useDeliveryZones";
+import { MapPin } from "lucide-react";
+import DeliveryAddressSelector from "./DeliveryAddressSelector";
 
 interface DeliveryMethodSelectorProps {
   onDeliveryMethodChange: (
     method: "pickup" | "delivery",
-    zoneId?: number
+    address?: {
+      regionId: number;
+      cityId: number;
+      areaName: string;
+      landmark?: string;
+      additionalInstructions?: string;
+      contactPhone?: string;
+      regionName?: string;
+      cityName?: string;
+    },
+    validationResult?: {
+      isValid: boolean;
+      message: string;
+      deliveryZoneId?: string;
+      deliveryZoneName?: string;
+      deliveryZoneFee?: number;
+    }
   ) => void;
   initialMethod?: "pickup" | "delivery";
-  initialZoneId?: number;
+  initialAddress?: {
+    regionId: number;
+    cityId: number;
+    areaName: string;
+    landmark?: string;
+    additionalInstructions?: string;
+    contactPhone?: string;
+    regionName?: string;
+    cityName?: string;
+  };
   disabled?: boolean;
 }
 
 export default function DeliveryMethodSelector({
   onDeliveryMethodChange,
   initialMethod = "delivery",
-  initialZoneId,
+  initialAddress,
   disabled = false,
 }: DeliveryMethodSelectorProps) {
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "delivery">(
     initialMethod
   );
-  const [selectedZoneId, setSelectedZoneId] = useState<number | undefined>(
-    initialZoneId
-  );
-  const {
-    zones,
-    loading: zonesLoading,
-    error: zonesError,
-  } = useDeliveryZones();
+  const [selectedAddress, setSelectedAddress] = useState<
+    | {
+        regionId: number;
+        cityId: number;
+        areaName: string;
+        landmark?: string;
+        additionalInstructions?: string;
+        contactPhone?: string;
+        regionName?: string;
+        cityName?: string;
+      }
+    | undefined
+  >(initialAddress);
 
   const handleMethodChange = (method: "pickup" | "delivery") => {
     setDeliveryMethod(method);
     if (method === "pickup") {
-      setSelectedZoneId(undefined);
+      setSelectedAddress(undefined);
       onDeliveryMethodChange(method);
     } else {
-      // If switching to delivery and no zone selected, select first available zone
-      if (zones.length > 0 && !selectedZoneId) {
-        const firstZone = zones[0];
-        setSelectedZoneId(parseInt(firstZone.id));
-        onDeliveryMethodChange(method, parseInt(firstZone.id));
-      } else if (selectedZoneId) {
-        onDeliveryMethodChange(method, selectedZoneId);
+      // If switching to delivery and we have an address, use it
+      if (selectedAddress) {
+        onDeliveryMethodChange(method, selectedAddress);
       }
     }
   };
 
-  const handleZoneChange = (zoneId: number) => {
-    setSelectedZoneId(zoneId);
-    onDeliveryMethodChange(deliveryMethod, zoneId);
+  const handleAddressChange = (
+    address: {
+      regionId: number;
+      cityId: number;
+      areaName: string;
+      landmark?: string;
+      additionalInstructions?: string;
+      contactPhone?: string;
+      regionName?: string;
+      cityName?: string;
+    },
+    validationResult?: {
+      isValid: boolean;
+      message: string;
+      deliveryZoneId?: string;
+      deliveryZoneName?: string;
+      deliveryZoneFee?: number;
+    }
+  ) => {
+    setSelectedAddress(address);
+    onDeliveryMethodChange(deliveryMethod, address, validationResult);
   };
 
   return (
@@ -88,51 +133,20 @@ export default function DeliveryMethodSelector({
         </div>
       </div>
 
-      {/* Delivery Zone Selection */}
+      {/* Delivery Address Selection */}
       {deliveryMethod === "delivery" && (
-        <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
-            Delivery Zone
-          </label>
-          {zonesLoading ? (
-            <div className="text-gray-400 text-sm">Loading zones...</div>
-          ) : zonesError ? (
-            <div className="text-red-400 text-sm">Error loading zones</div>
-          ) : zones.length === 0 ? (
-            <div className="text-gray-400 text-sm">
-              No delivery zones available
-            </div>
-          ) : (
-            <select
-              value={selectedZoneId || ""}
-              onChange={(e) => handleZoneChange(parseInt(e.target.value))}
-              disabled={disabled}
-              className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-            >
-              <option value="">Select a delivery zone</option>
-              {zones.map((zone) => (
-                <option key={zone.id} value={zone.id}>
-                  {zone.name} - ₵{zone.deliveryFee} ({zone.estimatedDays})
-                </option>
-              ))}
-            </select>
-          )}
-
-          {selectedZoneId && zones.length > 0 && (
-            <div className="mt-2 text-sm text-gray-400">
-              {
-                zones.find((z) => parseInt(z.id) === selectedZoneId)
-                  ?.description
-              }
-            </div>
-          )}
-        </div>
+        <DeliveryAddressSelector
+          onAddressChange={handleAddressChange}
+          initialAddress={selectedAddress}
+          disabled={disabled}
+        />
       )}
 
       {/* Pickup Information */}
       {deliveryMethod === "pickup" && (
         <div className="bg-gray-700/50 rounded-lg p-4">
-          <div className="text-sm text-gray-300">
+          <div className="flex items-center space-x-2 text-sm text-gray-300">
+            <MapPin className="w-4 h-4" />
             <strong>Pickup Location:</strong> Store Address (to be configured)
           </div>
           <div className="text-xs text-gray-400 mt-1">

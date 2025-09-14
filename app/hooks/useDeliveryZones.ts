@@ -47,6 +47,7 @@ export function useDeliveryZones() {
       const data: DeliveryZonesResponse = await response.json();
 
       if (data.zones) {
+        console.log("Received delivery zones:", data.zones);
         setZones(data.zones.filter((zone) => zone.isActive));
       } else {
         throw new Error("Invalid response format");

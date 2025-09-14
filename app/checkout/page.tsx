@@ -15,11 +15,14 @@ import {
   Plus,
   Minus,
   X,
+  Truck,
+  Store,
+  AlertCircle,
 } from "lucide-react";
 
 export default function Checkout() {
   const { isAuthenticated, loading, setRedirectUrl } = useAuth();
-  const { items, totals, clearCart, updateQuantity, removeFromCart } =
+  const { cart, items, totals, clearCart, updateQuantity, removeFromCart } =
     useCart();
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -141,6 +144,92 @@ export default function Checkout() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Checkout Form */}
             <div className="space-y-8">
+              {/* Delivery Method */}
+              <div className="bg-gray-800 rounded-lg p-6">
+                <div className="flex items-center mb-4">
+                  {cart?.deliveryMethod === "pickup" ? (
+                    <Store className="w-5 h-5 text-green-400 mr-2" />
+                  ) : (
+                    <Truck className="w-5 h-5 text-blue-400 mr-2" />
+                  )}
+                  <h2 className="text-xl font-semibold text-white">
+                    Delivery Method
+                  </h2>
+                </div>
+
+                <div className="bg-gray-700/50 p-4 rounded-lg">
+                  {cart?.deliveryMethod === "pickup" ? (
+                    <div className="flex items-start space-x-3">
+                      <Store className="w-5 h-5 text-green-400 mt-1 flex-shrink-0" />
+                      <div>
+                        <div className="text-white font-medium">
+                          Pickup (Free)
+                        </div>
+                        <p className="text-gray-400 text-sm mt-1">
+                          You'll pick up your order from our store location.
+                        </p>
+                        <div className="mt-3 flex items-center">
+                          <a
+                            href="https://www.google.com/maps/search/?api=1&query=Joantee+Store+Accra+Ghana"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-yellow-400 hover:text-yellow-300 text-sm flex items-center"
+                          >
+                            <MapPin className="w-4 h-4 mr-1" />
+                            View store location
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-start space-x-3">
+                      <Truck className="w-5 h-5 text-blue-400 mt-1 flex-shrink-0" />
+                      <div>
+                        <div className="text-white font-medium">
+                          Delivery to your address
+                          {cart?.deliveryZoneName && (
+                            <span className="ml-2 text-xs bg-blue-900/30 text-blue-400 px-2 py-0.5 rounded">
+                              {cart.deliveryZoneName}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-gray-400 text-sm mt-1">
+                          {cart?.deliveryZoneName
+                            ? `Your order will be delivered to your address in ${cart.deliveryZoneName}.`
+                            : "Your order will be delivered to your address."}
+                        </p>
+                        <div className="mt-2 flex items-center">
+                          <span className="text-gray-300 text-sm">
+                            Delivery fee:{" "}
+                            <span className="text-white">
+                              ₵{totals.shipping.toFixed(2)}
+                            </span>
+                          </span>
+                        </div>
+                        {totals.shipping > (cart?.deliveryZoneFee || 0) && (
+                          <div className="mt-2 flex items-start space-x-2">
+                            <AlertCircle className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
+                            <p className="text-yellow-400 text-xs">
+                              Special delivery fee applies due to order size or
+                              product requirements.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-4 text-center">
+                  <button
+                    onClick={() => router.push("/cart")}
+                    className="text-yellow-400 hover:text-yellow-300 text-sm underline"
+                  >
+                    Change delivery method
+                  </button>
+                </div>
+              </div>
+
               {/* Shipping Information */}
               <div className="bg-gray-800 rounded-lg p-6">
                 <div className="flex items-center mb-4">
@@ -438,16 +527,40 @@ export default function Checkout() {
                 <div className="border-t border-gray-700 mt-6 pt-4">
                   <div className="space-y-3">
                     <div className="flex justify-between items-center text-gray-300">
-                      <span>Subtotal</span>
+                      <span>
+                        Subtotal ({items.length}{" "}
+                        {items.length === 1 ? "item" : "items"})
+                      </span>
                       <span>₵{totals.subtotal.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between items-center text-gray-300">
-                      <span>Tax (10%)</span>
+                      <span>Tax</span>
                       <span>₵{totals.tax.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between items-center text-gray-300">
-                      <span>Shipping</span>
-                      <span>₵{totals.shipping.toFixed(2)}</span>
+                      {cart?.deliveryMethod === "pickup" ? (
+                        <>
+                          <span className="flex items-center">
+                            <span>Pickup</span>
+                            <span className="ml-2 text-xs bg-green-900/30 text-green-400 px-2 py-0.5 rounded">
+                              Free
+                            </span>
+                          </span>
+                          <span>₵0.00</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="flex items-center">
+                            <span>Delivery</span>
+                            {cart?.deliveryZoneName && (
+                              <span className="ml-2 text-xs bg-blue-900/30 text-blue-400 px-2 py-0.5 rounded">
+                                {cart.deliveryZoneName}
+                              </span>
+                            )}
+                          </span>
+                          <span>₵{totals.shipping.toFixed(2)}</span>
+                        </>
+                      )}
                     </div>
                     <div className="border-t border-gray-600 pt-3">
                       <div className="flex justify-between items-center text-lg font-semibold text-white">

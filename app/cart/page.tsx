@@ -6,7 +6,15 @@ import Navigation from "../components/Navigation";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
 import { useDeliveryZones } from "../hooks/useDeliveryZones";
-import { Plus, Minus, X, ShoppingBag, ArrowLeft } from "lucide-react";
+import {
+  Plus,
+  Minus,
+  X,
+  ShoppingBag,
+  ArrowLeft,
+  AlertCircle,
+  MapPin,
+} from "lucide-react";
 import DeliveryMethodSelector from "../components/DeliveryMethodSelector";
 import { useState } from "react";
 
@@ -32,17 +40,75 @@ export default function Cart() {
     }
   }, [isAuthenticated, loading, router, setRedirectUrl]);
 
+  const [validationError, setValidationError] = useState<string | null>(null);
+
   const handleDeliveryMethodChange = async (
     method: "pickup" | "delivery",
-    zoneId?: number
+    address?: {
+      regionId: number;
+      cityId: number;
+      areaName: string;
+      landmark?: string;
+      additionalInstructions?: string;
+      contactPhone?: string;
+      regionName?: string;
+      cityName?: string;
+    },
+    validationResult?: {
+      isValid: boolean;
+      message: string;
+      deliveryZoneId?: string;
+      deliveryZoneName?: string;
+      deliveryZoneFee?: number;
+    }
   ) => {
     try {
-      const success = await updateCartDeliveryMethod(method, zoneId);
+      setValidationError(null);
+
+      // For pickup method, we don't need to validate delivery zones
+      if (method === "pickup") {
+        const success = await updateCartDeliveryMethod(method);
+        if (success) {
+          setEditingItem(null);
+        }
+        return;
+      }
+
+      // For delivery method, check if address is valid
+      if (!address) {
+        setValidationError("Please select a delivery address");
+        return;
+      }
+
+      // Check validation result
+      if (validationResult && !validationResult.isValid) {
+        setValidationError(`⚠️ ${validationResult.message}`);
+        // Still allow the user to proceed, but show warning
+      }
+
+      // If we have a valid delivery zone from validation, use it
+      let zoneId: number | undefined = undefined;
+      if (validationResult?.deliveryZoneId) {
+        zoneId = parseInt(validationResult.deliveryZoneId);
+      }
+
+      // Set delivery method with address
+      const success = await updateCartDeliveryMethod(method, zoneId, address);
+
       if (success) {
-        setEditingItem(null);
+        // If we have a validation error but the user wants to proceed anyway
+        if (validationError) {
+          // Keep the validation error visible but close the editor
+          setEditingItem(null);
+        } else {
+          // All good, close the editor
+          setEditingItem(null);
+          setValidationError(null);
+        }
       }
     } catch (error) {
       console.error("Error updating delivery method:", error);
+      setValidationError("Failed to update delivery method");
     }
   };
 
@@ -121,21 +187,70 @@ export default function Cart() {
                 <h2 className="text-xl font-semibold text-white mb-2">
                   Delivery Method
                 </h2>
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm text-gray-300">Current:</span>
-                  <span
-                    className={`text-sm font-medium ${
-                      cart?.deliveryMethod === "pickup"
-                        ? "text-green-400"
-                        : "text-blue-400"
-                    }`}
-                  >
-                    {cart?.deliveryMethod === "pickup"
-                      ? "Pickup (Free)"
-                      : `${cart?.deliveryZoneName || "Delivery"} - ₵${
-                          cart?.deliveryZoneFee?.toFixed(2) || "0.00"
-                        }`}
-                  </span>
+                <div className="space-y-3">
+                  {/* Delivery Method */}
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-gray-300">
+                      Delivery Method:
+                    </span>
+                    <span
+                      className={`text-sm font-medium ${
+                        cart?.deliveryMethod === "pickup"
+                          ? "text-green-400"
+                          : "text-blue-400"
+                      }`}
+                    >
+                      {cart?.deliveryMethod === "pickup"
+                        ? "Pickup"
+                        : "Home Delivery"}
+                    </span>
+                  </div>
+
+                  {/* Show delivery address details if available */}
+                  {cart?.deliveryMethod === "delivery" &&
+                    cart?.deliveryAddress && (
+                      <div className="text-sm text-gray-400">
+                        <div className="flex items-center space-x-2">
+                          <MapPin className="w-4 h-4" />
+                          <span>
+                            {cart.deliveryAddress.regionName || "Region"} →{" "}
+                            {cart.deliveryAddress.cityName || "City"} →{" "}
+                            {cart.deliveryAddress.areaName}
+                          </span>
+                        </div>
+                        {cart.deliveryAddress.landmark && (
+                          <div className="text-xs text-gray-500 mt-1 ml-6">
+                            Near: {cart.deliveryAddress.landmark}
+                          </div>
+                        )}
+
+                        {/* Delivery zone info */}
+                        {cart?.deliveryZoneName ? (
+                          <div className="text-xs text-gray-500 mt-2 ml-6">
+                            Delivery zone: {cart.deliveryZoneName} - ₵
+                            {cart?.deliveryZoneFee?.toFixed(2)}
+                          </div>
+                        ) : (
+                          <div className="text-xs text-orange-400 mt-2 ml-6">
+                            ⚠️ Address is outside delivery zones - consider
+                            pickup instead
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                  {/* Pickup info */}
+                  {cart?.deliveryMethod === "pickup" && (
+                    <div className="text-sm text-gray-400">
+                      <div className="flex items-center space-x-2">
+                        <MapPin className="w-4 h-4" />
+                        <span>Store pickup location (to be configured)</span>
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1 ml-6">
+                        Free pickup - no delivery charges
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
               <button
@@ -154,12 +269,16 @@ export default function Cart() {
                 <DeliveryMethodSelector
                   onDeliveryMethodChange={handleDeliveryMethodChange}
                   initialMethod={cart?.deliveryMethod || "delivery"}
-                  initialZoneId={
-                    cart?.deliveryZoneId
-                      ? parseInt(cart.deliveryZoneId)
-                      : undefined
-                  }
                 />
+
+                {validationError && (
+                  <div className="mt-3 p-3 bg-orange-900/30 border border-orange-500 rounded flex items-start space-x-2">
+                    <AlertCircle className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
+                    <div className="text-orange-400 text-sm">
+                      {validationError}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -260,17 +379,55 @@ export default function Cart() {
 
                 <div className="space-y-4">
                   <div className="flex justify-between items-center text-gray-300">
-                    <span>Subtotal</span>
+                    <span>
+                      Subtotal ({items.length}{" "}
+                      {items.length === 1 ? "item" : "items"})
+                    </span>
                     <span>₵{totals.subtotal.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center text-gray-300">
-                    <span>Tax (10%)</span>
+                    <span>Tax</span>
                     <span>₵{totals.tax.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center text-gray-300">
-                    <span>Shipping</span>
-                    <span>₵{totals.shipping.toFixed(2)}</span>
+                    {cart?.deliveryMethod === "pickup" ? (
+                      <>
+                        <span className="flex items-center">
+                          <span>Pickup</span>
+                          <span className="ml-2 text-xs bg-green-900/30 text-green-400 px-2 py-0.5 rounded">
+                            Free
+                          </span>
+                        </span>
+                        <span>₵0.00</span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="flex items-center">
+                          <span>Delivery</span>
+                          {cart?.deliveryZoneName && (
+                            <span className="ml-2 text-xs bg-blue-900/30 text-blue-400 px-2 py-0.5 rounded">
+                              {cart.deliveryZoneName}
+                            </span>
+                          )}
+                        </span>
+                        <span>₵{totals.shipping.toFixed(2)}</span>
+                      </>
+                    )}
                   </div>
+
+                  {/* Show special delivery notice if applicable */}
+                  {totals.shipping > 0 &&
+                    cart?.deliveryMethod === "delivery" && (
+                      <div className="flex items-start space-x-2 bg-gray-700/50 p-2 rounded text-xs">
+                        <AlertCircle className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />
+                        <div className="text-gray-300">
+                          {totals.shipping > (cart?.deliveryZoneFee || 0)
+                            ? "Special delivery fee applies due to order size or product requirements."
+                            : "Standard delivery fee applies based on your location."}
+                        </div>
+                      </div>
+                    )}
+
                   <div className="border-t border-gray-600 pt-4">
                     <div className="flex justify-between items-center text-xl font-semibold text-white">
                       <span>Total</span>
