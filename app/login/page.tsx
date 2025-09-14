@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import Navigation from '../components/Navigation';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -112,11 +113,15 @@ export default function Login() {
         <div className="relative z-10 max-w-md w-full mx-auto px-4 py-20">
           <div className="bg-gray-800/90 backdrop-blur-sm rounded-2xl p-8 shadow-2xl border border-gray-700">
             <div className="text-center mb-8">
-              <div className="flex items-center justify-center space-x-2 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center">
-                  <span className="text-black font-bold text-xl">J</span>
-                </div>
-                <span className="text-3xl font-bold text-white">JoanTee</span>
+              <div className="flex items-center justify-center mb-4">
+                <Image
+                  src="/logo.png"
+                  alt="JoanTees logo"
+                  width={200}
+                  height={80}
+                  className="rounded-lg object-contain"
+                  priority
+                />
               </div>
               <h1 className="text-2xl font-bold text-white mb-2">
                 {isSignUp ? 'Create Account' : 'Welcome Back'}

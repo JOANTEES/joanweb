@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Navigation from '../components/Navigation';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
-import { CreditCard, MapPin, User, Lock, ArrowLeft, ShoppingCart, Plus, Minus, X } from 'lucide-react';
+import { CreditCard, MapPin, Lock, ArrowLeft, ShoppingCart, Plus, Minus, X } from 'lucide-react';
 
 export default function Checkout() {
   const { isAuthenticated, loading, setRedirectUrl } = useAuth();

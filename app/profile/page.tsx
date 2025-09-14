@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Navigation from '../components/Navigation';
 import { useAuth } from '../contexts/AuthContext';
-import { User, Mail, Phone, MapPin, Edit, Save, X, Package, Clock, CheckCircle } from 'lucide-react';
+import { User, MapPin, Edit, Save, X, Package, Clock, CheckCircle } from 'lucide-react';
 
 export default function Profile() {
   const { isAuthenticated, loading, setRedirectUrl, user } = useAuth();

@@ -1,11 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import Navigation from '../components/Navigation';
-import Link from 'next/link';
 import { useCart } from '../contexts/CartContext';
+
+type MainCategory = "All" | "Students" | "Women" | "Men";
 
 export default function Shop() {
   const { addToCart } = useCart();
+  const [selectedMainCategory, setSelectedMainCategory] = useState<MainCategory>("All");
+  const [selectedSubCategory, setSelectedSubCategory] = useState("All");
   
   // Sample product data - you'll replace this with real data
   const products = [
@@ -14,46 +18,92 @@ export default function Shop() {
       name: "Classic White Tee",
       price: 89.99,
       image: "/placeholder-tshirt.jpg",
-      category: "T-Shirts"
+      category: "Tees"
     },
     {
       id: 2,
       name: "Premium Hoodie",
       price: 179.99,
       image: "/placeholder-hoodie.jpg",
-      category: "Hoodies"
+      category: "Sweat outfits"
     },
     {
       id: 3,
       name: "Designer Jeans",
       price: 239.99,
       image: "/placeholder-jeans.jpg",
-      category: "Jeans"
+      category: "Jeans/Cargo pants"
     },
     {
       id: 4,
       name: "Casual Dress",
       price: 149.99,
       image: "/placeholder-dress.jpg",
-      category: "Dresses"
+      category: "Two piece outfits"
     },
     {
       id: 5,
       name: "Sporty Shorts",
       price: 104.99,
       image: "/placeholder-shorts.jpg",
-      category: "Shorts"
+      category: "Tees"
     },
     {
       id: 6,
       name: "Elegant Blouse",
       price: 134.99,
       image: "/placeholder-blouse.jpg",
-      category: "Tops"
+      category: "Shirts"
+    },
+    {
+      id: 7,
+      name: "Football Jersey",
+      price: 199.99,
+      image: "/placeholder-jersey.jpg",
+      category: "Jerseys"
+    },
+    {
+      id: 8,
+      name: "Comfortable Slippers",
+      price: 79.99,
+      image: "/placeholder-slippers.jpg",
+      category: "Slippers/Footwear"
+    },
+    {
+      id: 9,
+      name: "Running Sneakers",
+      price: 299.99,
+      image: "/placeholder-sneakers.jpg",
+      category: "Sneakers"
+    },
+    {
+      id: 10,
+      name: "Leather Belt",
+      price: 59.99,
+      image: "/placeholder-belt.jpg",
+      category: "Bags/Belts"
     }
   ];
 
-  const categories = ["All", "T-Shirts", "Hoodies", "Jeans", "Dresses", "Shorts", "Tops"];
+  const mainCategories: MainCategory[] = ["All", "Students", "Women", "Men"];
+  
+  const subCategories: Record<MainCategory, string[]> = {
+    "All": ["Jerseys", "Tees", "Shirts", "Sweat outfits", "Jeans/Cargo pants", "Two piece outfits", "Slippers/Footwear", "Sneakers", "Bags/Belts"],
+    "Students": ["Jerseys", "Tees", "Shirts", "Sweat outfits", "Jeans/Cargo pants", "Two piece outfits", "Slippers/Footwear", "Sneakers", "Bags/Belts"],
+    "Women": ["Jerseys", "Tees", "Shirts", "Sweat outfits", "Jeans/Cargo pants", "Two piece outfits", "Slippers/Footwear", "Sneakers", "Bags/Belts"],
+    "Men": ["Jerseys", "Tees", "Shirts", "Sweat outfits", "Jeans/Cargo pants", "Two piece outfits", "Slippers/Footwear", "Sneakers", "Bags/Belts"]
+  };
+
+  // Filter products based on selected categories
+  const filteredProducts = products.filter(product => {
+    // If "All" is selected for subcategory, show all products
+    if (selectedSubCategory === "All") {
+      return true;
+    }
+    
+    // Filter by the selected subcategory
+    return product.category === selectedSubCategory;
+  });
 
   return (
     <>
@@ -76,13 +126,49 @@ export default function Shop() {
       {/* Filters and Categories */}
       <section className="py-8 bg-gray-900 border-b border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-wrap justify-center gap-4">
-            {categories.map((category) => (
+          {/* Main Categories */}
+          <div className="flex flex-wrap justify-center gap-4 mb-6">
+            {mainCategories.map((category) => (
               <button
                 key={category}
-                className="px-6 py-3 rounded-full border-2 border-gray-600 hover:border-yellow-400 hover:bg-yellow-400 hover:text-black text-white font-medium transition-all duration-200"
+                onClick={() => {
+                  setSelectedMainCategory(category as MainCategory);
+                  setSelectedSubCategory("All");
+                }}
+                className={`px-6 py-3 rounded-full border-2 font-medium transition-all duration-200 ${
+                  selectedMainCategory === category
+                    ? 'border-yellow-400 bg-yellow-400 text-black'
+                    : 'border-gray-600 hover:border-yellow-400 hover:bg-yellow-400 hover:text-black text-white'
+                }`}
               >
                 {category}
+              </button>
+            ))}
+          </div>
+          
+          {/* Sub Categories */}
+          <div className="flex flex-wrap justify-center gap-3">
+            <button
+              onClick={() => setSelectedSubCategory("All")}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                selectedSubCategory === "All"
+                  ? 'bg-yellow-400 text-black'
+                  : 'bg-gray-700 hover:bg-yellow-400 hover:text-black text-white'
+              }`}
+            >
+              All {selectedMainCategory === "All" ? "Products" : selectedMainCategory}
+            </button>
+            {subCategories[selectedMainCategory]?.map((subCategory) => (
+              <button
+                key={subCategory}
+                onClick={() => setSelectedSubCategory(subCategory)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                  selectedSubCategory === subCategory
+                    ? 'bg-yellow-400 text-black'
+                    : 'bg-gray-700 hover:bg-yellow-400 hover:text-black text-white'
+                }`}
+              >
+                {subCategory}
               </button>
             ))}
           </div>
@@ -92,8 +178,38 @@ export default function Shop() {
       {/* Products Grid */}
       <section className="py-16 bg-black">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {products.map((product) => (
+          {/* Results Count */}
+          <div className="mb-8 text-center">
+            <p className="text-gray-400">
+              Showing {filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''}
+              {selectedSubCategory !== "All" && (
+                <span> in <span className="text-yellow-400 font-medium">{selectedSubCategory}</span></span>
+              )}
+            </p>
+          </div>
+          
+          {filteredProducts.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-6">
+                <span className="text-4xl">🔍</span>
+              </div>
+              <h3 className="text-xl font-semibold text-white mb-2">No products found</h3>
+              <p className="text-gray-400 mb-6">
+                No products match your current filter selection.
+              </p>
+              <button
+                onClick={() => {
+                  setSelectedMainCategory("All");
+                  setSelectedSubCategory("All");
+                }}
+                className="bg-yellow-400 hover:bg-yellow-500 text-black px-6 py-3 rounded-lg font-semibold transition-colors"
+              >
+                Show All Products
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {filteredProducts.map((product) => (
               <div key={product.id} className="group cursor-pointer">
                 <div className="bg-gray-800 rounded-2xl p-8 mb-4 h-64 flex items-center justify-center group-hover:shadow-lg transition-shadow duration-300 border border-gray-700">
                   <div className="text-center">
@@ -118,7 +234,8 @@ export default function Shop() {
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+          )}
         </div>
       </section>
 

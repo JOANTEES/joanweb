@@ -1,5 +1,6 @@
 import Navigation from './components/Navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function Home() {
   return (
@@ -58,21 +59,27 @@ export default function Home() {
             <div className="relative h-96 flex items-center justify-center">
               <div className="relative w-80 h-80" style={{ perspective: '1000px' }}>
                 {/* Image 1 */}
-                <img 
+                <Image 
                   src="/1.jpg" 
                   alt="Premium Clothing Collection 1" 
+                  width={320}
+                  height={320}
                   className="absolute inset-0 w-full h-full object-contain shadow-2xl animate-flip-carousel-1"
                 />
                 {/* Image 2 */}
-                <img 
+                <Image 
                   src="/2.jpg" 
                   alt="Premium Clothing Collection 2" 
+                  width={320}
+                  height={320}
                   className="absolute inset-0 w-full h-full object-contain shadow-2xl animate-flip-carousel-2"
                 />
                 {/* Image 3 */}
-                <img 
+                <Image 
                   src="/3.jpg" 
                   alt="Premium Clothing Collection 3" 
+                  width={320}
+                  height={320}
                   className="absolute inset-0 w-full h-full object-contain shadow-2xl animate-flip-carousel-3"
                 />
               </div>
