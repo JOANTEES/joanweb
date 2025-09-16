@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Navigation from "../components/Navigation";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
+import { useDeliveryZones } from "../hooks/useDeliveryZones";
 import {
   Plus,
   Minus,
@@ -26,7 +27,9 @@ export default function Cart() {
     updateQuantity,
     removeFromCart,
     updateCartDeliveryMethod,
+    refreshCart,
   } = useCart();
+  const { zones } = useDeliveryZones();
   const router = useRouter();
   const [editingItem, setEditingItem] = useState<string | null>(null);
 

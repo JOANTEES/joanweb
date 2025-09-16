@@ -17,7 +17,6 @@ import {
   ExternalLink,
 } from "lucide-react";
 
-
 export default function Profile() {
   const { isAuthenticated, loading, setRedirectUrl, user } = useAuth();
   const { addresses, loading: addressesLoading } = useCustomerAddresses();

@@ -1,6 +1,5 @@
 "use client";
 
-
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navigation from "../components/Navigation";
@@ -20,7 +19,6 @@ import {
   AlertCircle,
 } from "lucide-react";
 import PaymentMethodSelector from "../components/PaymentMethodSelector";
-
 
 export default function Checkout() {
   const { isAuthenticated, loading, setRedirectUrl } = useAuth();
