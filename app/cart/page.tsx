@@ -479,6 +479,7 @@ export default function Cart() {
                             "delivery",
                             undefined,
                             {
+                              addressId: addr.id,
                               regionId: addr.regionId,
                               cityId: addr.cityId,
                               areaName: addr.areaName,

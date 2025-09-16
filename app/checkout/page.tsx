@@ -79,9 +79,9 @@ export default function Checkout() {
     try {
       // Preconditions
       if (cart?.deliveryMethod === "delivery") {
-        // Require a valid delivery setup (zone/address)
-        if (!cart?.deliveryZoneName && totals.shipping === 0) {
-          alert("Please select a valid delivery address before continuing.");
+        // Require a valid delivery address selection
+        if (!selectedDeliveryAddressId) {
+          alert("Please select a delivery address before continuing.");
           setIsProcessing(false);
           return;
         }
@@ -241,9 +241,14 @@ export default function Checkout() {
                   "[Paystack] Inline modal callback fired (success)",
                   paystackResponse
                 );
+                console.log("[Paystack] Starting verification process...");
                 (async () => {
                   try {
                     // Verify transaction so backend creates the order from session
+                    console.log(
+                      "[Paystack] Calling verify endpoint with reference:",
+                      reference
+                    );
                     const verifyRes = await fetch(
                       `${API_BASE_URL}/payments/paystack/verify`,
                       {
@@ -257,11 +262,16 @@ export default function Checkout() {
                         body: JSON.stringify({ reference }),
                       }
                     );
+                    console.log(
+                      "[Paystack] Verify response status:",
+                      verifyRes.status
+                    );
                     const verifyCT =
                       verifyRes.headers.get("content-type") || "";
                     const verifyData = verifyCT.includes("application/json")
                       ? await verifyRes.json()
                       : { success: false, message: await verifyRes.text() };
+                    console.log("[Paystack] Verify response data:", verifyData);
 
                     if (verifyRes.ok && verifyData?.success) {
                       await clearCart();
@@ -289,7 +299,9 @@ export default function Checkout() {
                     );
                     setShowConfirm(true);
                   }
-                })();
+                })().catch((err) => {
+                  console.error("[Paystack] Async function error:", err);
+                });
               },
             });
             if (handler) {

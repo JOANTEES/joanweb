@@ -126,6 +126,7 @@ interface CartContextType {
     deliveryMethod: "pickup" | "delivery",
     deliveryZoneId?: number,
     address?: {
+      addressId?: string;
       regionId: number;
       cityId: number;
       areaName: string;
@@ -381,6 +382,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     deliveryMethod: "pickup" | "delivery",
     deliveryZoneId?: number,
     address?: {
+      addressId?: string;
       regionId: number;
       cityId: number;
       areaName: string;
