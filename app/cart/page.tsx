@@ -13,10 +13,11 @@ import {
   ShoppingBag,
   ArrowLeft,
   AlertCircle,
-  MapPin,
 } from "lucide-react";
-import DeliveryMethodSelector from "../components/DeliveryMethodSelector";
+
 import { useState } from "react";
+import { useCustomerAddresses } from "../hooks/useCustomerAddresses";
+import { usePickupLocations } from "../hooks/usePickupLocations";
 
 export default function Cart() {
   const { isAuthenticated, loading, setRedirectUrl } = useAuth();
@@ -27,12 +28,24 @@ export default function Cart() {
     updateQuantity,
     removeFromCart,
     updateCartDeliveryMethod,
-    refreshCart,
     selectedDeliveryAddressId,
+    setSelectedPickupLocation,
   } = useCart();
-  const { zones } = useDeliveryZones();
+  useDeliveryZones();
   const router = useRouter();
-  const [editingItem, setEditingItem] = useState<string | null>(null);
+
+  const [activeTab, setActiveTab] = useState<"delivery" | "pickup">(
+    (cart?.deliveryMethod as "delivery" | "pickup") || "delivery"
+  );
+  const [localSelectedAddressId, setLocalSelectedAddressId] = useState<
+    number | null
+  >(null);
+  const [localSelectedPickupId, setLocalSelectedPickupId] = useState<
+    string | null
+  >(null);
+  const [appliedSelection, setAppliedSelection] = useState<
+    { type: "delivery"; id: number } | { type: "pickup"; id: string } | null
+  >(null);
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -41,22 +54,7 @@ export default function Cart() {
     }
   }, [isAuthenticated, loading, router, setRedirectUrl]);
 
-  // Auto-open delivery editor when delivery is selected but no address is set
-  useEffect(() => {
-    if (
-      cart?.deliveryMethod === "delivery" &&
-      !cart?.deliveryAddress &&
-      !selectedDeliveryAddressId &&
-      editingItem !== "delivery"
-    ) {
-      setEditingItem("delivery");
-    }
-  }, [
-    cart?.deliveryMethod,
-    cart?.deliveryAddress,
-    selectedDeliveryAddressId,
-    editingItem,
-  ]);
+  // Removed: old auto-open delivery editor
 
   const [validationError, setValidationError] = useState<string | null>(null);
   const [deliveryEligibilityIssues, setDeliveryEligibilityIssues] =
@@ -79,6 +77,22 @@ export default function Cart() {
     }
   }, [totals.deliveryEligibilityIssues]);
 
+  // Load addresses for the Delivery tab
+  const { addresses, loading: addressesLoading } = useCustomerAddresses();
+  const { locations: pickupLocations, loading: pickupsLoading } =
+    usePickupLocations();
+  useEffect(() => {
+    if (!addressesLoading && addresses && addresses.length > 0) {
+      const defaultAddress = addresses.find((a) => a.isDefault);
+      const initialIdStr = (defaultAddress?.id ?? addresses[0]?.id) as
+        | string
+        | undefined;
+      if (initialIdStr && !localSelectedAddressId) {
+        setLocalSelectedAddressId(Number(initialIdStr));
+      }
+    }
+  }, [addressesLoading, addresses, localSelectedAddressId]);
+
   const handleSwitchToPickup = async () => {
     try {
       const success = await updateCartDeliveryMethod("pickup");
@@ -89,76 +103,6 @@ export default function Cart() {
     } catch (error) {
       console.error("Error switching to pickup:", error);
       setValidationError("Failed to switch to pickup");
-    }
-  };
-
-  const handleDeliveryMethodChange = async (
-    method: "pickup" | "delivery",
-    address?: {
-      regionId: number;
-      cityId: number;
-      areaName: string;
-      landmark?: string;
-      additionalInstructions?: string;
-      contactPhone?: string;
-      regionName?: string;
-      cityName?: string;
-    },
-    validationResult?: {
-      isValid: boolean;
-      message: string;
-      deliveryZoneId?: string;
-      deliveryZoneName?: string;
-      deliveryZoneFee?: number;
-    }
-  ) => {
-    try {
-      setValidationError(null);
-
-      // For pickup method, we don't need to validate delivery zones
-      if (method === "pickup") {
-        const success = await updateCartDeliveryMethod(method);
-        if (success) {
-          setEditingItem(null);
-        }
-        return;
-      }
-
-      // For delivery method, check if address is valid
-      if (!address) {
-        setValidationError("Please select a delivery address");
-        return;
-      }
-
-      // Check validation result
-      if (validationResult && !validationResult.isValid) {
-        setValidationError(`⚠️ ${validationResult.message}`);
-        // Still allow the user to proceed, but show warning
-      }
-
-      // If we have a valid delivery zone from validation, use it
-      let zoneId: number | undefined = undefined;
-      if (validationResult?.deliveryZoneId) {
-        zoneId = parseInt(validationResult.deliveryZoneId);
-      }
-
-      // Set delivery method with address
-      const success = await updateCartDeliveryMethod(method, zoneId, address);
-
-      if (success) {
-        // If we have a validation error but the user wants to proceed anyway
-        if (validationError) {
-          // Keep the validation error visible but close the editor
-          setEditingItem(null);
-        } else {
-          // All good, close the editor
-          setEditingItem(null);
-          setValidationError(null);
-        }
-      }
-    } catch (error) {
-      console.error("Error updating delivery method:", error);
-      setValidationError("Failed to update delivery method");
     }
   };
 
@@ -230,119 +174,7 @@ export default function Cart() {
             </div>
           </div>
 
-          {/* Cart Delivery Method */}
-          <div className="bg-gray-800 rounded-lg p-6 mb-8">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-white mb-2">
-                  Delivery Method
-                </h2>
-                <div className="space-y-3">
-                  {/* Delivery Method */}
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-300">
-                      Delivery Method:
-                    </span>
-                    <span
-                      className={`text-sm font-medium ${
-                        cart?.deliveryMethod === "pickup"
-                          ? "text-green-400"
-                          : "text-blue-400"
-                      }`}
-                    >
-                      {cart?.deliveryMethod === "pickup"
-                        ? "Pickup"
-                        : cart?.deliveryAddress
-                        ? "Home Delivery"
-                        : "Delivery (address not set)"}
-                    </span>
-                  </div>
-
-                  {/* Show delivery address details if available */}
-                  {cart?.deliveryMethod === "delivery" &&
-                    cart?.deliveryAddress && (
-                      <div className="text-sm text-gray-400">
-                        <div className="flex items-center space-x-2">
-                          <MapPin className="w-4 h-4" />
-                          <span>
-                            {cart.deliveryAddress.regionName || "Region"} →{" "}
-                            {cart.deliveryAddress.cityName || "City"} →{" "}
-                            {cart.deliveryAddress.areaName}
-                          </span>
-                        </div>
-                        {cart.deliveryAddress.landmark && (
-                          <div className="text-xs text-gray-500 mt-1 ml-6">
-                            Near: {cart.deliveryAddress.landmark}
-                          </div>
-                        )}
-
-                        {/* Delivery zone info */}
-                        {cart?.deliveryZoneName ? (
-                          <div className="text-xs text-gray-500 mt-2 ml-6">
-                            Delivery zone: {cart.deliveryZoneName} - ₵
-                            {cart?.deliveryZoneFee?.toFixed(2)}
-                          </div>
-                        ) : (
-                          <div className="text-xs text-orange-400 mt-2 ml-6">
-                            ⚠️ Address is outside delivery zones - consider
-                            pickup instead
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                  {/* Pickup info */}
-                  {cart?.deliveryMethod === "pickup" && (
-                    <div className="text-sm text-gray-400">
-                      <div className="flex items-center space-x-2">
-                        <MapPin className="w-4 h-4" />
-                        <span>
-                          {/** Show selected pickup location if present via context */}
-                          {(() => {
-                            try {
-                              // Inline hook usage is not allowed; instead we rely on totals/cart area update elsewhere.
-                              // Keep placeholder text until selection is displayed below in summary panel.
-                              return "Pickup location selected below";
-                            } catch (_) {
-                              return "Pickup location";
-                            }
-                          })()}
-                        </span>
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1 ml-6">
-                        Free pickup - no delivery charges
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <button
-                onClick={() => setEditingItem("delivery")}
-                className="text-yellow-400 hover:text-yellow-300 text-sm underline"
-              >
-                Change Address
-              </button>
-            </div>
-
-            {/* Delivery Method Editor */}
-            {editingItem === "delivery" && (
-              <div className="mt-4 p-4 bg-gray-700 rounded-lg">
-                <DeliveryMethodSelector
-                  onDeliveryMethodChange={handleDeliveryMethodChange}
-                  initialMethod={cart?.deliveryMethod || "delivery"}
-                />
-
-                {validationError && (
-                  <div className="mt-3 p-3 bg-orange-900/30 border border-orange-500 rounded flex items-start space-x-2">
-                    <AlertCircle className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
-                    <div className="text-orange-400 text-sm">
-                      {validationError}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          {/* Removed old delivery method section - replaced by Delivery Options card below */}
 
           {/* Simple delivery eligibility notice */}
           {deliveryEligibilityIssues &&
@@ -466,6 +298,239 @@ export default function Cart() {
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* Delivery Options Card (New - Tabs Scaffold) */}
+              <div className="bg-gray-800 rounded-lg p-6 mt-8">
+                <h2 className="text-xl font-semibold text-white mb-4">
+                  Delivery Options
+                </h2>
+                {/* Tabs */}
+                <div className="flex border-b border-gray-700 mb-4">
+                  <button
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                      activeTab === "delivery"
+                        ? "border-yellow-400 text-yellow-400"
+                        : "border-transparent text-gray-400 hover:text-gray-200"
+                    }`}
+                    onClick={() => setActiveTab("delivery")}
+                  >
+                    Delivery
+                  </button>
+                  <button
+                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ml-2 ${
+                      activeTab === "pickup"
+                        ? "border-yellow-400 text-yellow-400"
+                        : "border-transparent text-gray-400 hover:text-gray-200"
+                    }`}
+                    onClick={() => setActiveTab("pickup")}
+                  >
+                    Pickup
+                  </button>
+                </div>
+
+                {/* Panel Content */}
+                <div className="grid grid-cols-1 gap-4">
+                  {activeTab === "delivery" ? (
+                    <div className="bg-gray-700/50 rounded p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="text-sm text-gray-300 font-medium">
+                          Select a delivery address
+                        </div>
+                        <button
+                          className="text-yellow-400 hover:text-yellow-300 text-sm"
+                          disabled
+                        >
+                          + Add New
+                        </button>
+                      </div>
+                      <div className="max-h-60 overflow-auto pr-1 space-y-2">
+                        {addressesLoading ? (
+                          <div className="text-gray-400 text-sm">
+                            Loading addresses...
+                          </div>
+                        ) : (addresses ?? []).length === 0 ? (
+                          <div className="text-gray-400 text-sm">
+                            You have no saved addresses yet.
+                          </div>
+                        ) : (
+                          (addresses ?? []).map((addr) => (
+                            <label
+                              key={addr.id}
+                              className={`flex items-start p-3 rounded border cursor-pointer transition-colors ${
+                                localSelectedAddressId === Number(addr.id)
+                                  ? "border-yellow-400 bg-yellow-400/5"
+                                  : "border-gray-600 hover:border-gray-500"
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name="deliveryAddress"
+                                className="mt-1 mr-3 accent-yellow-400"
+                                checked={
+                                  localSelectedAddressId === Number(addr.id)
+                                }
+                                onChange={() =>
+                                  setLocalSelectedAddressId(Number(addr.id))
+                                }
+                              />
+                              <div className="text-sm">
+                                <div className="text-white font-medium">
+                                  {addr.areaName}
+                                  {addr.isDefault && (
+                                    <span className="ml-2 text-xxs uppercase tracking-wide bg-gray-600 text-white px-1.5 py-0.5 rounded">
+                                      Default
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-gray-300">
+                                  {[
+                                    addr.areaName,
+                                    addr.cityName,
+                                    addr.regionName,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(", ")}
+                                </div>
+                                {addr.landmark && (
+                                  <div className="text-gray-500 text-xs mt-0.5">
+                                    Near {addr.landmark}
+                                  </div>
+                                )}
+                              </div>
+                            </label>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-gray-700/50 rounded p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="text-sm text-gray-300 font-medium">
+                          Select a pickup location
+                        </div>
+                      </div>
+                      <div className="max-h-60 overflow-auto pr-1 space-y-2">
+                        {pickupsLoading ? (
+                          <div className="text-gray-400 text-sm">
+                            Loading pickup locations...
+                          </div>
+                        ) : (pickupLocations ?? []).length === 0 ? (
+                          <div className="text-gray-400 text-sm">
+                            No pickup locations available.
+                          </div>
+                        ) : (
+                          (pickupLocations ?? []).map((loc) => (
+                            <label
+                              key={loc.id}
+                              className={`flex items-start p-3 rounded border cursor-pointer transition-colors ${
+                                localSelectedPickupId === String(loc.id)
+                                  ? "border-yellow-400 bg-yellow-400/5"
+                                  : "border-gray-600 hover:border-gray-500"
+                              }`}
+                            >
+                              <input
+                                type="radio"
+                                name="pickupLocation"
+                                className="mt-1 mr-3 accent-yellow-400"
+                                checked={
+                                  localSelectedPickupId === String(loc.id)
+                                }
+                                onChange={() =>
+                                  setLocalSelectedPickupId(String(loc.id))
+                                }
+                              />
+                              <div className="text-sm">
+                                <div className="text-white font-medium">
+                                  {loc.name}
+                                </div>
+                                <div className="text-gray-300">
+                                  {[loc.areaName, loc.cityName, loc.regionName]
+                                    .filter(Boolean)
+                                    .join(", ")}
+                                </div>
+                                {loc.landmark && (
+                                  <div className="text-gray-500 text-xs mt-0.5">
+                                    Near {loc.landmark}
+                                  </div>
+                                )}
+                              </div>
+                            </label>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  <div className="flex justify-end">
+                    <button
+                      disabled={
+                        (activeTab === "delivery" && !localSelectedAddressId) ||
+                        (activeTab === "pickup" && !localSelectedPickupId)
+                      }
+                      onClick={async () => {
+                        if (activeTab === "delivery") {
+                          if (!localSelectedAddressId) return;
+                          const addr = (addresses ?? []).find(
+                            (a) =>
+                              Number(a.id) === Number(localSelectedAddressId)
+                          );
+                          if (!addr) return;
+                          await updateCartDeliveryMethod(
+                            "delivery",
+                            undefined,
+                            {
+                              regionId: addr.regionId,
+                              cityId: addr.cityId,
+                              areaName: addr.areaName,
+                              landmark: addr.landmark,
+                              additionalInstructions:
+                                addr.additionalInstructions,
+                              contactPhone: addr.contactPhone,
+                            }
+                          );
+                          setAppliedSelection({
+                            type: "delivery",
+                            id: Number(localSelectedAddressId),
+                          });
+                        } else {
+                          if (!localSelectedPickupId) return;
+                          const loc = (pickupLocations ?? []).find(
+                            (p) =>
+                              String(p.id) === String(localSelectedPickupId)
+                          );
+                          if (loc) {
+                            await updateCartDeliveryMethod("pickup");
+                            try {
+                              setSelectedPickupLocation?.(
+                                loc as unknown as import("../hooks/usePickupLocations").PickupLocation
+                              );
+                            } catch {}
+                            setAppliedSelection({
+                              type: "pickup",
+                              id: String(localSelectedPickupId),
+                            });
+                          }
+                        }
+                      }}
+                      className={`px-5 py-2 rounded-lg font-semibold transition-colors ${
+                        (activeTab === "delivery" && !localSelectedAddressId) ||
+                        (activeTab === "pickup" && !localSelectedPickupId)
+                          ? "bg-gray-600 text-gray-300 cursor-not-allowed"
+                          : "bg-yellow-400 hover:bg-yellow-500 text-black"
+                      }`}
+                    >
+                      {activeTab === "delivery"
+                        ? appliedSelection?.type === "delivery" &&
+                          appliedSelection.id === Number(localSelectedAddressId)
+                          ? "Applied"
+                          : "Apply"
+                        : appliedSelection?.type === "pickup" &&
+                          appliedSelection.id === String(localSelectedPickupId)
+                        ? "Applied"
+                        : "Apply"}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
