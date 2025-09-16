@@ -80,6 +80,18 @@ interface SelectedPickupLocation {
   googleMapsLink?: string;
 }
 
+interface SelectedDeliveryAddress {
+  addressId?: string;
+  regionId: number;
+  cityId: number;
+  areaName: string;
+  landmark?: string;
+  additionalInstructions?: string;
+  contactPhone?: string;
+  regionName?: string;
+  cityName?: string;
+}
+
 // This interface defines the structure of cart data returned from the API
 // Used for typing the response from the server
 type CartData = {
@@ -98,6 +110,10 @@ interface CartContextType {
   error: string | null;
   selectedPickupLocation: SelectedPickupLocation | null;
   setSelectedPickupLocation: (location: SelectedPickupLocation | null) => void;
+  selectedDeliveryAddressId: string | null;
+  setSelectedDeliveryAddressId: (addressId: string | null) => void;
+  selectedDeliveryAddress: SelectedDeliveryAddress | null;
+  setSelectedDeliveryAddress: (address: SelectedDeliveryAddress | null) => void;
   addToCart: (
     productId: number,
     quantity?: number,
@@ -138,6 +154,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [selectedPickupLocation, setSelectedPickupLocation] =
     useState<SelectedPickupLocation | null>(null);
+  const [selectedDeliveryAddressId, setSelectedDeliveryAddressId] = useState<
+    string | null
+  >(null);
+  const [selectedDeliveryAddress, setSelectedDeliveryAddress] =
+    useState<SelectedDeliveryAddress | null>(null);
   const { isAuthenticated, setRedirectUrl } = useAuth();
 
   const API_BASE_URL =
@@ -207,6 +228,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setTotals({ subtotal: 0, tax: 0, shipping: 0, total: 0 });
       setItemCount(0);
       setSelectedPickupLocation(null);
+      setSelectedDeliveryAddressId(null);
+      setSelectedDeliveryAddress(null);
     }
   }, [isAuthenticated, refreshCart]);
 
@@ -420,18 +443,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
           if (addressResponse.ok) {
             const addressData = await addressResponse.json();
-            if (addressData.success && addressData.data?.deliveryZoneId) {
-              // If address was set successfully and a zone was determined, use that zone
-              deliveryZoneId = parseInt(addressData.data.deliveryZoneId);
-              console.log(
-                "Delivery zone determined from address:",
-                deliveryZoneId
-              );
-            } else {
-              console.log(
-                "Address set but no delivery zone was determined:",
-                addressData
-              );
+            if (addressData.success) {
+              // Prefer explicit deliveryZoneId if provided
+              if (addressData.data?.deliveryZoneId) {
+                deliveryZoneId = parseInt(addressData.data.deliveryZoneId);
+              }
+              // Fallback to determinedZone.id if present per updated docs
+              if (!deliveryZoneId && addressData.data?.determinedZone?.id) {
+                deliveryZoneId = Number(addressData.data.determinedZone.id);
+              }
+
+              if (deliveryZoneId) {
+                console.log(
+                  "Delivery zone determined from address:",
+                  deliveryZoneId
+                );
+              } else {
+                console.log(
+                  "Address set but no delivery zone was determined:",
+                  addressData
+                );
+              }
             }
           } else {
             // Log the error details for debugging
@@ -499,6 +531,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
             );
             // Switching to delivery clears any previously selected pickup location
             setSelectedPickupLocation(null);
+            // If we have an explicit address id, store it as selected
+            if ((address as { addressId?: string }).addressId) {
+              setSelectedDeliveryAddressId(
+                (address as { addressId?: string }).addressId || null
+              );
+            }
+            // Also store full selected address for UI
+            setSelectedDeliveryAddress(address as SelectedDeliveryAddress);
           }
           // Refresh cart to get updated data
           await refreshCart();
@@ -580,6 +620,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
         error,
         selectedPickupLocation,
         setSelectedPickupLocation,
+        selectedDeliveryAddressId,
+        setSelectedDeliveryAddressId,
+        selectedDeliveryAddress,
+        setSelectedDeliveryAddress,
         addToCart,
         removeFromCart,
         updateQuantity,

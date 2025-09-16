@@ -88,6 +88,44 @@ export default function DeliveryAddressSelector({
     ? addresses.find((addr) => addr.id === selectedAddressId)
     : null;
 
+  // Auto-select default address on load if none selected yet
+  useEffect(() => {
+    if (!disabled && !selectedAddressId && addresses.length > 0) {
+      const defaultAddress = addresses.find((a) => a.isDefault) || addresses[0];
+      if (defaultAddress) {
+        setSelectedAddressId(defaultAddress.id);
+        const addressData = {
+          addressId: defaultAddress.id,
+          regionId: defaultAddress.regionId,
+          cityId: defaultAddress.cityId,
+          areaName: defaultAddress.areaName,
+          landmark: defaultAddress.landmark,
+          additionalInstructions: defaultAddress.additionalInstructions,
+          contactPhone: defaultAddress.contactPhone,
+          regionName: defaultAddress.regionName,
+          cityName: defaultAddress.cityName,
+        };
+
+        // Prefer existing validation result; fall back to local validation immediately
+        const validation =
+          validationResults[defaultAddress.id] ||
+          validateAddressLocally({
+            regionId: addressData.regionId,
+            cityId: addressData.cityId,
+            areaName: addressData.areaName,
+          });
+        onAddressChange(addressData as any, validation);
+      }
+    }
+  }, [
+    addresses,
+    disabled,
+    onAddressChange,
+    selectedAddressId,
+    validationResults,
+    validateAddressLocally,
+  ]);
+
   // Validate all addresses
   useEffect(() => {
     if (addresses.length > 0 && regions.length > 0) {
@@ -134,6 +172,7 @@ export default function DeliveryAddressSelector({
       // We now have regionId and cityId directly from the address object.
       // No more string matching needed.
       const addressData = {
+        addressId: address.id,
         regionId: address.regionId,
         cityId: address.cityId,
         areaName: address.areaName,
@@ -235,7 +274,7 @@ export default function DeliveryAddressSelector({
     }
 
     // Notify parent component with address and validation result
-    onAddressChange(addressData, validation);
+    onAddressChange(addressData as any, validation);
     setIsFormOpen(false);
     setIsCreatingNew(false);
     return true;

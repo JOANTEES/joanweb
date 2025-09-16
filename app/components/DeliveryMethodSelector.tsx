@@ -10,6 +10,7 @@ interface DeliveryMethodSelectorProps {
   onDeliveryMethodChange: (
     method: "pickup" | "delivery",
     address?: {
+      addressId?: string;
       regionId: number;
       cityId: number;
       areaName: string;
@@ -47,13 +48,18 @@ export default function DeliveryMethodSelector({
   initialAddress,
   disabled = false,
 }: DeliveryMethodSelectorProps) {
-  const { selectedPickupLocation, setSelectedPickupLocation } = useCart();
+  const {
+    selectedPickupLocation,
+    setSelectedPickupLocation,
+    setSelectedDeliveryAddressId,
+  } = useCart();
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "delivery">(
     initialMethod
   );
   const [showPickupSelector, setShowPickupSelector] = useState<boolean>(true);
   const [selectedAddress, setSelectedAddress] = useState<
     | {
+        addressId?: string;
         regionId: number;
         cityId: number;
         areaName: string;
@@ -85,6 +91,7 @@ export default function DeliveryMethodSelector({
 
   const handleAddressChange = (
     address: {
+      addressId?: string;
       regionId: number;
       cityId: number;
       areaName: string;
@@ -104,6 +111,9 @@ export default function DeliveryMethodSelector({
   ) => {
     setSelectedAddress(address);
     onDeliveryMethodChange(deliveryMethod, address, validationResult);
+    if (address.addressId) {
+      setSelectedDeliveryAddressId(address.addressId);
+    }
   };
 
   return (

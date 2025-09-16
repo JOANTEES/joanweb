@@ -28,6 +28,7 @@ export default function Cart() {
     removeFromCart,
     updateCartDeliveryMethod,
     refreshCart,
+    selectedDeliveryAddressId,
   } = useCart();
   const { zones } = useDeliveryZones();
   const router = useRouter();
@@ -39,6 +40,23 @@ export default function Cart() {
       router.push("/login");
     }
   }, [isAuthenticated, loading, router, setRedirectUrl]);
+
+  // Auto-open delivery editor when delivery is selected but no address is set
+  useEffect(() => {
+    if (
+      cart?.deliveryMethod === "delivery" &&
+      !cart?.deliveryAddress &&
+      !selectedDeliveryAddressId &&
+      editingItem !== "delivery"
+    ) {
+      setEditingItem("delivery");
+    }
+  }, [
+    cart?.deliveryMethod,
+    cart?.deliveryAddress,
+    selectedDeliveryAddressId,
+    editingItem,
+  ]);
 
   const [validationError, setValidationError] = useState<string | null>(null);
   const [deliveryEligibilityIssues, setDeliveryEligibilityIssues] =
@@ -234,7 +252,9 @@ export default function Cart() {
                     >
                       {cart?.deliveryMethod === "pickup"
                         ? "Pickup"
-                        : "Home Delivery"}
+                        : cart?.deliveryAddress
+                        ? "Home Delivery"
+                        : "Delivery (address not set)"}
                     </span>
                   </div>
 
@@ -297,12 +317,10 @@ export default function Cart() {
                 </div>
               </div>
               <button
-                onClick={() =>
-                  setEditingItem(editingItem === "delivery" ? null : "delivery")
-                }
+                onClick={() => setEditingItem("delivery")}
                 className="text-yellow-400 hover:text-yellow-300 text-sm underline"
               >
-                {editingItem === "delivery" ? "Cancel" : "Change"}
+                Change Address
               </button>
             </div>
 
