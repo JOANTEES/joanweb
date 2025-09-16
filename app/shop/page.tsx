@@ -1,13 +1,18 @@
 "use client";
 
+
 import { useState, useMemo } from "react";
 import Navigation from "../components/Navigation";
 import { useCart } from "../contexts/CartContext";
 import { useProducts } from "../hooks/useProducts";
 import AddToCartModal from "../components/AddToCartModal";
 
+
+type MainCategory = "All" | "Students" | "Women" | "Men";
+
 export default function Shop() {
   const { addToCart } = useCart();
+
   const { products, loading, error, refetch } = useProducts();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
@@ -55,6 +60,7 @@ export default function Shop() {
     });
   }, [products, selectedCategory, searchTerm]);
 
+
   return (
     <>
       <Navigation />
@@ -77,6 +83,7 @@ export default function Shop() {
       {/* Filters and Categories */}
       <section className="py-8 bg-gray-900 border-b border-gray-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
           {/* Search Bar */}
           <div className="mb-6">
             <div className="max-w-md mx-auto">
@@ -100,9 +107,37 @@ export default function Shop() {
                   selectedCategory === category
                     ? "border-yellow-400 bg-yellow-400 text-black"
                     : "border-gray-600 hover:border-yellow-400 hover:bg-yellow-400 hover:text-black text-white"
+
                 }`}
               >
                 {category}
+              </button>
+            ))}
+          </div>
+          
+          {/* Sub Categories */}
+          <div className="flex flex-wrap justify-center gap-3">
+            <button
+              onClick={() => setSelectedSubCategory("All")}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                selectedSubCategory === "All"
+                  ? 'bg-yellow-400 text-black'
+                  : 'bg-gray-700 hover:bg-yellow-400 hover:text-black text-white'
+              }`}
+            >
+              All {selectedMainCategory === "All" ? "Products" : selectedMainCategory}
+            </button>
+            {subCategories[selectedMainCategory]?.map((subCategory) => (
+              <button
+                key={subCategory}
+                onClick={() => setSelectedSubCategory(subCategory)}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                  selectedSubCategory === subCategory
+                    ? 'bg-yellow-400 text-black'
+                    : 'bg-gray-700 hover:bg-yellow-400 hover:text-black text-white'
+                }`}
+              >
+                {subCategory}
               </button>
             ))}
           </div>
@@ -112,6 +147,7 @@ export default function Shop() {
       {/* Products Grid */}
       <section className="py-16 bg-black">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
           {loading ? (
             <div className="flex items-center justify-center py-16">
               <div className="text-center">
@@ -124,6 +160,7 @@ export default function Shop() {
               <div className="text-center">
                 <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                   <span className="text-2xl">⚠️</span>
+
                 </div>
                 <p className="text-red-400 text-lg mb-4">{error}</p>
                 <button
@@ -225,6 +262,7 @@ export default function Shop() {
                 ))}
               </div>
             </>
+
           )}
         </div>
       </section>
