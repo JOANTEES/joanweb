@@ -51,7 +51,9 @@ export default function AddressForm({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (formData.regionId && formData.regionId !== "") {
+    const hasRegionSelection =
+      formData.regionId !== "" && Number(formData.regionId) > 0;
+    if (hasRegionSelection) {
       fetchCities(Number(formData.regionId));
     } else {
       fetchCities();
@@ -104,6 +106,7 @@ export default function AddressForm({
           additionalInstructions: "",
           contactPhone: "",
           isDefault: false,
+          saveAddress: true,
         });
       }
     } catch (err) {

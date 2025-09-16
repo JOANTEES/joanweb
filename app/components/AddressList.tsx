@@ -43,7 +43,15 @@ export default function AddressList() {
     null
   );
 
-  const handleCreateAddress = async (data: any) => {
+  const handleCreateAddress = async (data: {
+    regionId: number | string;
+    cityId: number | string;
+    areaName: string;
+    landmark?: string;
+    additionalInstructions?: string;
+    contactPhone?: string;
+    isDefault: boolean;
+  }) => {
     const success = await createAddress({
       regionId: Number(data.regionId),
       cityId: Number(data.cityId),
@@ -56,7 +64,15 @@ export default function AddressList() {
     return success;
   };
 
-  const handleUpdateAddress = async (data: any) => {
+  const handleUpdateAddress = async (data: {
+    regionId?: number | string;
+    cityId?: number | string;
+    areaName: string;
+    landmark?: string;
+    additionalInstructions?: string;
+    contactPhone?: string;
+    isDefault: boolean;
+  }) => {
     if (!editingAddress) return false;
 
     const success = await updateAddress(editingAddress.id, {
@@ -270,8 +286,8 @@ export default function AddressList() {
         initialData={
           editingAddress
             ? {
-                regionId: editingAddress.regionName,
-                cityId: editingAddress.cityName,
+                regionId: "",
+                cityId: "",
                 areaName: editingAddress.areaName,
                 landmark: editingAddress.landmark || "",
                 additionalInstructions:

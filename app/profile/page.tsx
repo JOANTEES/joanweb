@@ -7,8 +7,6 @@ import { useAuth } from "../contexts/AuthContext";
 import { useCustomerAddresses } from "../hooks/useCustomerAddresses";
 import {
   User,
-  Mail,
-  Phone,
   MapPin,
   Edit,
   Save,
@@ -291,7 +289,7 @@ export default function Profile() {
                 ) : addresses.length === 0 ? (
                   <div className="p-4 bg-gray-700/50 rounded-lg text-center">
                     <p className="text-gray-300 mb-2">
-                      You don't have any saved addresses yet.
+                      You don&#39;t have any saved addresses yet.
                     </p>
                     <button
                       onClick={() => router.push("/profile/addresses")}

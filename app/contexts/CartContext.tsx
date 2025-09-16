@@ -23,6 +23,9 @@ interface CartItem {
   size?: string;
   color?: string;
   subtotal: number;
+  deliveryEligible: boolean;
+  pickupEligible: boolean;
+  requiresSpecialDelivery: boolean;
   createdAt: string;
 }
 
@@ -47,11 +50,22 @@ interface Cart {
   updatedAt: string;
 }
 
+interface DeliveryEligibilityIssue {
+  type: string;
+  message: string;
+  items: Array<{
+    productId: string;
+    productName: string;
+    message: string;
+  }>;
+}
+
 interface CartTotals {
   subtotal: number;
   tax: number;
   shipping: number;
   total: number;
+  deliveryEligibilityIssues?: DeliveryEligibilityIssue[] | null;
 }
 
 // This interface defines the structure of cart data returned from the API

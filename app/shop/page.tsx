@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from "react";
 import Navigation from "../components/Navigation";
-import Link from "next/link";
 import { useCart } from "../contexts/CartContext";
 import { useProducts } from "../hooks/useProducts";
 import AddToCartModal from "../components/AddToCartModal";
@@ -12,7 +11,18 @@ export default function Shop() {
   const { products, loading, error, refetch } = useProducts();
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  type ProductForModal = {
+    id: string | number;
+    name: string;
+    description?: string;
+    price: string | number;
+    category: string;
+    imageUrl?: string;
+    stock_quantity: number;
+  };
+
+  const [selectedProduct, setSelectedProduct] =
+    useState<ProductForModal | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Get unique categories from products
@@ -23,7 +33,7 @@ export default function Shop() {
     return ["All", ...uniqueCategories];
   }, [products]);
 
-  const handleAddToCartClick = (product: any) => {
+  const handleAddToCartClick = (product: ProductForModal) => {
     setSelectedProduct(product);
     setIsModalOpen(true);
   };
@@ -244,7 +254,15 @@ export default function Shop() {
       {/* Add to Cart Modal */}
       {selectedProduct && (
         <AddToCartModal
-          product={selectedProduct}
+          product={{
+            id: String(selectedProduct.id),
+            name: selectedProduct.name,
+            description: selectedProduct.description,
+            price: String(selectedProduct.price),
+            category: selectedProduct.category,
+            imageUrl: selectedProduct.imageUrl,
+            stock_quantity: selectedProduct.stock_quantity,
+          }}
           isOpen={isModalOpen}
           onClose={handleCloseModal}
         />

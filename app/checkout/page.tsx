@@ -9,7 +9,6 @@ import {
   CreditCard,
   MapPin,
   User,
-  Lock,
   ArrowLeft,
   ShoppingCart,
   Plus,
@@ -19,6 +18,7 @@ import {
   Store,
   AlertCircle,
 } from "lucide-react";
+import PaymentMethodSelector from "../components/PaymentMethodSelector";
 
 export default function Checkout() {
   const { isAuthenticated, loading, setRedirectUrl } = useAuth();
@@ -26,19 +26,11 @@ export default function Checkout() {
     useCart();
   const router = useRouter();
   const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    address: "",
-    city: "",
-    zipCode: "",
-    country: "Ghana",
-    cardNumber: "",
-    expiryDate: "",
-    cvv: "",
-    cardName: "",
+    customerNotes: "",
   });
+  const [paymentMethod, setPaymentMethod] = useState<
+    "online" | "on_delivery" | "on_pickup"
+  >("online");
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
@@ -50,7 +42,9 @@ export default function Checkout() {
   }, [isAuthenticated, loading, router, setRedirectUrl]);
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
   ) => {
     setFormData({
       ...formData,
@@ -58,18 +52,56 @@ export default function Checkout() {
     });
   };
 
+  const handlePaymentMethodChange = (
+    method: "online" | "on_delivery" | "on_pickup"
+  ) => {
+    setPaymentMethod(method);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsProcessing(true);
 
-    // Simulate payment processing
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    try {
+      // Create order with backend API
+      const orderData = {
+        paymentMethod: paymentMethod,
+        deliveryMethod: cart?.deliveryMethod || "delivery",
+        // For now, we'll use a placeholder address ID since the cart doesn't store it
+        // TODO: Update backend to accept address details directly or store address ID in cart
+        deliveryAddressId: cart?.deliveryMethod === "delivery" ? 1 : undefined, // Placeholder - needs to be fixed
+        pickupLocationId: cart?.deliveryMethod === "pickup" ? 1 : undefined, // Default pickup location
+        customerNotes: formData.customerNotes || "No additional notes",
+      };
 
-    // Clear cart and redirect to success page
-    clearCart();
-    alert("Order placed successfully!");
-    router.push("/orders");
-    setIsProcessing(false);
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/orders`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify(orderData),
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Clear cart and redirect to success page
+        clearCart();
+        alert("Order placed successfully!");
+        router.push("/orders");
+      } else {
+        alert(`Order failed: ${data.message}`);
+      }
+    } catch (error) {
+      console.error("Error creating order:", error);
+      alert("Failed to place order. Please try again.");
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   if (loading) {
@@ -166,7 +198,7 @@ export default function Checkout() {
                           Pickup (Free)
                         </div>
                         <p className="text-gray-400 text-sm mt-1">
-                          You'll pick up your order from our store location.
+                          You&#39;ll pick up your order from our store location.
                         </p>
                         <div className="mt-3 flex items-center">
                           <a
@@ -230,213 +262,71 @@ export default function Checkout() {
                 </div>
               </div>
 
-              {/* Shipping Information */}
+              {/* Payment Method Selection */}
               <div className="bg-gray-800 rounded-lg p-6">
-                <div className="flex items-center mb-4">
-                  <MapPin className="w-5 h-5 text-yellow-400 mr-2" />
-                  <h2 className="text-xl font-semibold text-white">
-                    Shipping Information
-                  </h2>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      First Name *
-                    </label>
-                    <input
-                      type="text"
-                      name="firstName"
-                      value={formData.firstName}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-                      placeholder="Enter first name"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Last Name *
-                    </label>
-                    <input
-                      type="text"
-                      name="lastName"
-                      value={formData.lastName}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-                      placeholder="Enter last name"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Email Address *
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-                    placeholder="Enter email address"
-                    required
-                  />
-                </div>
-
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Phone Number *
-                  </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-                    placeholder="Enter phone number"
-                    required
-                  />
-                </div>
-
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Address *
-                  </label>
-                  <input
-                    type="text"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-                    placeholder="Enter full address"
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      City *
-                    </label>
-                    <input
-                      type="text"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-                      placeholder="Enter city"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      ZIP Code *
-                    </label>
-                    <input
-                      type="text"
-                      name="zipCode"
-                      value={formData.zipCode}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-                      placeholder="Enter ZIP code"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Country *
-                    </label>
-                    <select
-                      name="country"
-                      value={formData.country}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-                      required
-                    >
-                      <option value="Ghana">Ghana</option>
-                      <option value="Nigeria">Nigeria</option>
-                      <option value="Kenya">Kenya</option>
-                      <option value="South Africa">South Africa</option>
-                    </select>
-                  </div>
-                </div>
+                <PaymentMethodSelector
+                  onPaymentMethodChange={handlePaymentMethodChange}
+                  initialMethod={paymentMethod}
+                  deliveryMethod={cart?.deliveryMethod}
+                />
               </div>
 
-              {/* Payment Information */}
+              {/* Payment Method Summary for non-online payments */}
+              {paymentMethod !== "online" && (
+                <div className="bg-gray-800 rounded-lg p-6">
+                  <div className="flex items-center mb-4">
+                    <CreditCard className="w-5 h-5 text-yellow-400 mr-2" />
+                    <h2 className="text-xl font-semibold text-white">
+                      Payment Summary
+                    </h2>
+                  </div>
+
+                  <div className="bg-gray-700/50 p-4 rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
+                        <CreditCard className="w-5 h-5 text-green-400" />
+                      </div>
+                      <div>
+                        <div className="text-white font-medium">
+                          {paymentMethod === "on_delivery"
+                            ? "Pay on Delivery"
+                            : "Pay on Pickup"}
+                        </div>
+                        <p className="text-gray-400 text-sm">
+                          {paymentMethod === "on_delivery"
+                            ? "You\u2019ll pay when your order is delivered to your address"
+                            : "You\u2019ll pay when you collect your order from our store"}
+                        </p>
+                        <p className="text-gray-500 text-xs mt-1">
+                          We accept cash, mobile money, and card payments
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Customer Notes */}
               <div className="bg-gray-800 rounded-lg p-6">
                 <div className="flex items-center mb-4">
-                  <CreditCard className="w-5 h-5 text-yellow-400 mr-2" />
+                  <User className="w-5 h-5 text-yellow-400 mr-2" />
                   <h2 className="text-xl font-semibold text-white">
-                    Payment Information
+                    Additional Notes
                   </h2>
                 </div>
 
                 <div className="mt-4">
                   <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Cardholder Name *
+                    Special Instructions (Optional)
                   </label>
-                  <input
-                    type="text"
-                    name="cardName"
-                    value={formData.cardName}
+                  <textarea
+                    name="customerNotes"
+                    value={formData.customerNotes}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-                    placeholder="Enter cardholder name"
-                    required
+                    rows={3}
+                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent resize-none"
+                    placeholder="Any special instructions for your order..."
                   />
-                </div>
-
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Card Number *
-                  </label>
-                  <input
-                    type="text"
-                    name="cardNumber"
-                    value={formData.cardNumber}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-                    placeholder="1234 5678 9012 3456"
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Expiry Date *
-                    </label>
-                    <input
-                      type="text"
-                      name="expiryDate"
-                      value={formData.expiryDate}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-                      placeholder="MM/YY"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      CVV *
-                    </label>
-                    <input
-                      type="text"
-                      name="cvv"
-                      value={formData.cvv}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-                      placeholder="123"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center mt-4 text-sm text-gray-400">
-                  <Lock className="w-4 h-4 mr-2" />
-                  Your payment information is secure and encrypted
                 </div>
               </div>
             </div>
@@ -576,7 +466,11 @@ export default function Checkout() {
                   disabled={isProcessing}
                   className="w-full mt-6 bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-600 text-black py-4 rounded-lg font-semibold transition-colors duration-200"
                 >
-                  {isProcessing ? "Processing..." : "Place Order"}
+                  {isProcessing
+                    ? "Processing..."
+                    : paymentMethod === "online"
+                    ? "Pay Now & Place Order"
+                    : "Place Order"}
                 </button>
               </div>
             </div>

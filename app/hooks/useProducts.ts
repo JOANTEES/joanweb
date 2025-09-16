@@ -70,7 +70,7 @@ export function useProducts(): UseProductsReturn {
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [API_BASE_URL]);
 
   return {
     products,

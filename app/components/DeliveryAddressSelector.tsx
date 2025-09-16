@@ -91,7 +91,15 @@ export default function DeliveryAddressSelector({
   // Validate all addresses
   useEffect(() => {
     if (addresses.length > 0 && regions.length > 0) {
-      const newValidationResults: { [key: string]: any } = {};
+      const newValidationResults: {
+        [key: string]: {
+          isValid: boolean;
+          message: string;
+          deliveryZoneId?: string;
+          deliveryZoneName?: string;
+          deliveryZoneFee?: number;
+        };
+      } = {};
 
       addresses.forEach((address) => {
         // Use the IDs directly from the address object for validation
@@ -151,11 +159,20 @@ export default function DeliveryAddressSelector({
   };
 
   // Handle form submission
-  const handleFormSubmit = async (formData: any) => {
+  const handleFormSubmit = async (formData: {
+    regionId: number | string;
+    cityId: number | string;
+    areaName: string;
+    landmark?: string;
+    additionalInstructions?: string;
+    contactPhone?: string;
+    isDefault: boolean;
+    saveAddress?: boolean;
+  }): Promise<boolean> => {
     // Client-side validation before processing
     if (!formData.regionId || !formData.cityId) {
       alert("Please select a Region and City before saving.");
-      return; // Stop the submission
+      return false; // Stop the submission
     }
 
     // Create the address data
@@ -181,7 +198,7 @@ export default function DeliveryAddressSelector({
           `${validation.message}\n\nWould you like to continue with this address anyway? You can also choose pickup instead.`
         )
       ) {
-        return;
+        return false;
       }
     }
 
@@ -221,6 +238,7 @@ export default function DeliveryAddressSelector({
     onAddressChange(addressData, validation);
     setIsFormOpen(false);
     setIsCreatingNew(false);
+    return true;
   };
 
   // Load cities when region changes
@@ -277,10 +295,12 @@ export default function DeliveryAddressSelector({
                         <Star className="w-4 h-4 text-yellow-400 fill-current" />
                       )}
                       {validationResults[address.id]?.isValid === false && (
-                        <AlertCircle
-                          className="w-4 h-4 text-orange-400"
-                          title="Outside delivery zone"
-                        />
+                        <span
+                          className="inline-flex"
+                          aria-label="Outside delivery zone"
+                        >
+                          <AlertCircle className="w-4 h-4 text-orange-400" />
+                        </span>
                       )}
                     </div>
                     <p className="text-gray-400 text-sm">
@@ -363,10 +383,12 @@ export default function DeliveryAddressSelector({
                   {cities.find((c) => c.id === tempAddress.cityId)?.name}
                 </span>
                 {validationResults.temp?.isValid === false && (
-                  <AlertCircle
-                    className="w-4 h-4 text-orange-400"
-                    title="Outside delivery zone"
-                  />
+                  <span
+                    className="inline-flex"
+                    aria-label="Outside delivery zone"
+                  >
+                    <AlertCircle className="w-4 h-4 text-orange-400" />
+                  </span>
                 )}
               </div>
               <p className="text-gray-400 text-sm">

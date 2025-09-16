@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Navigation from "../components/Navigation";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
-import { useDeliveryZones } from "../hooks/useDeliveryZones";
 import {
   Plus,
   Minus,
@@ -27,9 +26,7 @@ export default function Cart() {
     updateQuantity,
     removeFromCart,
     updateCartDeliveryMethod,
-    refreshCart,
   } = useCart();
-  const { zones } = useDeliveryZones();
   const router = useRouter();
   const [editingItem, setEditingItem] = useState<string | null>(null);
 
@@ -41,6 +38,38 @@ export default function Cart() {
   }, [isAuthenticated, loading, router, setRedirectUrl]);
 
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [deliveryEligibilityIssues, setDeliveryEligibilityIssues] =
+    useState<Array<{
+      type: string;
+      message: string;
+      items: Array<{
+        productId: string;
+        productName: string;
+        message: string;
+      }>;
+    }> | null>(null);
+
+  // Check for delivery eligibility issues whenever cart data changes
+  useEffect(() => {
+    if (totals.deliveryEligibilityIssues) {
+      setDeliveryEligibilityIssues(totals.deliveryEligibilityIssues);
+    } else {
+      setDeliveryEligibilityIssues(null);
+    }
+  }, [totals.deliveryEligibilityIssues]);
+
+  const handleSwitchToPickup = async () => {
+    try {
+      const success = await updateCartDeliveryMethod("pickup");
+      if (success) {
+        setDeliveryEligibilityIssues(null);
+        setValidationError(null);
+      }
+    } catch (error) {
+      console.error("Error switching to pickup:", error);
+      setValidationError("Failed to switch to pickup");
+    }
+  };
 
   const handleDeliveryMethodChange = async (
     method: "pickup" | "delivery",
@@ -283,12 +312,41 @@ export default function Cart() {
             )}
           </div>
 
+          {/* Simple delivery eligibility notice */}
+          {deliveryEligibilityIssues &&
+            deliveryEligibilityIssues.length > 0 && (
+              <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4 mb-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <AlertCircle className="w-4 h-4 text-blue-400" />
+                    <span className="text-blue-300 text-sm">
+                      Some items in your cart are only available for pickup
+                    </span>
+                  </div>
+                  <button
+                    onClick={handleSwitchToPickup}
+                    className="text-blue-400 hover:text-blue-300 text-sm underline"
+                  >
+                    Switch to Pickup
+                  </button>
+                </div>
+              </div>
+            )}
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Cart Items */}
             <div className="lg:col-span-2">
               <div className="space-y-4">
                 {items.map((item) => (
-                  <div key={item.id} className="bg-gray-800 rounded-lg p-6">
+                  <div
+                    key={item.id}
+                    className={`rounded-lg p-6 ${
+                      cart?.deliveryMethod === "delivery" &&
+                      !item.deliveryEligible
+                        ? "bg-blue-900/10 border border-blue-500/30"
+                        : "bg-gray-800"
+                    }`}
+                  >
                     <div className="flex items-start space-x-4">
                       {/* Product Image */}
                       <div className="w-20 h-20 bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -307,9 +365,18 @@ export default function Cart() {
 
                       {/* Product Details */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-semibold text-white mb-2">
-                          {item.productName}
-                        </h3>
+                        <div className="flex items-center space-x-2 mb-2">
+                          <h3 className="text-lg font-semibold text-white">
+                            {item.productName}
+                          </h3>
+                          {cart?.deliveryMethod === "delivery" &&
+                            !item.deliveryEligible && (
+                              <div className="flex items-center space-x-1 bg-blue-500/20 text-blue-400 px-2 py-1 rounded text-xs">
+                                <AlertCircle className="w-3 h-3" />
+                                <span>Pickup Only</span>
+                              </div>
+                            )}
+                        </div>
                         <p className="text-gray-400 text-sm mb-2">
                           ₵{item.price.toFixed(2)} each
                         </p>
@@ -438,9 +505,23 @@ export default function Cart() {
 
                 <button
                   onClick={() => router.push("/checkout")}
-                  className="w-full mt-6 bg-yellow-400 hover:bg-yellow-500 text-black py-4 rounded-lg font-semibold transition-colors duration-200"
+                  disabled={
+                    !!(
+                      deliveryEligibilityIssues &&
+                      deliveryEligibilityIssues.length > 0
+                    )
+                  }
+                  className={`w-full mt-6 py-4 rounded-lg font-semibold transition-colors duration-200 ${
+                    deliveryEligibilityIssues &&
+                    deliveryEligibilityIssues.length > 0
+                      ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                      : "bg-yellow-400 hover:bg-yellow-500 text-black"
+                  }`}
                 >
-                  Proceed to Checkout
+                  {deliveryEligibilityIssues &&
+                  deliveryEligibilityIssues.length > 0
+                    ? "Resolve Delivery Issues First"
+                    : "Proceed to Checkout"}
                 </button>
 
                 <button

@@ -120,16 +120,21 @@ export function useDeliveryZoneValidation() {
       for (const zone of zones) {
         console.log(`%cChecking Zone: ${zone.name}`, "color: cyan;", zone);
 
-        // Check if the zone has structured areas
-        if (zone.structuredAreas && zone.structuredAreas.length > 0) {
-          console.log(
-            "Zone has structured areas to check:",
-            zone.structuredAreas
-          );
+        // Check if the zone has structured areas (fallback to any for shape differences)
+        const areas = (
+          zone as {
+            structuredAreas?: Array<{
+              regionId: number;
+              cityId: number;
+            }>;
+          }
+        ).structuredAreas;
+        if (Array.isArray(areas) && areas.length > 0) {
+          console.log("Zone has structured areas to check:", areas);
 
           // Find if this zone covers the address's city, ignoring the specific areaName.
           // IMPORTANT: Convert address IDs to numbers for a strict type comparison.
-          const cityIsCovered = zone.structuredAreas.some(
+          const cityIsCovered = areas.some(
             (area) =>
               area.regionId === Number(address.regionId) &&
               area.cityId === Number(address.cityId)
