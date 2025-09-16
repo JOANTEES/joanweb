@@ -276,7 +276,18 @@ export default function Cart() {
                     <div className="text-sm text-gray-400">
                       <div className="flex items-center space-x-2">
                         <MapPin className="w-4 h-4" />
-                        <span>Store pickup location (to be configured)</span>
+                        <span>
+                          {/** Show selected pickup location if present via context */}
+                          {(() => {
+                            try {
+                              // Inline hook usage is not allowed; instead we rely on totals/cart area update elsewhere.
+                              // Keep placeholder text until selection is displayed below in summary panel.
+                              return "Pickup location selected below";
+                            } catch (_) {
+                              return "Pickup location";
+                            }
+                          })()}
+                        </span>
                       </div>
                       <div className="text-xs text-gray-500 mt-1 ml-6">
                         Free pickup - no delivery charges
@@ -485,6 +496,10 @@ export default function Cart() {
                     )}
                   </div>
 
+                  {cart?.deliveryMethod === "pickup" && (
+                    <PickupLocationSummary />
+                  )}
+
                   {/* Show special delivery notice if applicable */}
                   {totals.shipping > 0 &&
                     cart?.deliveryMethod === "delivery" && (
@@ -539,5 +554,47 @@ export default function Cart() {
         </div>
       </div>
     </>
+  );
+}
+
+function PickupLocationSummary() {
+  const { selectedPickupLocation } = useCart();
+  if (!selectedPickupLocation) {
+    return (
+      <div className="mt-2 text-xs text-orange-400">
+        Please choose a pickup location.
+      </div>
+    );
+  }
+  return (
+    <div className="mt-3 p-3 bg-gray-700/50 rounded">
+      <div className="text-sm text-gray-300 font-medium">
+        {selectedPickupLocation.name}
+      </div>
+      <div className="text-xs text-gray-400">
+        {[
+          selectedPickupLocation.areaName,
+          selectedPickupLocation.cityName,
+          selectedPickupLocation.regionName,
+        ]
+          .filter(Boolean)
+          .join(", ")}
+      </div>
+      {selectedPickupLocation.landmark && (
+        <div className="text-xs text-gray-500 mt-1">
+          Near {selectedPickupLocation.landmark}
+        </div>
+      )}
+      {selectedPickupLocation.googleMapsLink && (
+        <a
+          href={selectedPickupLocation.googleMapsLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-yellow-400 hover:text-yellow-300 text-xs mt-2 inline-block"
+        >
+          View on Maps
+        </a>
+      )}
+    </div>
   );
 }

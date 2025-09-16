@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MapPin } from "lucide-react";
 import DeliveryAddressSelector from "./DeliveryAddressSelector";
+import PickupLocationSelector from "./PickupLocationSelector";
+import { useCart } from "../contexts/CartContext";
 
 interface DeliveryMethodSelectorProps {
   onDeliveryMethodChange: (
@@ -45,9 +47,11 @@ export default function DeliveryMethodSelector({
   initialAddress,
   disabled = false,
 }: DeliveryMethodSelectorProps) {
+  const { selectedPickupLocation, setSelectedPickupLocation } = useCart();
   const [deliveryMethod, setDeliveryMethod] = useState<"pickup" | "delivery">(
     initialMethod
   );
+  const [showPickupSelector, setShowPickupSelector] = useState<boolean>(true);
   const [selectedAddress, setSelectedAddress] = useState<
     | {
         regionId: number;
@@ -67,11 +71,15 @@ export default function DeliveryMethodSelector({
     if (method === "pickup") {
       setSelectedAddress(undefined);
       onDeliveryMethodChange(method);
+      // Collapse selector if a location is already chosen
+      setShowPickupSelector(!selectedPickupLocation);
     } else {
       // If switching to delivery and we have an address, use it
       if (selectedAddress) {
         onDeliveryMethodChange(method, selectedAddress);
       }
+      // Always collapse pickup selector when switching away
+      setShowPickupSelector(false);
     }
   };
 
@@ -142,16 +150,54 @@ export default function DeliveryMethodSelector({
         />
       )}
 
-      {/* Pickup Information */}
+      {/* Pickup Selection */}
       {deliveryMethod === "pickup" && (
-        <div className="bg-gray-700/50 rounded-lg p-4">
-          <div className="flex items-center space-x-2 text-sm text-gray-300">
-            <MapPin className="w-4 h-4" />
-            <strong>Pickup Location:</strong> Store Address (to be configured)
-          </div>
-          <div className="text-xs text-gray-400 mt-1">
-            You can pick up your order from our store location. Free of charge.
-          </div>
+        <div className="space-y-3">
+          {!showPickupSelector && selectedPickupLocation ? (
+            <div className="bg-gray-700/50 rounded-lg p-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="text-white font-medium">
+                    {selectedPickupLocation.name}
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    {[
+                      selectedPickupLocation.areaName,
+                      selectedPickupLocation.cityName,
+                      selectedPickupLocation.regionName,
+                    ]
+                      .filter(Boolean)
+                      .join(", ")}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  className="text-yellow-400 hover:text-yellow-300 text-sm underline"
+                  onClick={() => setShowPickupSelector(true)}
+                >
+                  Change
+                </button>
+              </div>
+            </div>
+          ) : (
+            <PickupLocationSelector
+              onSelect={(loc) => {
+                setSelectedPickupLocation({
+                  id: loc.id,
+                  name: loc.name,
+                  description: loc.description,
+                  regionName: loc.regionName,
+                  cityName: loc.cityName,
+                  areaName: loc.areaName,
+                  landmark: loc.landmark,
+                  contactPhone: loc.contactPhone,
+                  googleMapsLink: loc.googleMapsLink,
+                });
+                setShowPickupSelector(false);
+              }}
+              disabled={disabled}
+            />
+          )}
         </div>
       )}
     </div>

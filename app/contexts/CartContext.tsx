@@ -68,6 +68,18 @@ interface CartTotals {
   deliveryEligibilityIssues?: DeliveryEligibilityIssue[] | null;
 }
 
+interface SelectedPickupLocation {
+  id: string;
+  name: string;
+  description?: string;
+  regionName?: string;
+  cityName?: string;
+  areaName?: string;
+  landmark?: string;
+  contactPhone?: string;
+  googleMapsLink?: string;
+}
+
 // This interface defines the structure of cart data returned from the API
 // Used for typing the response from the server
 type CartData = {
@@ -84,6 +96,8 @@ interface CartContextType {
   itemCount: number;
   loading: boolean;
   error: string | null;
+  selectedPickupLocation: SelectedPickupLocation | null;
+  setSelectedPickupLocation: (location: SelectedPickupLocation | null) => void;
   addToCart: (
     productId: number,
     quantity?: number,
@@ -122,6 +136,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [itemCount, setItemCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedPickupLocation, setSelectedPickupLocation] =
+    useState<SelectedPickupLocation | null>(null);
   const { isAuthenticated, setRedirectUrl } = useAuth();
 
   const API_BASE_URL =
@@ -190,6 +206,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setItems([]);
       setTotals({ subtotal: 0, tax: 0, shipping: 0, total: 0 });
       setItemCount(0);
+      setSelectedPickupLocation(null);
     }
   }, [isAuthenticated, refreshCart]);
 
@@ -480,6 +497,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
                   }
                 : null
             );
+            // Switching to delivery clears any previously selected pickup location
+            setSelectedPickupLocation(null);
           }
           // Refresh cart to get updated data
           await refreshCart();
@@ -559,6 +578,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
         itemCount,
         loading,
         error,
+        selectedPickupLocation,
+        setSelectedPickupLocation,
         addToCart,
         removeFromCart,
         updateQuantity,

@@ -22,8 +22,15 @@ import PaymentMethodSelector from "../components/PaymentMethodSelector";
 
 export default function Checkout() {
   const { isAuthenticated, loading, setRedirectUrl } = useAuth();
-  const { cart, items, totals, clearCart, updateQuantity, removeFromCart } =
-    useCart();
+  const {
+    cart,
+    items,
+    totals,
+    clearCart,
+    updateQuantity,
+    removeFromCart,
+    selectedPickupLocation,
+  } = useCart();
   const router = useRouter();
   const [formData, setFormData] = useState({
     customerNotes: "",
@@ -64,15 +71,25 @@ export default function Checkout() {
 
     try {
       // Create order with backend API
-      const orderData = {
+      const orderData: Record<string, unknown> = {
         paymentMethod: paymentMethod,
         deliveryMethod: cart?.deliveryMethod || "delivery",
-        // For now, we'll use a placeholder address ID since the cart doesn't store it
-        // TODO: Update backend to accept address details directly or store address ID in cart
-        deliveryAddressId: cart?.deliveryMethod === "delivery" ? 1 : undefined, // Placeholder - needs to be fixed
-        pickupLocationId: cart?.deliveryMethod === "pickup" ? 1 : undefined, // Default pickup location
         customerNotes: formData.customerNotes || "No additional notes",
       };
+
+      if (cart?.deliveryMethod === "pickup") {
+        if (!selectedPickupLocation?.id) {
+          alert("Please select a pickup location to continue.");
+          setIsProcessing(false);
+          return;
+        }
+        orderData.pickupLocationId = Number(selectedPickupLocation.id);
+      } else if (cart?.deliveryMethod === "delivery") {
+        // If your backend requires deliveryAddressId, pass it here when available from cart
+        if (cart?.deliveryZoneId) {
+          // still rely on backend to bind address->zone; leaving deliveryAddressId unset
+        }
+      }
 
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/orders`,
@@ -80,7 +97,7 @@ export default function Checkout() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${localStorage.getItem("authToken")}`,
           },
           body: JSON.stringify(orderData),
         }
