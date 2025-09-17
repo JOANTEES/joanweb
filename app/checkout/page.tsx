@@ -670,11 +670,14 @@ export default function Checkout() {
                     >
                       <div className="w-16 h-16 bg-gray-600 rounded-lg flex items-center justify-center flex-shrink-0">
                         {item.imageUrl ? (
-                          <img
-                            src={item.imageUrl}
-                            alt={item.productName}
-                            className="w-full h-full object-cover rounded-lg"
-                          />
+                          <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={item.imageUrl}
+                              alt={item.productName}
+                              className="w-full h-full object-cover rounded-lg"
+                            />
+                          </>
                         ) : (
                           <span className="text-gray-300 text-xs font-medium">
                             IMG

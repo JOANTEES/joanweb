@@ -28,7 +28,7 @@ export default function Cart() {
     updateQuantity,
     removeFromCart,
     updateCartDeliveryMethod,
-    selectedDeliveryAddressId,
+    // selectedDeliveryAddressId, // Unused but kept for future use
     setSelectedPickupLocation,
   } = useCart();
   useDeliveryZones();
@@ -56,7 +56,7 @@ export default function Cart() {
 
   // Removed: old auto-open delivery editor
 
-  const [validationError, setValidationError] = useState<string | null>(null);
+  // const [validationError, setValidationError] = useState<string | null>(null); // Unused but kept for future use
   const [deliveryEligibilityIssues, setDeliveryEligibilityIssues] =
     useState<Array<{
       type: string;
@@ -98,11 +98,11 @@ export default function Cart() {
       const success = await updateCartDeliveryMethod("pickup");
       if (success) {
         setDeliveryEligibilityIssues(null);
-        setValidationError(null);
+        // setValidationError(null); // Commented out as variable is unused
       }
     } catch (error) {
       console.error("Error switching to pickup:", error);
-      setValidationError("Failed to switch to pickup");
+      // setValidationError("Failed to switch to pickup"); // Commented out as variable is unused
     }
   };
 
@@ -215,11 +215,14 @@ export default function Cart() {
                       {/* Product Image */}
                       <div className="w-20 h-20 bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
                         {item.imageUrl ? (
-                          <img
-                            src={item.imageUrl}
-                            alt={item.productName}
-                            className="w-full h-full object-cover rounded-lg"
-                          />
+                          <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={item.imageUrl}
+                              alt={item.productName}
+                              className="w-full h-full object-cover rounded-lg"
+                            />
+                          </>
                         ) : (
                           <span className="text-gray-300 text-xs font-medium">
                             IMG

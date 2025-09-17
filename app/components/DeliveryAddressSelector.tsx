@@ -42,7 +42,7 @@ interface DeliveryAddressSelectorProps {
 
 export default function DeliveryAddressSelector({
   onAddressChange,
-  initialAddress,
+  initialAddress: _initialAddress, // eslint-disable-line @typescript-eslint/no-unused-vars
   disabled = false,
 }: DeliveryAddressSelectorProps) {
   const {
@@ -50,18 +50,13 @@ export default function DeliveryAddressSelector({
     loading: addressesLoading,
     createAddress,
   } = useCustomerAddresses();
-  const {
-    regions,
-    cities,
-    loading: locationsLoading,
-    fetchCities,
-  } = useGhanaLocations();
-  const { validateAddressLocally, validating } = useDeliveryZoneValidation();
+  const { regions, cities, fetchCities } = useGhanaLocations();
+  const { validateAddressLocally } = useDeliveryZoneValidation();
 
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
     null
   );
-  const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const [_isCreatingNew, setIsCreatingNew] = useState(false); // eslint-disable-line @typescript-eslint/no-unused-vars
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [tempAddress, setTempAddress] = useState<{
     regionId: number;
@@ -84,9 +79,9 @@ export default function DeliveryAddressSelector({
   }>({});
 
   // Find the selected address
-  const selectedAddress = selectedAddressId
-    ? addresses.find((addr) => addr.id === selectedAddressId)
-    : null;
+  // const selectedAddress = selectedAddressId
+  //   ? addresses.find((addr) => addr.id === selectedAddressId)
+  //   : null;
 
   // Auto-select default address on load if none selected yet
   useEffect(() => {
@@ -114,7 +109,7 @@ export default function DeliveryAddressSelector({
             cityId: addressData.cityId,
             areaName: addressData.areaName,
           });
-        onAddressChange(addressData as any, validation);
+        onAddressChange(addressData, validation);
       }
     }
   }, [
@@ -274,7 +269,7 @@ export default function DeliveryAddressSelector({
     }
 
     // Notify parent component with address and validation result
-    onAddressChange(addressData as any, validation);
+    onAddressChange(addressData, validation);
     setIsFormOpen(false);
     setIsCreatingNew(false);
     return true;

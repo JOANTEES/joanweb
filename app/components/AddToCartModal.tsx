@@ -76,11 +76,14 @@ export default function AddToCartModal({
           <div className="flex items-center space-x-4 mb-4">
             <div className="w-16 h-16 bg-gray-600 rounded-lg flex items-center justify-center flex-shrink-0">
               {product.imageUrl ? (
-                <img
-                  src={product.imageUrl}
-                  alt={product.name}
-                  className="w-full h-full object-cover rounded-lg"
-                />
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={product.imageUrl}
+                    alt={product.name}
+                    className="w-full h-full object-cover rounded-lg"
+                  />
+                </>
               ) : (
                 <span className="text-gray-300 text-xs font-medium">IMG</span>
               )}

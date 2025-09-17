@@ -9,9 +9,25 @@ import { Package, Clock, CheckCircle, XCircle } from "lucide-react";
 export default function Orders() {
   const { isAuthenticated, loading, setRedirectUrl } = useAuth();
   const router = useRouter();
-  const [orders, setOrders] = useState<any[]>([]);
-  const [fetching, setFetching] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [orders, setOrders] = useState<
+    Array<{
+      id: string;
+      orderNumber: string;
+      status: string;
+      paymentMethod: string;
+      paymentStatus: string;
+      deliveryMethod: string;
+      totals: {
+        subtotal: number;
+        tax: number;
+        shipping: number;
+        total: number;
+      };
+      createdAt: string;
+    }>
+  >([]);
+  const [_fetching, setFetching] = useState<boolean>(true); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const [_error, setError] = useState<string | null>(null); // eslint-disable-line @typescript-eslint/no-unused-vars
   const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
@@ -46,7 +62,25 @@ export default function Orders() {
         if (!res.ok || !data.success) {
           throw new Error(data.message || "Failed to fetch orders");
         }
-        setOrders(Array.isArray(data.orders) ? data.orders : []);
+        setOrders(
+          Array.isArray(data.orders)
+            ? (data.orders as Array<{
+                id: string;
+                orderNumber: string;
+                status: string;
+                paymentMethod: string;
+                paymentStatus: string;
+                deliveryMethod: string;
+                totals: {
+                  subtotal: number;
+                  tax: number;
+                  shipping: number;
+                  total: number;
+                };
+                createdAt: string;
+              }>)
+            : []
+        );
       } catch (e) {
         setError(e instanceof Error ? e.message : "Failed to fetch orders");
         setOrders([]);
@@ -61,14 +95,41 @@ export default function Orders() {
   const normalizedOrders = useMemo(() => {
     return orders.map((o) => ({
       id: o.orderNumber || o.id,
-      date: o.createdAt || o.created_at || o.date,
+      date:
+        o.createdAt ||
+        (o as { created_at?: string; date?: string }).created_at ||
+        (o as { created_at?: string; date?: string }).date,
       status: o.status || "pending",
-      total: o.totals?.totalAmount ?? o.totalAmount ?? o.total ?? 0,
-      items: (o.items || []).map((it: any) => ({
-        name: it.productName || it.name,
-        price: it.unitPrice ?? it.price ?? 0,
-        quantity: it.quantity ?? 1,
-      })),
+      total:
+        o.totals?.total ??
+        (o as { totalAmount?: number; total?: number }).totalAmount ??
+        (o as { totalAmount?: number; total?: number }).total ??
+        0,
+      items: (
+        (
+          o as {
+            items?: Array<{
+              productName?: string;
+              name?: string;
+              unitPrice?: number;
+              price?: number;
+              quantity?: number;
+            }>;
+          }
+        ).items || []
+      ).map(
+        (it: {
+          productName?: string;
+          name?: string;
+          unitPrice?: number;
+          price?: number;
+          quantity?: number;
+        }) => ({
+          name: it.productName || it.name,
+          price: it.unitPrice ?? it.price ?? 0,
+          quantity: it.quantity ?? 1,
+        })
+      ),
     }));
   }, [orders]);
 
@@ -197,7 +258,10 @@ export default function Orders() {
                         Order #{order.id}
                       </h3>
                       <p className="text-gray-400">
-                        Placed on {new Date(order.date).toLocaleDateString()}
+                        Placed on{" "}
+                        {order.date
+                          ? new Date(order.date).toLocaleDateString()
+                          : "Unknown date"}
                       </p>
                     </div>
                     <div className="flex items-center space-x-4 mt-4 md:mt-0">

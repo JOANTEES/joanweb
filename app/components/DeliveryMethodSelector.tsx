@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { MapPin } from "lucide-react";
+import { useState } from "react";
 import DeliveryAddressSelector from "./DeliveryAddressSelector";
 import PickupLocationSelector from "./PickupLocationSelector";
 import { useCart } from "../contexts/CartContext";
