@@ -22,8 +22,16 @@ import PaymentMethodSelector from "../components/PaymentMethodSelector";
 
 export default function Checkout() {
   const { isAuthenticated, loading, setRedirectUrl } = useAuth();
-  const { cart, items, totals, clearCart, updateQuantity, removeFromCart } =
-    useCart();
+  const {
+    cart,
+    items,
+    totals,
+    clearCart,
+    updateQuantity,
+    removeFromCart,
+    selectedPickupLocation,
+    selectedDeliveryAddressId,
+  } = useCart();
   const router = useRouter();
   const [formData, setFormData] = useState({
     customerNotes: "",
@@ -32,6 +40,12 @@ export default function Checkout() {
     "online" | "on_delivery" | "on_pickup"
   >("online");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [confirmTitle, setConfirmTitle] = useState("");
+  const [confirmSubtitle, setConfirmSubtitle] = useState("");
+  const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+  const PAYSTACK_PUBLIC_KEY = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "";
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -63,36 +77,315 @@ export default function Checkout() {
     setIsProcessing(true);
 
     try {
+      // Preconditions
+      if (cart?.deliveryMethod === "delivery") {
+        // Require a valid delivery address selection
+        if (!selectedDeliveryAddressId) {
+          alert("Please select a delivery address before continuing.");
+          setIsProcessing(false);
+          return;
+        }
+      }
+
       // Create order with backend API
-      const orderData = {
+      const orderData: Record<string, unknown> = {
         paymentMethod: paymentMethod,
         deliveryMethod: cart?.deliveryMethod || "delivery",
-        // For now, we'll use a placeholder address ID since the cart doesn't store it
-        // TODO: Update backend to accept address details directly or store address ID in cart
-        deliveryAddressId: cart?.deliveryMethod === "delivery" ? 1 : undefined, // Placeholder - needs to be fixed
-        pickupLocationId: cart?.deliveryMethod === "pickup" ? 1 : undefined, // Default pickup location
         customerNotes: formData.customerNotes || "No additional notes",
       };
 
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/orders`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify(orderData),
+      if (cart?.deliveryMethod === "pickup") {
+        if (!selectedPickupLocation?.id) {
+          alert("Please select a pickup location to continue.");
+          setIsProcessing(false);
+          return;
         }
-      );
+        orderData.pickupLocationId = Number(selectedPickupLocation.id);
+      } else if (cart?.deliveryMethod === "delivery") {
+        if (!selectedDeliveryAddressId) {
+          alert("Please select a delivery address to continue.");
+          setIsProcessing(false);
+          return;
+        }
+        orderData.deliveryAddressId = Number(selectedDeliveryAddressId);
+      }
 
-      const data = await response.json();
+      const response = await fetch(`${API_BASE_URL}/orders`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+        },
+        body: JSON.stringify(orderData),
+      });
+
+      const contentType = response.headers.get("content-type") || "";
+      const data = contentType.includes("application/json")
+        ? await response.json()
+        : { success: false, message: await response.text() };
 
       if (data.success) {
-        // Clear cart and redirect to success page
-        clearCart();
-        alert("Order placed successfully!");
-        router.push("/orders");
+        if (paymentMethod === "online") {
+          // Support both new checkout-session flow and legacy order-id flow
+          const orderId: string | number | undefined =
+            data.order?.id || data.data?.orderId;
+          const sessionId: string | number | undefined =
+            data.session?.id || data.data?.sessionId;
+
+          let initEndpoint = "";
+          let initBody: Record<string, unknown> | undefined = undefined;
+          if (sessionId) {
+            initEndpoint = `${API_BASE_URL}/payments/paystack/initialize-session`;
+            initBody = { sessionId };
+          } else if (orderId) {
+            initEndpoint = `${API_BASE_URL}/orders/${orderId}/pay/initialize`;
+          } else {
+            // Backend created a session but didn't include identifiers
+            alert(
+              data.message ||
+                "Checkout session created. Initialize Paystack to proceed with payment."
+            );
+            return;
+          }
+
+          // Initialize Paystack
+          const initRes = await fetch(initEndpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+            },
+            body: initBody ? JSON.stringify(initBody) : undefined,
+          });
+          const initContentType = initRes.headers.get("content-type") || "";
+          const initData = initContentType.includes("application/json")
+            ? await initRes.json()
+            : { success: false, message: await initRes.text() };
+          if (!initRes.ok || !initData?.data) {
+            alert(initData?.message || "Failed to initialize payment");
+            return;
+          }
+
+          const reference: string | undefined = initData?.data?.reference;
+          const authorizationUrl: string | undefined =
+            initData?.data?.authorization_url;
+          const amountFromSession: number | undefined = data.session?.amount;
+          const orderTotalAmount: number = Number(
+            amountFromSession ??
+              data?.order?.totals?.totalAmount ??
+              totals.total
+          );
+          const inlineAmountKobo: number = Number(
+            initData?.data?.amount ?? Math.round(orderTotalAmount * 100)
+          );
+
+          // Persist debug breadcrumbs across redirects
+          const persistPaystackDebug = (
+            event: string,
+            extra?: Record<string, unknown>
+          ) => {
+            try {
+              const maskedKey = PAYSTACK_PUBLIC_KEY
+                ? `${PAYSTACK_PUBLIC_KEY.slice(
+                    0,
+                    6
+                  )}...${PAYSTACK_PUBLIC_KEY.slice(-4)}`
+                : undefined;
+              const payload = {
+                event,
+                timestamp: new Date().toISOString(),
+                hasPublicKey: !!PAYSTACK_PUBLIC_KEY,
+                maskedPublicKey: maskedKey,
+                hasReference: !!reference,
+                hasAuthorizationUrl: !!authorizationUrl,
+                amountKobo: Math.round(orderTotalAmount * 100),
+                ...extra,
+              };
+              sessionStorage.setItem("paystack_debug", JSON.stringify(payload));
+            } catch {
+              // ignore storage errors silently
+            }
+          };
+
+          // Helper to open inline modal
+          type PaystackGlobal = {
+            PaystackPop?: {
+              setup?: (
+                config: Record<string, unknown>
+              ) => { openIframe: () => void } | undefined;
+            };
+          };
+          const openInline = () => {
+            console.log("[Paystack] Attempting inline modal with:", {
+              hasPublicKey: !!PAYSTACK_PUBLIC_KEY,
+              hasReference: !!reference,
+              amountKobo: inlineAmountKobo,
+              currency: "GHS",
+            });
+            console.log("[Paystack] Using reference:", reference);
+            const w = window as unknown as PaystackGlobal;
+            const handler = w.PaystackPop?.setup?.({
+              key: PAYSTACK_PUBLIC_KEY,
+              email:
+                (typeof window !== "undefined" &&
+                  localStorage.getItem("userEmail")) ||
+                "customer@example.com",
+              amount: inlineAmountKobo,
+              currency: "GHS",
+              ref: reference,
+              onClose: () => {
+                console.warn("[Paystack] Inline modal closed by user");
+              },
+              callback: (paystackResponse: unknown) => {
+                console.log(
+                  "[Paystack] Inline modal callback fired (success)",
+                  paystackResponse
+                );
+                console.log("[Paystack] Starting verification process...");
+                (async () => {
+                  try {
+                    // Verify transaction so backend creates the order from session
+                    console.log(
+                      "[Paystack] Calling verify endpoint with reference:",
+                      reference
+                    );
+                    const verifyRes = await fetch(
+                      `${API_BASE_URL}/payments/paystack/verify`,
+                      {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                          Authorization: `Bearer ${localStorage.getItem(
+                            "authToken"
+                          )}`,
+                        },
+                        body: JSON.stringify({ reference }),
+                      }
+                    );
+                    console.log(
+                      "[Paystack] Verify response status:",
+                      verifyRes.status
+                    );
+                    const verifyCT =
+                      verifyRes.headers.get("content-type") || "";
+                    const verifyData = verifyCT.includes("application/json")
+                      ? await verifyRes.json()
+                      : { success: false, message: await verifyRes.text() };
+                    console.log("[Paystack] Verify response data:", verifyData);
+
+                    if (verifyRes.ok && verifyData?.success) {
+                      await clearCart();
+                      setConfirmTitle("Payment successful");
+                      setConfirmSubtitle(
+                        "Your order has been created and paid successfully."
+                      );
+                      setShowConfirm(true);
+                    } else {
+                      console.warn(
+                        "[Paystack] Verify failed or not OK:",
+                        verifyData
+                      );
+                      setConfirmTitle("Payment received");
+                      setConfirmSubtitle(
+                        "We are confirming your payment. Your order will appear in a moment."
+                      );
+                      setShowConfirm(true);
+                    }
+                  } catch (err) {
+                    console.error("[Paystack] Verify error:", err);
+                    setConfirmTitle("Payment received");
+                    setConfirmSubtitle(
+                      "We are confirming your payment. Your order will appear in a moment."
+                    );
+                    setShowConfirm(true);
+                  }
+                })().catch((err) => {
+                  console.error("[Paystack] Async function error:", err);
+                });
+              },
+            });
+            if (handler) {
+              console.log("[Paystack] Handler created. Opening iframe...");
+              handler.openIframe();
+            } else {
+              console.error(
+                "[Paystack] Handler not created. window.PaystackPop.setup missing?",
+                {
+                  hasPaystackPop: !!w.PaystackPop,
+                  typeofSetup: typeof w.PaystackPop?.setup,
+                }
+              );
+            }
+          };
+
+          // Ensure script or fallback to redirect
+          const ensureScriptAndOpen = () => {
+            const w = window as unknown as PaystackGlobal;
+            if (w.PaystackPop && typeof w.PaystackPop.setup === "function") {
+              console.log(
+                "[Paystack] Inline script already available; opening modal"
+              );
+              openInline();
+              return;
+            }
+            const script = document.createElement("script");
+            script.src = "https://js.paystack.co/v1/inline.js";
+            script.async = true;
+            script.onload = () => {
+              console.log("[Paystack] Inline script loaded successfully");
+              openInline();
+            };
+            script.onerror = () => {
+              console.error(
+                "[Paystack] Failed to load inline script. Falling back to redirect."
+              );
+              persistPaystackDebug("inline_script_load_failed");
+              if (authorizationUrl) window.location.href = authorizationUrl;
+            };
+            document.body.appendChild(script);
+          };
+
+          if (PAYSTACK_PUBLIC_KEY && reference) {
+            console.log("[Paystack] Proceeding with inline flow", {
+              hasPublicKey: !!PAYSTACK_PUBLIC_KEY,
+              hasReference: !!reference,
+            });
+            ensureScriptAndOpen();
+            return;
+          }
+          if (authorizationUrl) {
+            console.warn(
+              "[Paystack] Missing public key or reference. Redirecting to authorization_url."
+            );
+            persistPaystackDebug("missing_inline_requirements_redirect", {
+              reason: !PAYSTACK_PUBLIC_KEY
+                ? "missing_public_key"
+                : !reference
+                ? "missing_reference"
+                : "unknown",
+            });
+            window.location.href = authorizationUrl;
+            return;
+          }
+          alert(
+            "Payment initialization succeeded but no reference or redirect URL provided."
+          );
+        } else {
+          // Pay on delivery/pickup: pending payment
+          await clearCart();
+          setConfirmTitle(
+            paymentMethod === "on_delivery"
+              ? "Order placed - Pay on Delivery"
+              : "Order placed - Pay on Pickup"
+          );
+          setConfirmSubtitle(
+            paymentMethod === "on_delivery"
+              ? "We\u2019ll deliver your order and collect payment on delivery."
+              : "Please pay when you pick up your order at our store."
+          );
+          setShowConfirm(true);
+          return;
+        }
       } else {
         alert(`Order failed: ${data.message}`);
       }
@@ -119,7 +412,7 @@ export default function Checkout() {
     return null;
   }
 
-  if (items.length === 0) {
+  if (items.length === 0 && !showConfirm) {
     return (
       <>
         <Navigation />
@@ -160,6 +453,32 @@ export default function Checkout() {
 
       <div className="min-h-screen bg-black py-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          {showConfirm && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center">
+              <div className="absolute inset-0 bg-black/70" />
+              <div className="relative z-10 w-full max-w-md bg-gray-800 rounded-lg p-6 shadow-xl">
+                <div className="flex items-center mb-2">
+                  <CreditCard className="w-5 h-5 text-yellow-400 mr-2" />
+                  <h3 className="text-xl font-semibold text-white">
+                    {confirmTitle}
+                  </h3>
+                </div>
+                <p className="text-gray-300 mb-6">{confirmSubtitle}</p>
+                <button
+                  onClick={async () => {
+                    try {
+                      await clearCart();
+                    } catch {}
+                    setShowConfirm(false);
+                    router.push("/orders");
+                  }}
+                  className="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-3 rounded-lg font-semibold transition-colors"
+                >
+                  Go to Orders
+                </button>
+              </div>
+            </div>
+          )}
           {/* Header */}
           <div className="mb-8">
             <button
@@ -351,11 +670,14 @@ export default function Checkout() {
                     >
                       <div className="w-16 h-16 bg-gray-600 rounded-lg flex items-center justify-center flex-shrink-0">
                         {item.imageUrl ? (
-                          <img
-                            src={item.imageUrl}
-                            alt={item.productName}
-                            className="w-full h-full object-cover rounded-lg"
-                          />
+                          <>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={item.imageUrl}
+                              alt={item.productName}
+                              className="w-full h-full object-cover rounded-lg"
+                            />
+                          </>
                         ) : (
                           <span className="text-gray-300 text-xs font-medium">
                             IMG

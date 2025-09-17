@@ -8,7 +8,7 @@ The order management system supports 4 payment/delivery combinations with compre
 
 ### Order Creation
 
-#### Create Order from Cart
+#### Create Order from Cart (Offline payments: on_delivery, on_pickup)
 
 - **URL:** `POST /api/orders`
 - **Description:** Create a new order from the user's cart with support for 4 payment/delivery combinations. Validates that all cart items support the selected delivery method.
@@ -82,6 +82,96 @@ The order management system supports 4 payment/delivery combinations with compre
   ]
 }
 ```
+
+#### Create Checkout Session (Online payments: Paystack modal/redirect)
+
+- URL: `POST /api/orders`
+- Description: When `paymentMethod` is `online`, this endpoint now creates a checkout session instead of an order. The cart is NOT cleared. Use the returned data to initialize Paystack.
+- Headers: `Authorization: Bearer <token>`
+- Request Body:
+  ```json
+  {
+    "paymentMethod": "online",
+    "deliveryMethod": "delivery",
+    "deliveryAddressId": 1,
+    "pickupLocationId": 1
+  }
+  ```
+- Response (201):
+  ```json
+  {
+    "success": true,
+    "message": "Checkout session created. Initialize Paystack to proceed with payment.",
+    "session": {
+      "id": "123",
+      "amount": 130.0,
+      "createdAt": "2024-01-15T10:30:00.000Z"
+    }
+  }
+  ```
+
+Order is created after Paystack success (via webhook/callback). Cart is cleared only after order creation.
+
+#### Initialize Paystack for Checkout Session (Modal or Redirect)
+
+- URL: `POST /api/payments/paystack/initialize-session`
+- Description: Two modes supported.
+  - Inline-only (default, recommended): Backend does not call Paystack. It generates and saves a fresh unique `reference` per attempt and returns inline params (no `authorization_url`).
+  - Redirect (legacy): If you prefer server-side init + redirect, you can keep the older behavior; in that case the response includes `authorization_url`.
+- Headers: `Authorization: Bearer <token>`
+- Request Body:
+  ```json
+  {
+    "sessionId": 123
+  }
+  ```
+- Inline-only Response (200):
+  ```json
+  {
+    "success": true,
+    "message": "Session payment prepared",
+    "data": {
+      "reference": "JTN-123-...",
+      "amount": 13000, // kobo/pesewas
+      "currency": "GHS",
+      "email": "customer@example.com"
+    }
+  }
+  ```
+- Redirect Response (200):
+  ```json
+  {
+    "success": true,
+    "message": "Session payment initialized",
+    "data": {
+      "reference": "psk_ref",
+      "authorization_url": "https://checkout.paystack.com/...",
+      "access_code": "..."
+    }
+  }
+  ```
+
+Frontend (Inline): open Paystack modal with public key, pass `reference`, `amount` (kobo), `currency: "GHS"`, and `email`. On success, rely on webhook/callback to create the order; if webhooks are not available in dev, call the verify endpoint below.
+
+#### Verify Paystack Transaction (fallback for dev/local without webhooks)
+
+- URL: `POST /api/payments/paystack/verify`
+- Description: Client-triggered verification using the Paystack `reference`. Mirrors the callback logic to create the order from the checkout session and mark it paid.
+- Headers: none required beyond standard auth if your app enforces it
+- Request Body:
+  ```json
+  {
+    "reference": "JTN-123-..."
+  }
+  ```
+- Response (200):
+  ```json
+  {
+    "success": true,
+    "message": "Verification processed",
+    "orderId": "456" // may be null if verification failed
+  }
+  ```
 
 ### Order Retrieval
 
@@ -186,6 +276,54 @@ The order management system supports 4 payment/delivery combinations with compre
   }
   ```
 
+### Admin: Orders Listing
+
+#### Get All Orders (Admin Only)
+
+- **URL:** `GET /api/orders/admin`
+- **Headers:** `Authorization: Bearer <ADMIN_JWT_TOKEN>`
+- **Query Params (optional):**
+  - `status` — filter by order status
+  - `paymentStatus` — filter by payment status
+  - `deliveryMethod` — `delivery | pickup`
+  - `paymentMethod` — `online | on_delivery | on_pickup`
+  - `startDate` — ISO date/time
+  - `endDate` — ISO date/time
+  - `q` — search by order number or customer email
+  - `page` — default 1
+  - `limit` — default 20
+- **Response (200):**
+  ```json
+  {
+    "success": true,
+    "message": "Admin orders retrieved successfully",
+    "count": 2,
+    "orders": [
+      {
+        "id": "1",
+        "orderNumber": "ORD-123456-001",
+        "status": "pending",
+        "paymentMethod": "online",
+        "paymentStatus": "pending",
+        "deliveryMethod": "delivery",
+        "totals": {
+          "subtotal": 100.0,
+          "taxAmount": 10.0,
+          "shippingFee": 20.0,
+          "totalAmount": 130.0
+        },
+        "customerEmail": "customer@example.com",
+        "pickupLocationName": null,
+        "deliveryZoneName": "Accra North",
+        "createdAt": "2024-01-15T10:30:00.000Z",
+        "updatedAt": null
+      }
+    ],
+    "page": 1,
+    "limit": 20
+  }
+  ```
+
 ### Order Status Flow
 
 The system supports the following order statuses:
@@ -218,7 +356,316 @@ The system supports 4 combinations:
 - **Address Integration:** Works with customer addresses and pickup locations
 - **Google Maps Links:** Automatic generation for delivery addresses
 
+### Payments for Orders
+
+**Automatic Payment Creation:** Orders and bookings now automatically create payment records when created. No manual payment creation needed.
+
+#### Admin: Add Partial Payment to Existing Payment
+
+```http
+PATCH /api/payments/:id/add-payment
+Authorization: Bearer <admin_token>
+Content-Type: application/json
+
+{
+  "amount": 50.0,
+  "method": "cash", // cash | bank_transfer | check | paystack
+  "notes": "Partial payment received"
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Payment added successfully",
+  "payment": {
+    "id": 456,
+    "order_id": 123,
+    "amount": 200.0,
+    "currency": "GHS",
+    "status": "completed",
+    "payment_history": {
+      "transactions": [
+        {
+          "amount": 150.0,
+          "method": "bank_transfer",
+          "timestamp": "2024-01-15T10:30:00Z",
+          "notes": "Initial payment"
+        },
+        {
+          "amount": 50.0,
+          "method": "cash",
+          "timestamp": "2024-01-20T14:15:00Z",
+          "notes": "Partial payment received"
+        }
+      ]
+    }
+  }
+}
+```
+
+#### Admin: List All Payments
+
+```http
+GET /api/payments
+Authorization: Bearer <admin_token>
+```
+
+**Response:**
+
+```json
+{
+  "payments": [
+    {
+      "id": 456,
+      "booking_id": 789,
+      "order_id": null,
+      "amount": 5000.00,
+      "currency": "GHS",
+      "status": "partial",
+      "method": "cash",
+      "provider": "manual",
+      "payment_history": {
+        "transactions": [...]
+      },
+      "booking_title": "Wedding Event",
+      "booking_customer": "John Doe",
+      "order_number": null,
+      "order_customer": null,
+      "created_at": "2024-01-15T10:30:00Z"
+    }
+  ]
+}
+```
+
+Response:
+
+```json
+{
+  "payment": {
+    "id": 1,
+    "order_id": 123,
+    "amount": 100.0,
+    "currency": "GHS",
+    "method": "cash",
+    "status": "completed",
+    "provider": "paystack",
+    "created_at": "..."
+  }
+}
+```
+
+On creation/update, the backend recalculates the order's `payment_status` by summing all completed payments for the order and comparing against `orders.total_amount`.
+
+#### Admin: Update Payment Status
+
+```http
+PATCH /api/payments/:id/status
+Authorization: Bearer <admin_token>
+Content-Type: application/json
+
+{ "status": "completed" }
+```
+
+This also triggers an automatic recalculation of the linked order's `payment_status`.
+
+#### Customer: Initialize Online Payment (Paystack)
+
+```http
+POST /api/orders/:id/pay/initialize
+Authorization: Bearer <customer_token>
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "message": "Payment initialized",
+  "data": {
+    "reference": "abc123",
+    "authorization_url": "https://checkout.paystack.com/...",
+    "access_code": "..."
+  }
+}
+```
+
+Notes:
+
+- The backend saves the Paystack `reference` into `orders.payment_reference`.
+- On Paystack webhook `charge.success`, the backend:
+  - Inserts a `payments` row linked to the order.
+  - Sets `orders.payment_status = 'paid'`.
+
+Callback URL (redirect) setup
+
+- Backend includes `callback_url` when initializing Paystack (from `PAYSTACK_CALLBACK_URL` or `test_callback_url`).
+- Paystack redirects the user to this URL after payment.
+- The backend handles `GET /api/payments/paystack/callback` to:
+  - Verify the transaction with Paystack using the `reference` query param.
+  - Update the order to `payment_status = 'paid'` on success.
+  - Redirect user to a frontend success/failure page (`PAYSTACK_SUCCESS_URL`/`PAYSTACK_FAILURE_URL` or test variants).
+
+Environment variables
+
+- Server:
+  - `test_secret_key` — Paystack test secret key
+  - `PAYSTACK_SECRET_KEY` — live secret (fallback)
+  - `PAYSTACK_CALLBACK_URL` — live redirect URL (e.g., `https://yourapp.com/api/payments/paystack/callback`)
+  - `test_callback_url` — test redirect URL (e.g., `http://localhost:3000/api/payments/paystack/callback`)
+  - `PAYSTACK_SUCCESS_URL` / `test_success_url` — frontend success page
+  - `PAYSTACK_FAILURE_URL` / `test_failure_url` — frontend failure page
+- Client:
+  - `test_public_key`
+
+### Frontend/Dev Setup for Paystack (Test Mode)
+
+Environment variables
+
+- Backend (server):
+  - `test_secret_key` (required in test) — Paystack test secret key used by the server.
+  - `PAYSTACK_SECRET_KEY` (optional fallback) — used if `test_secret_key` is not set.
+- Frontend (client):
+  - `test_public_key` — Paystack test public key used by the browser checkout widget/SDK.
+
+Local testing with webhook
+
+1. Start the backend locally.
+2. Expose your local server with a tunnel (e.g., `ngrok http 3000`).
+3. Copy the public URL (e.g., `https://abcd.ngrok.io`).
+4. In Paystack Dashboard, set the webhook URL to `https://abcd.ngrok.io/api/payments/paystack/webhook`.
+5. Create an order and initialize payment:
+   - POST `/api/orders` (with `paymentMethod: "online"`).
+   - POST `/api/orders/:id/pay/initialize` and redirect to `authorization_url`.
+6. Complete the Paystack test payment; the webhook will hit your tunnel and the backend will mark the order as paid.
+
+If you cannot receive webhooks locally
+
+- You can simulate completion via admin API:
+  - After Paystack init (or for cash flows), use `PATCH /api/payments/:id/status` with `{ "status": "completed" }`.
+  - This recalculates and updates the linked order's `payment_status`.
+
+Frontend flow summary (test)
+
+1. User checks out and chooses Online Payment.
+2. Create order: `POST /api/orders`.
+3. Initialize Paystack: `POST /api/orders/:id/pay/initialize` → open `authorization_url`.
+4. On success, either rely on webhook to update the order, or (if no webhook in dev) call admin endpoint to simulate completion.
+5. Confirm: `GET /api/orders/:id` → `payment_status` should be `paid`.
+
 ---
+
+### Payments Lifecycle & Admin Flows
+
+Offline orders (on_delivery, on_pickup)
+
+- When an order is created with `paymentMethod: on_delivery | on_pickup`, the backend now also inserts a pending payment row:
+  - `payments`: { order_id, amount=order.total_amount, currency="GHS", method="cash", provider="manual", status="pending" }
+- Admin can later mark the payment as completed in the Payments table or by updating the order status (see below).
+
+Online orders (Paystack)
+
+- Inline (recommended):
+  1. `POST /api/orders` with `paymentMethod: "online"` → creates a checkout session (no order yet)
+  2. `POST /api/payments/paystack/initialize-session` → returns `{ reference, amount (kobo), currency:"GHS", email }`
+  3. Frontend opens Paystack modal with those values
+  4. On success, webhook/callback creates a paid order and inserts a completed payment. If webhooks are unavailable locally, call `POST /api/payments/paystack/verify` with `{ reference }` to finalize.
+- Redirect (legacy): If you prefer server-side init, response includes `authorization_url` and you redirect the user.
+
+Provider mapping (admin-created payments)
+
+- `POST /api/payments` now sets `provider` based on `method`:
+  - `method` in ["cash","bank_transfer","check"] → `provider: "manual"`
+  - `method === "paystack"` → `provider: "paystack"`
+
+Bidirectional status sync
+
+- Payment -> Order: When a payment's status becomes `completed`:
+  - Order `payment_status` is recalculated to `paid` or `partial` based on total paid vs order total.
+  - Order `amount_paid` is updated to reflect the sum of completed payments.
+  - Order `status` is advanced to `completed` if it is not already terminal (`completed|cancelled|refunded`).
+- Order -> Payments: Admin can update an order's status:
+  - `PATCH /api/orders/:id/status` (admin-only)
+  - When the order is set to `completed`, any linked non-completed payments are set to `completed`, and `payment_status` becomes `paid`.
+
+Partial payments support
+
+- Orders now support partial payments for large bookings (e.g., deposits):
+  - `orders.amount_paid` tracks the total amount paid across all completed payments.
+  - `orders.payment_status` can be `pending`, `partial`, or `paid`.
+  - Multiple payments can be made against the same order.
+- Admin workflow for partial payments:
+  1. Create order for large booking (e.g., ₵5,000 event)
+  2. Customer pays ₵2,000 deposit → order shows `payment_status: "partial"`, `amount_paid: 2000`
+  3. Customer pays remaining ₵3,000 → order shows `payment_status: "paid"`, `amount_paid: 5000`
+- Frontend can display payment progress: `amount_paid / total_amount * 100`
+
+Admin endpoints recap
+
+- `PATCH /api/orders/:id/status` (admin)
+  - Body: `{ "status": "completed" | "processing" | ... }`
+  - On `completed`: marks linked payments as `completed` and order `payment_status` as `paid`.
+- `POST /api/payments` (admin)
+  - Creates manual payments. Use `method` to set the payment type; `provider` is auto-derived.
+
+Frontend notes
+
+- Inline: Always use the initializer response for `reference`, `amount` (kobo), `currency: "GHS"`, and `email`.
+- After inline success in local dev: call `POST /api/payments/paystack/verify` with `{ reference }` when webhooks cannot reach your machine.
+
+## New Payment Management Flow
+
+### Key Changes
+
+1. **No Manual Payment Creation**: Payments are automatically created when bookings/orders are created
+2. **Update-Only Payments Manager**: Frontend should remove "Add Payment" button, only show "Update Payment" functionality
+3. **Partial Payment Support**: Use `PATCH /api/payments/:id/add-payment` to add partial amounts
+4. **Payment History Tracking**: Each payment record includes `payment_history` JSONB field with transaction details
+
+### Frontend Implementation
+
+**Payments Manager UI should:**
+
+- Show existing payments (from `GET /api/payments`)
+- For each payment, show "Add Payment" button to add partial amounts
+- Display payment history in a collapsible section
+- Show payment progress: `(amount / total) * 100`
+
+**Payment History Display:**
+
+```javascript
+// Example payment_history structure
+{
+  "transactions": [
+    {
+      "amount": 2000,
+      "method": "cash",
+      "timestamp": "2024-01-15T10:30:00Z",
+      "notes": "Initial deposit"
+    },
+    {
+      "amount": 3000,
+      "method": "bank_transfer",
+      "timestamp": "2024-01-20T14:15:00Z",
+      "notes": "Final payment"
+    }
+  ]
+}
+```
+
+Database changes (migration required)
+
+- Added `orders.amount_paid` column to track partial payments.
+- Updated `orders.payment_status` constraint to include `'partial'` status.
+- Run migrations: `node src/database/migrate.js` after pulling latest changes.
+
+Order response fields
+
+- Orders now include `amount_paid` field showing total amount paid.
+- `payment_status` can be `pending`, `partial`, or `paid`.
+- Calculate payment progress: `(amount_paid / total_amount) * 100`
 
 ## Delivery Zones System (Available Now)
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 interface Product {
   id: number;
@@ -36,7 +36,7 @@ export function useProducts(): UseProductsReturn {
   const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -66,11 +66,11 @@ export function useProducts(): UseProductsReturn {
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_BASE_URL]);
 
   useEffect(() => {
     fetchProducts();
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, fetchProducts]);
 
   return {
     products,

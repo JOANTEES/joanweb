@@ -42,7 +42,7 @@ interface DeliveryAddressSelectorProps {
 
 export default function DeliveryAddressSelector({
   onAddressChange,
-  initialAddress,
+  initialAddress: _initialAddress, // eslint-disable-line @typescript-eslint/no-unused-vars
   disabled = false,
 }: DeliveryAddressSelectorProps) {
   const {
@@ -50,18 +50,13 @@ export default function DeliveryAddressSelector({
     loading: addressesLoading,
     createAddress,
   } = useCustomerAddresses();
-  const {
-    regions,
-    cities,
-    loading: locationsLoading,
-    fetchCities,
-  } = useGhanaLocations();
-  const { validateAddressLocally, validating } = useDeliveryZoneValidation();
+  const { regions, cities, fetchCities } = useGhanaLocations();
+  const { validateAddressLocally } = useDeliveryZoneValidation();
 
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(
     null
   );
-  const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const [_isCreatingNew, setIsCreatingNew] = useState(false); // eslint-disable-line @typescript-eslint/no-unused-vars
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [tempAddress, setTempAddress] = useState<{
     regionId: number;
@@ -84,9 +79,47 @@ export default function DeliveryAddressSelector({
   }>({});
 
   // Find the selected address
-  const selectedAddress = selectedAddressId
-    ? addresses.find((addr) => addr.id === selectedAddressId)
-    : null;
+  // const selectedAddress = selectedAddressId
+  //   ? addresses.find((addr) => addr.id === selectedAddressId)
+  //   : null;
+
+  // Auto-select default address on load if none selected yet
+  useEffect(() => {
+    if (!disabled && !selectedAddressId && addresses.length > 0) {
+      const defaultAddress = addresses.find((a) => a.isDefault) || addresses[0];
+      if (defaultAddress) {
+        setSelectedAddressId(defaultAddress.id);
+        const addressData = {
+          addressId: defaultAddress.id,
+          regionId: defaultAddress.regionId,
+          cityId: defaultAddress.cityId,
+          areaName: defaultAddress.areaName,
+          landmark: defaultAddress.landmark,
+          additionalInstructions: defaultAddress.additionalInstructions,
+          contactPhone: defaultAddress.contactPhone,
+          regionName: defaultAddress.regionName,
+          cityName: defaultAddress.cityName,
+        };
+
+        // Prefer existing validation result; fall back to local validation immediately
+        const validation =
+          validationResults[defaultAddress.id] ||
+          validateAddressLocally({
+            regionId: addressData.regionId,
+            cityId: addressData.cityId,
+            areaName: addressData.areaName,
+          });
+        onAddressChange(addressData, validation);
+      }
+    }
+  }, [
+    addresses,
+    disabled,
+    onAddressChange,
+    selectedAddressId,
+    validationResults,
+    validateAddressLocally,
+  ]);
 
   // Validate all addresses
   useEffect(() => {
@@ -134,6 +167,7 @@ export default function DeliveryAddressSelector({
       // We now have regionId and cityId directly from the address object.
       // No more string matching needed.
       const addressData = {
+        addressId: address.id,
         regionId: address.regionId,
         cityId: address.cityId,
         areaName: address.areaName,

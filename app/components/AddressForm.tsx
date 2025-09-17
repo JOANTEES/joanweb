@@ -109,7 +109,7 @@ export default function AddressForm({
           saveAddress: true,
         });
       }
-    } catch (err) {
+    } catch {
       setError("An error occurred while saving the address");
     } finally {
       setIsSubmitting(false);
