@@ -111,7 +111,7 @@ export default function Checkout() {
         orderData.deliveryAddressId = Number(selectedDeliveryAddressId);
         // Per-order maps link override if an explicit link exists on the selected address
         if (selectedDeliveryAddress?.googleMapsLink) {
-          (orderData as any).locationLink =
+          (orderData as { locationLink?: string }).locationLink =
             selectedDeliveryAddress.googleMapsLink;
         }
       }
