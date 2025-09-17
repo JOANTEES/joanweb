@@ -19,9 +19,11 @@ export default function Orders() {
       deliveryMethod: string;
       totals: {
         subtotal: number;
-        tax: number;
-        shipping: number;
-        total: number;
+        taxAmount: number;
+        shippingFee: number;
+        largeOrderFee: number;
+        specialDeliveryFee: number;
+        totalAmount: number;
       };
       createdAt: string;
     }>
@@ -73,9 +75,11 @@ export default function Orders() {
                 deliveryMethod: string;
                 totals: {
                   subtotal: number;
-                  tax: number;
-                  shipping: number;
-                  total: number;
+                  taxAmount: number;
+                  shippingFee: number;
+                  largeOrderFee: number;
+                  specialDeliveryFee: number;
+                  totalAmount: number;
                 };
                 createdAt: string;
               }>)
@@ -102,7 +106,6 @@ export default function Orders() {
       status: o.status || "pending",
       total:
         o.totals?.totalAmount ??
-        o.totals?.total ??
         (o as { totalAmount?: number; total?: number }).totalAmount ??
         (o as { totalAmount?: number; total?: number }).total ??
         0,
