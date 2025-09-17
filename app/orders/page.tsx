@@ -101,6 +101,7 @@ export default function Orders() {
         (o as { created_at?: string; date?: string }).date,
       status: o.status || "pending",
       total:
+        o.totals?.totalAmount ??
         o.totals?.total ??
         (o as { totalAmount?: number; total?: number }).totalAmount ??
         (o as { totalAmount?: number; total?: number }).total ??
