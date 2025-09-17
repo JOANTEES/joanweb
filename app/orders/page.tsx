@@ -4,7 +4,16 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navigation from "../components/Navigation";
 import { useAuth } from "../contexts/AuthContext";
-import { Package, Clock, CheckCircle, XCircle } from "lucide-react";
+import {
+  Package,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Truck,
+  Store,
+  MapPin,
+  ImageIcon,
+} from "lucide-react";
 
 export default function Orders() {
   const { isAuthenticated, loading, setRedirectUrl } = useAuth();
@@ -32,6 +41,84 @@ export default function Orders() {
   const [_error, setError] = useState<string | null>(null); // eslint-disable-line @typescript-eslint/no-unused-vars
   const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+
+  // Order details modal state
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null); // eslint-disable-line @typescript-eslint/no-unused-vars
+  const [orderDetails, setOrderDetails] = useState<null | {
+    id: string;
+    orderNumber: string;
+    status: string;
+    paymentMethod: string;
+    paymentStatus: string;
+    deliveryMethod: string;
+    deliveryAddress: {
+      regionId?: number;
+      cityId?: number;
+      areaName?: string;
+      landmark?: string | null;
+      additionalInstructions?: string | null;
+      contactPhone?: string | null;
+      regionName?: string;
+      cityName?: string;
+      googleMapsLink?: string;
+    } | null;
+    pickupLocation: { id?: string; name?: string } | null;
+    deliveryZone?: { id: string; name: string; deliveryFee: number } | null;
+    totals: {
+      subtotal: number;
+      taxAmount: number;
+      shippingFee: number;
+      largeOrderFee: number;
+      specialDeliveryFee: number;
+      totalAmount: number;
+    };
+    customerNotes?: string | null;
+    items?: Array<{
+      id: string;
+      productId: string;
+      productName: string;
+      productDescription?: string;
+      productImageUrl?: string;
+      size?: string | null;
+      color?: string | null;
+      quantity: number;
+      unitPrice: number;
+      subtotal: number;
+      currentProductName?: string;
+      currentImageUrl?: string;
+    }>;
+  }>(null);
+
+  const openDetails = async (orderId: string) => {
+    setSelectedOrderId(orderId);
+    setDetailsOpen(true);
+    setDetailsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE_URL}/orders/${orderId}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${
+            typeof window !== "undefined"
+              ? localStorage.getItem("authToken")
+              : ""
+          }`,
+        },
+      });
+      const ct = res.headers.get("content-type") || "";
+      const data = ct.includes("application/json")
+        ? await res.json()
+        : { success: false, message: await res.text() };
+      if (!res.ok || !data.success)
+        throw new Error(data.message || "Failed to fetch order details");
+      setOrderDetails(data.order || null);
+    } catch {
+      setOrderDetails(null);
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -98,7 +185,8 @@ export default function Orders() {
   // Normalize orders for rendering (must be before any early returns to keep hook order consistent)
   const normalizedOrders = useMemo(() => {
     return orders.map((o) => ({
-      id: o.orderNumber || o.id,
+      orderId: o.id,
+      orderNumber: o.orderNumber,
       date:
         o.createdAt ||
         (o as { created_at?: string; date?: string }).created_at ||
@@ -154,6 +242,8 @@ export default function Orders() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
+      case "completed":
+        return <CheckCircle className="w-5 h-5 text-green-400" />;
       case "delivered":
         return <CheckCircle className="w-5 h-5 text-green-400" />;
       case "shipped":
@@ -169,6 +259,8 @@ export default function Orders() {
 
   const getStatusText = (status: string) => {
     switch (status) {
+      case "completed":
+        return "Completed";
       case "delivered":
         return "Delivered";
       case "shipped":
@@ -193,6 +285,8 @@ export default function Orders() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case "completed":
+        return "text-green-400 bg-green-400/10 border-green-400/20";
       case "delivered":
         return "text-green-400 bg-green-400/10 border-green-400/20";
       case "shipped":
@@ -207,8 +301,12 @@ export default function Orders() {
         return "text-purple-300 bg-purple-300/10 border-purple-300/20";
       case "out_for_delivery":
         return "text-teal-300 bg-teal-300/10 border-teal-300/20";
-      default:
+      case "refunded":
+        return "text-orange-300 bg-orange-300/10 border-orange-300/20";
+      case "cancelled":
         return "text-red-400 bg-red-400/10 border-red-400/20";
+      default:
+        return "text-gray-300 bg-gray-300/10 border-gray-300/20";
     }
   };
 
@@ -253,13 +351,13 @@ export default function Orders() {
             <div className="space-y-6">
               {normalizedOrders.map((order) => (
                 <div
-                  key={order.id}
+                  key={order.orderId}
                   className="bg-gray-800 rounded-2xl p-6 border border-gray-700"
                 >
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4">
                     <div>
                       <h3 className="text-xl font-bold text-white">
-                        Order #{order.id}
+                        Order #{order.orderNumber}
                       </h3>
                       <p className="text-gray-400">
                         Placed on{" "}
@@ -315,7 +413,10 @@ export default function Orders() {
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-3 mt-6">
-                    <button className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-lg font-medium transition-colors duration-200">
+                    <button
+                      onClick={() => openDetails(order.orderId)}
+                      className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-lg font-medium transition-colors duration-200"
+                    >
                       View Details
                     </button>
                     {order.status === "delivered" && (
@@ -330,6 +431,195 @@ export default function Orders() {
           )}
         </div>
       </section>
+
+      {/* Order Details Modal */}
+      {detailsOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div
+            className="absolute inset-0 bg-black/70"
+            onClick={() => setDetailsOpen(false)}
+          />
+          <div className="relative z-10 w-full max-w-2xl bg-gray-900 rounded-xl p-6 border border-gray-700 shadow-2xl max-h-[85vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-white">
+                Order Details
+              </h3>
+              <button
+                onClick={() => setDetailsOpen(false)}
+                className="text-gray-400 hover:text-white"
+                aria-label="Close"
+              >
+                ✕
+              </button>
+            </div>
+
+            {detailsLoading ? (
+              <div className="text-gray-400">Loading details...</div>
+            ) : !orderDetails ? (
+              <div className="text-red-400">Failed to load order details.</div>
+            ) : (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-400 text-sm">Order</p>
+                    <p className="text-white font-medium">
+                      #{orderDetails.orderNumber || orderDetails.id}
+                    </p>
+                  </div>
+                  <div
+                    className={`px-3 py-1 rounded-full border ${getStatusColor(
+                      orderDetails.status
+                    )}`}
+                  >
+                    <span className="text-sm font-medium">
+                      {getStatusText(orderDetails.status)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="bg-gray-800/60 rounded-lg p-4">
+                    <div className="flex items-center mb-2 text-white font-medium">
+                      {orderDetails.deliveryMethod === "pickup" ? (
+                        <Store className="w-4 h-4 mr-2 text-green-400" />
+                      ) : (
+                        <Truck className="w-4 h-4 mr-2 text-blue-400" />
+                      )}
+                      {orderDetails.deliveryMethod === "pickup"
+                        ? "Pickup Details"
+                        : "Delivery Details"}
+                    </div>
+                    {orderDetails.deliveryMethod === "pickup" ? (
+                      <div className="text-gray-300 text-sm">
+                        <p>
+                          {orderDetails.pickupLocation?.name ||
+                            "Pickup location"}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="text-gray-300 text-sm space-y-1">
+                        <div className="flex items-center">
+                          <MapPin className="w-4 h-4 mr-2 text-gray-400" />
+                          <span>
+                            {orderDetails.deliveryAddress?.areaName},{" "}
+                            {orderDetails.deliveryAddress?.cityName}
+                          </span>
+                        </div>
+                        <p>{orderDetails.deliveryAddress?.regionName}</p>
+                        {orderDetails.deliveryAddress?.landmark && (
+                          <p>Near {orderDetails.deliveryAddress.landmark}</p>
+                        )}
+                        {orderDetails.deliveryAddress?.contactPhone && (
+                          <p>
+                            Phone: {orderDetails.deliveryAddress.contactPhone}
+                          </p>
+                        )}
+                        {orderDetails.deliveryAddress?.googleMapsLink && (
+                          <a
+                            className="text-yellow-400 text-xs"
+                            href={orderDetails.deliveryAddress.googleMapsLink}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            Open in Maps
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="bg-gray-800/60 rounded-lg p-4">
+                    <div className="text-white font-medium mb-2">Totals</div>
+                    <div className="text-gray-300 text-sm space-y-1">
+                      <div className="flex justify-between">
+                        <span>Subtotal</span>
+                        <span>₵{orderDetails.totals.subtotal.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Tax</span>
+                        <span>₵{orderDetails.totals.taxAmount.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Delivery</span>
+                        <span>
+                          ₵{orderDetails.totals.shippingFee.toFixed(2)}
+                        </span>
+                      </div>
+                      {orderDetails.totals.largeOrderFee > 0 && (
+                        <div className="flex justify-between">
+                          <span>Large Order Fee</span>
+                          <span>
+                            ₵{orderDetails.totals.largeOrderFee.toFixed(2)}
+                          </span>
+                        </div>
+                      )}
+                      {orderDetails.totals.specialDeliveryFee > 0 && (
+                        <div className="flex justify-between">
+                          <span>Special Delivery Fee</span>
+                          <span>
+                            ₵{orderDetails.totals.specialDeliveryFee.toFixed(2)}
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex justify-between font-semibold text-white pt-1 border-t border-gray-700">
+                        <span>Total</span>
+                        <span>
+                          ₵{orderDetails.totals.totalAmount.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-white font-medium mb-3">Items</div>
+                  <div className="space-y-3">
+                    {(orderDetails.items || []).map((it) => (
+                      <div
+                        key={it.id}
+                        className="flex items-center gap-3 bg-gray-800/50 rounded-lg p-3"
+                      >
+                        <div className="w-16 h-16 bg-gray-700 rounded-lg flex items-center justify-center">
+                          {it.currentImageUrl || it.productImageUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={
+                                (it.currentImageUrl ||
+                                  it.productImageUrl) as string
+                              }
+                              alt={it.productName}
+                              className="w-full h-full object-cover rounded-lg"
+                            />
+                          ) : (
+                            <ImageIcon className="w-6 h-6 text-gray-400" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-white font-medium truncate">
+                            {it.productName || it.currentProductName}
+                          </div>
+                          <div className="text-gray-400 text-sm">
+                            Qty: {it.quantity}
+                          </div>
+                          {(it.size || it.color) && (
+                            <div className="text-gray-500 text-xs">
+                              {it.size ? `Size: ${it.size}` : ""}{" "}
+                              {it.color ? `Color: ${it.color}` : ""}
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-white font-semibold">
+                          ₵{(it.unitPrice ?? 0).toFixed(2)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -32,6 +32,7 @@ interface CreateAddressRequest {
   landmark?: string;
   additionalInstructions?: string;
   contactPhone?: string;
+  googleMapsLink?: string;
   isDefault?: boolean;
 }
 
@@ -42,6 +43,7 @@ interface UpdateAddressRequest {
   landmark?: string;
   additionalInstructions?: string;
   contactPhone?: string;
+  googleMapsLink?: string;
   isDefault?: boolean;
 }
 

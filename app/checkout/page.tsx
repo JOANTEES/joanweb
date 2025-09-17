@@ -31,6 +31,7 @@ export default function Checkout() {
     removeFromCart,
     selectedPickupLocation,
     selectedDeliveryAddressId,
+    selectedDeliveryAddress,
   } = useCart();
   const router = useRouter();
   const [formData, setFormData] = useState({
@@ -108,6 +109,11 @@ export default function Checkout() {
           return;
         }
         orderData.deliveryAddressId = Number(selectedDeliveryAddressId);
+        // Per-order maps link override if an explicit link exists on the selected address
+        if (selectedDeliveryAddress?.googleMapsLink) {
+          (orderData as any).locationLink =
+            selectedDeliveryAddress.googleMapsLink;
+        }
       }
 
       const authToken =

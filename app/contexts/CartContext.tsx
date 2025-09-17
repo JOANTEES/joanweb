@@ -90,6 +90,7 @@ interface SelectedDeliveryAddress {
   contactPhone?: string;
   regionName?: string;
   cityName?: string;
+  googleMapsLink?: string;
 }
 
 // This interface defines the structure of cart data returned from the API
@@ -126,6 +127,7 @@ interface CartContextType {
     deliveryMethod: "pickup" | "delivery",
     deliveryZoneId?: number,
     address?: {
+      googleMapsLink?: string;
       addressId?: string;
       regionId: number;
       cityId: number;
@@ -382,6 +384,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     deliveryMethod: "pickup" | "delivery",
     deliveryZoneId?: number,
     address?: {
+      googleMapsLink?: string;
       addressId?: string;
       regionId: number;
       cityId: number;
@@ -431,6 +434,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
                 regionId: regionId,
                 cityId: cityId,
                 areaName: address.areaName,
+                ...(address.googleMapsLink
+                  ? { googleMapsLink: address.googleMapsLink }
+                  : {}),
                 // Optional fields - only include if they have values
                 ...(address.landmark ? { landmark: address.landmark } : {}),
                 ...(address.additionalInstructions
@@ -468,26 +474,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
               }
             }
           } else {
-            // Log the error details for debugging
+            // Swallow the failure gracefully and let caller decide UX
             const errorData = await addressResponse.json().catch(() => ({}));
-            console.error("Failed to set delivery address:", errorData);
-            console.error("Address data sent:", {
-              regionId: Number(address.regionId),
-              cityId: Number(address.cityId),
-              areaName: address.areaName,
-            });
-
-            // If the backend gives us a specific error message, show it to the user
-            if (errorData.message) {
-              setError(errorData.message);
-            } else if (errorData.errors && errorData.errors.length > 0) {
-              // Handle validation errors array if present
-              setError(errorData.errors.join(", "));
-            } else {
-              setError("Failed to set delivery address. Please try again.");
-            }
-
-            // Return false to indicate failure
+            console.warn("[Cart] Set delivery address failed", errorData);
+            setError(
+              errorData?.message ||
+                "Could not set this address for delivery. Please pick another address or switch to Pickup."
+            );
             return false;
           }
         } catch (addressErr) {

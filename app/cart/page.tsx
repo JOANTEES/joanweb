@@ -17,6 +17,7 @@ import {
 
 import { useState } from "react";
 import { useCustomerAddresses } from "../hooks/useCustomerAddresses";
+import AddressForm from "../components/AddressForm";
 import { usePickupLocations } from "../hooks/usePickupLocations";
 
 export default function Cart() {
@@ -31,7 +32,7 @@ export default function Cart() {
     // selectedDeliveryAddressId, // Unused but kept for future use
     setSelectedPickupLocation,
   } = useCart();
-  useDeliveryZones();
+  const { zones: deliveryZones, loading: zonesLoading } = useDeliveryZones();
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState<"delivery" | "pickup">(
@@ -46,6 +47,19 @@ export default function Cart() {
   const [appliedSelection, setAppliedSelection] = useState<
     { type: "delivery"; id: number } | { type: "pickup"; id: string } | null
   >(null);
+  const [isAddressFormOpen, setIsAddressFormOpen] = useState(false);
+
+  // Addresses hook utilities
+  const {
+    addresses,
+    loading: addressesLoading,
+    // error: _addrErr,
+    createAddress,
+    refetch: refetchAddresses,
+  } = useCustomerAddresses();
+  // Pickup locations
+  const { locations: pickupLocations, loading: pickupsLoading } =
+    usePickupLocations();
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -77,10 +91,7 @@ export default function Cart() {
     }
   }, [totals.deliveryEligibilityIssues]);
 
-  // Load addresses for the Delivery tab
-  const { addresses, loading: addressesLoading } = useCustomerAddresses();
-  const { locations: pickupLocations, loading: pickupsLoading } =
-    usePickupLocations();
+  // Load addresses default selection when list first arrives
   useEffect(() => {
     if (!addressesLoading && addresses && addresses.length > 0) {
       const defaultAddress = addresses.find((a) => a.isDefault);
@@ -175,6 +186,50 @@ export default function Cart() {
           </div>
 
           {/* Removed old delivery method section - replaced by Delivery Options card below */}
+
+          {/* Delivery zones info / eligibility notice */}
+          <div className="bg-gray-800 rounded-lg p-4 mb-6 border border-gray-700">
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="text-white font-medium mb-1">
+                  Available Delivery Zones
+                </div>
+                {zonesLoading ? (
+                  <div className="text-gray-400 text-sm">
+                    Loading delivery zones...
+                  </div>
+                ) : (deliveryZones ?? []).length === 0 ? (
+                  <div className="text-gray-400 text-sm">
+                    No delivery zones available right now. You can still choose
+                    Pickup.
+                  </div>
+                ) : (
+                  <div className="text-gray-300 text-sm">
+                    {(deliveryZones ?? []).map((z) => (
+                      <span
+                        key={z.id}
+                        className="inline-flex items-center px-2 py-0.5 mr-2 mb-2 rounded border border-gray-600 bg-gray-700/50"
+                        title={`${
+                          z.description
+                        } • Fee: ₵${z.deliveryFee.toFixed(2)} • ETA: ${
+                          z.estimatedDays
+                        }`}
+                      >
+                        {z.name}
+                        <span className="ml-2 text-xs text-gray-400">
+                          ₵{z.deliveryFee.toFixed(2)}
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <div className="text-gray-500 text-xs mt-2">
+                  Pick an address that falls within one of these zones to enable
+                  Delivery, or switch to Pickup.
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Simple delivery eligibility notice */}
           {deliveryEligibilityIssues &&
@@ -342,7 +397,7 @@ export default function Cart() {
                         </div>
                         <button
                           className="text-yellow-400 hover:text-yellow-300 text-sm"
-                          disabled
+                          onClick={() => setIsAddressFormOpen(true)}
                         >
                           + Add New
                         </button>
@@ -536,6 +591,73 @@ export default function Cart() {
                   </div>
                 </div>
               </div>
+              {/* Address Form Modal */}
+              <AddressForm
+                isOpen={isAddressFormOpen}
+                onClose={() => setIsAddressFormOpen(false)}
+                title="Create Delivery Address"
+                onSubmit={async (data) => {
+                  // Build the address payload compatible with updateCartDeliveryMethod
+                  const addressForCart = {
+                    regionId: Number(data.regionId),
+                    cityId: Number(data.cityId),
+                    areaName: data.areaName,
+                    landmark: data.landmark || undefined,
+                    additionalInstructions:
+                      data.additionalInstructions || undefined,
+                    contactPhone: data.contactPhone || undefined,
+                  };
+
+                  // Save to backend if requested, then try to select it
+                  if (data.saveAddress) {
+                    const created = await createAddress({
+                      regionId: Number(data.regionId),
+                      cityId: Number(data.cityId),
+                      areaName: data.areaName,
+                      landmark: data.landmark || undefined,
+                      additionalInstructions:
+                        data.additionalInstructions || undefined,
+                      contactPhone: data.contactPhone || undefined,
+                      isDefault: data.isDefault,
+                      googleMapsLink: data.googleMapsLink || undefined,
+                    });
+                    if (!created) return false;
+                    // Refresh list and try to pick the newly created address
+                    try {
+                      await refetchAddresses();
+                      const createdAddr = (addresses ?? []).find(
+                        (a) =>
+                          Number(a.regionId) === Number(data.regionId) &&
+                          Number(a.cityId) === Number(data.cityId) &&
+                          a.areaName.trim().toLowerCase() ===
+                            data.areaName.trim().toLowerCase()
+                      );
+                      if (createdAddr) {
+                        setLocalSelectedAddressId(Number(createdAddr.id));
+                      }
+                    } catch {}
+                  }
+
+                  // Apply immediately to cart
+                  const ok = await updateCartDeliveryMethod(
+                    "delivery",
+                    undefined,
+                    addressForCart
+                  );
+                  if (ok) {
+                    setAppliedSelection({
+                      type: "delivery",
+                      id: Number(localSelectedAddressId || 0),
+                    });
+                    setIsAddressFormOpen(false);
+                    return true;
+                  }
+                  alert(
+                    "We couldn't set that address for delivery (no delivery zone found). Please adjust the address or choose Pickup."
+                  );
+                  return false;
+                }}
+              />
             </div>
 
             {/* Order Summary */}
