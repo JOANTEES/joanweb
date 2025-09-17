@@ -110,11 +110,24 @@ export default function Checkout() {
         orderData.deliveryAddressId = Number(selectedDeliveryAddressId);
       }
 
+      const authToken =
+        typeof window !== "undefined"
+          ? localStorage.getItem("authToken")
+          : null;
+      console.log("[Checkout] Creating order", {
+        apiBase: API_BASE_URL,
+        deliveryMethod: orderData.deliveryMethod,
+        hasAddressId: !!orderData.deliveryAddressId,
+        hasPickupId: !!orderData.pickupLocationId,
+        paymentMethod,
+        hasAuthToken: !!authToken,
+      });
+
       const response = await fetch(`${API_BASE_URL}/orders`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+          Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify(orderData),
       });
@@ -123,6 +136,11 @@ export default function Checkout() {
       const data = contentType.includes("application/json")
         ? await response.json()
         : { success: false, message: await response.text() };
+      console.log("[Checkout] Create order response", {
+        status: response.status,
+        ok: response.ok,
+        data,
+      });
 
       if (data.success) {
         if (paymentMethod === "online") {
@@ -149,11 +167,18 @@ export default function Checkout() {
           }
 
           // Initialize Paystack
+          console.log("[Paystack] Initializing payment", {
+            initEndpoint,
+            hasSessionId: !!sessionId,
+            hasOrderId: !!orderId,
+            hasAuthToken: !!authToken,
+            body: initBody,
+          });
           const initRes = await fetch(initEndpoint, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+              Authorization: `Bearer ${authToken}`,
             },
             body: initBody ? JSON.stringify(initBody) : undefined,
           });
@@ -161,6 +186,11 @@ export default function Checkout() {
           const initData = initContentType.includes("application/json")
             ? await initRes.json()
             : { success: false, message: await initRes.text() };
+          console.log("[Paystack] Init response", {
+            status: initRes.status,
+            ok: initRes.ok,
+            initData,
+          });
           if (!initRes.ok || !initData?.data) {
             alert(initData?.message || "Failed to initialize payment");
             return;
@@ -255,9 +285,7 @@ export default function Checkout() {
                         method: "POST",
                         headers: {
                           "Content-Type": "application/json",
-                          Authorization: `Bearer ${localStorage.getItem(
-                            "authToken"
-                          )}`,
+                          Authorization: `Bearer ${authToken}`,
                         },
                         body: JSON.stringify({ reference }),
                       }
@@ -285,6 +313,11 @@ export default function Checkout() {
                         "[Paystack] Verify failed or not OK:",
                         verifyData
                       );
+                      if (!verifyRes.ok) {
+                        console.warn("[Paystack] Verify HTTP not ok", {
+                          status: verifyRes.status,
+                        });
+                      }
                       setConfirmTitle("Payment received");
                       setConfirmSubtitle(
                         "We are confirming your payment. Your order will appear in a moment."
