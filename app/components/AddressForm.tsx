@@ -11,6 +11,7 @@ interface AddressFormData {
   landmark: string;
   additionalInstructions: string;
   contactPhone: string;
+  googleMapsLink?: string;
   isDefault: boolean;
   saveAddress: boolean;
 }
@@ -43,6 +44,7 @@ export default function AddressForm({
     landmark: "",
     additionalInstructions: "",
     contactPhone: "",
+    googleMapsLink: "",
     isDefault: false,
     saveAddress: true,
     ...initialData,
@@ -105,6 +107,7 @@ export default function AddressForm({
           landmark: "",
           additionalInstructions: "",
           contactPhone: "",
+          googleMapsLink: "",
           isDefault: false,
           saveAddress: true,
         });
@@ -230,6 +233,26 @@ export default function AddressForm({
               placeholder="e.g., +233123456789"
               className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
             />
+          </div>
+
+          {/* Google Maps Link (Optional override) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              <MapPin className="w-4 h-4 inline mr-2" />
+              Google Maps Link (Optional)
+            </label>
+            <input
+              type="url"
+              name="googleMapsLink"
+              value={formData.googleMapsLink || ""}
+              onChange={handleInputChange}
+              placeholder="https://maps.google.com/?q=5.6037,-0.1870"
+              className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
+            />
+            <p className="text-gray-500 text-xs mt-1">
+              If provided, this exact link will be saved and used. Otherwise the
+              server auto-generates a link from the address.
+            </p>
           </div>
 
           {/* Additional Instructions */}
