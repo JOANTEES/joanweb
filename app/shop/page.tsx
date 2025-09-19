@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, Suspense } from "react";
 import Navigation from "../components/Navigation";
 import { useCart } from "../contexts/CartContext";
 import { useProducts } from "../hooks/useProducts";
@@ -10,6 +10,7 @@ export default function Shop() {
   const { addToCart: _addToCart } = useCart(); // eslint-disable-line @typescript-eslint/no-unused-vars
   const { products, loading, error, refetch } = useProducts();
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedGender, setSelectedGender] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   type ProductForModal = {
     id: string | number;
@@ -25,13 +26,22 @@ export default function Shop() {
     useState<ProductForModal | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Get unique categories from products
-  const categories = useMemo(() => {
-    const uniqueCategories = [
-      ...new Set(products.map((product) => product.category)),
-    ];
-    return ["All", ...uniqueCategories];
-  }, [products]);
+  // Predefined categories
+  const categories = [
+    "All",
+    "Jerseys",
+    "Tees",
+    "Shirts", 
+    "Sweat outfits",
+    "Jeans/Cargo pants",
+    "Two piece outfits",
+    "Slippers/Footwear",
+    "Sneakers",
+    "Bags/Belts"
+  ];
+
+  // Gender filters
+  const genderFilters = ["All", "Students", "Women", "Men"];
 
   const handleAddToCartClick = (product: ProductForModal) => {
     setSelectedProduct(product);
@@ -43,17 +53,22 @@ export default function Shop() {
     setSelectedProduct(null);
   };
 
-  // Filter products based on category and search term
+  // Filter products based on category, gender, and search term
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       const matchesCategory =
         selectedCategory === "All" || product.category === selectedCategory;
+      const matchesGender =
+        selectedGender === "All" || 
+        (selectedGender === "Students" && product.category.toLowerCase().includes("student")) ||
+        (selectedGender === "Women" && product.category.toLowerCase().includes("women")) ||
+        (selectedGender === "Men" && product.category.toLowerCase().includes("men"));
       const matchesSearch =
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.description?.toLowerCase().includes(searchTerm.toLowerCase());
-      return matchesCategory && matchesSearch;
+      return matchesCategory && matchesGender && matchesSearch;
     });
-  }, [products, selectedCategory, searchTerm]);
+  }, [products, selectedCategory, selectedGender, searchTerm]);
 
   return (
     <>
@@ -90,21 +105,44 @@ export default function Shop() {
             </div>
           </div>
 
+          {/* Gender Filters */}
+          <div className="mb-6">
+            <h3 className="text-white text-lg font-semibold mb-4 text-center">Filter by Gender</h3>
+            <div className="flex flex-wrap justify-center gap-3">
+              {genderFilters.map((gender) => (
+                <button
+                  key={gender}
+                  onClick={() => setSelectedGender(gender)}
+                  className={`px-5 py-2 rounded-full border-2 font-medium transition-all duration-200 text-sm ${
+                    selectedGender === gender
+                      ? "border-yellow-400 bg-yellow-400 text-black"
+                      : "border-gray-600 hover:border-yellow-400 hover:bg-yellow-400 hover:text-black text-white"
+                  }`}
+                >
+                  {gender}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Category Filters */}
-          <div className="flex flex-wrap justify-center gap-4">
-            {categories.map((category) => (
-              <button
-                key={category}
-                onClick={() => setSelectedCategory(category)}
-                className={`px-6 py-3 rounded-full border-2 font-medium transition-all duration-200 ${
-                  selectedCategory === category
-                    ? "border-yellow-400 bg-yellow-400 text-black"
-                    : "border-gray-600 hover:border-yellow-400 hover:bg-yellow-400 hover:text-black text-white"
-                }`}
-              >
-                {category}
-              </button>
-            ))}
+          <div>
+            <h3 className="text-white text-lg font-semibold mb-4 text-center">Categories</h3>
+            <div className="flex flex-wrap justify-center gap-3">
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`px-5 py-2 rounded-full border-2 font-medium transition-all duration-200 text-sm ${
+                    selectedCategory === category
+                      ? "border-yellow-400 bg-yellow-400 text-black"
+                      : "border-gray-600 hover:border-yellow-400 hover:bg-yellow-400 hover:text-black text-white"
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -141,15 +179,16 @@ export default function Shop() {
                   <span className="text-2xl">🔍</span>
                 </div>
                 <p className="text-gray-400 text-lg mb-4">
-                  {searchTerm || selectedCategory !== "All"
+                  {searchTerm || selectedCategory !== "All" || selectedGender !== "All"
                     ? "No products found matching your criteria"
                     : "No products available"}
                 </p>
-                {(searchTerm || selectedCategory !== "All") && (
+                {(searchTerm || selectedCategory !== "All" || selectedGender !== "All") && (
                   <button
                     onClick={() => {
                       setSearchTerm("");
                       setSelectedCategory("All");
+                      setSelectedGender("All");
                     }}
                     className="bg-yellow-400 hover:bg-yellow-500 text-black px-6 py-3 rounded-full font-semibold transition-colors duration-200"
                   >

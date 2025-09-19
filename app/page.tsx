@@ -1,6 +1,7 @@
 import Navigation from './components/Navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Suspense } from 'react';
 
 export default function Home() {
   return (
@@ -15,6 +16,8 @@ export default function Home() {
           loop
           muted
           playsInline
+          preload="metadata"
+          poster="/hero-poster.jpg"
         />
 
         {/* Dark overlay for readability */}
@@ -35,7 +38,7 @@ export default function Home() {
                   <span className="block text-4xl lg:text-5xl font-light">for Everyone</span>
                 </h1>
                 <p className="text-xl text-gray-300 max-w-lg">
-                  Discover the latest trends in fashion with JoanTees. Quality clothing with fast delivery service right to your doorstep.
+                  Discover the latest trends in fashion with JoanTee. Quality clothing with fast delivery service right to your doorstep.
                 </p>
               </div>
               
@@ -58,30 +61,35 @@ export default function Home() {
             {/* Right Content - Flipping Clothing Images */}
             <div className="relative h-96 flex items-center justify-center">
               <div className="relative w-80 h-80" style={{ perspective: '1000px' }}>
-                {/* Image 1 */}
-                <Image 
-                  src="/1.jpg" 
-                  alt="Premium Clothing Collection 1" 
-                  width={320}
-                  height={320}
-                  className="absolute inset-0 w-full h-full object-contain shadow-2xl animate-flip-carousel-1"
-                />
-                {/* Image 2 */}
-                <Image 
-                  src="/2.jpg" 
-                  alt="Premium Clothing Collection 2" 
-                  width={320}
-                  height={320}
-                  className="absolute inset-0 w-full h-full object-contain shadow-2xl animate-flip-carousel-2"
-                />
-                {/* Image 3 */}
-                <Image 
-                  src="/3.jpg" 
-                  alt="Premium Clothing Collection 3" 
-                  width={320}
-                  height={320}
-                  className="absolute inset-0 w-full h-full object-contain shadow-2xl animate-flip-carousel-3"
-                />
+                <Suspense fallback={<div className="w-full h-full bg-gray-800 rounded-lg animate-pulse" />}>
+                  {/* Image 1 */}
+                  <Image 
+                    src="/1.jpg" 
+                    alt="Premium Clothing Collection 1" 
+                    width={320}
+                    height={320}
+                    priority
+                    className="absolute inset-0 w-full h-full object-contain shadow-2xl animate-flip-carousel-1"
+                  />
+                  {/* Image 2 */}
+                  <Image 
+                    src="/2.jpg" 
+                    alt="Premium Clothing Collection 2" 
+                    width={320}
+                    height={320}
+                    loading="lazy"
+                    className="absolute inset-0 w-full h-full object-contain shadow-2xl animate-flip-carousel-2"
+                  />
+                  {/* Image 3 */}
+                  <Image 
+                    src="/3.jpg" 
+                    alt="Premium Clothing Collection 3" 
+                    width={320}
+                    height={320}
+                    loading="lazy"
+                    className="absolute inset-0 w-full h-full object-contain shadow-2xl animate-flip-carousel-3"
+                  />
+                </Suspense>
               </div>
             </div>
           </div>
@@ -92,7 +100,7 @@ export default function Home() {
       <section className="py-20 bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-white mb-4">Why Choose JoanTees?</h2>
+            <h2 className="text-4xl font-bold text-white mb-4">Why Choose JoanTee?</h2>
             <p className="text-xl text-gray-300 max-w-2xl mx-auto">
               We deliver anyday, anytime, anywhere.
             </p>
@@ -137,7 +145,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl font-bold mb-6">Ready to Upgrade Your Wardrobe?</h2>
           <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            Join thousands of satisfied customers who trust JoanTees for their fashion needs.
+            Join thousands of satisfied customers who trust JoanTee for their fashion needs.
           </p>
           <Link
             href="/shop"
@@ -154,10 +162,14 @@ export default function Home() {
           <div className="grid md:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center">
-                  <span className="text-black font-bold text-lg">J</span>
-                </div>
-                <span className="text-2xl font-bold">JoanTees</span>
+                <Image
+                  src="/logo.png"
+                  alt="JoanTees logo"
+                  width={100}
+                  height={100}
+                  className="rounded-lg object-contain"
+                />
+                <span className="text-2xl font-bold">JoanTee</span>
               </div>
               <p className="text-gray-400">
                 Premium clothing with fast delivery service.
@@ -193,7 +205,7 @@ export default function Home() {
           </div>
 
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; {new Date().getFullYear()} JoanTees. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} JoanTee. All rights reserved.</p>
           </div>
         </div>
       </footer>
