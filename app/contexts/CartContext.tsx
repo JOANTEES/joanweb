@@ -270,8 +270,28 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          // Refresh cart to get updated data
-          await refreshCart();
+          // Optimize: Update cart state directly instead of full refresh
+          if (data.item) {
+            setItems(prevItems => {
+              const existingIndex = prevItems.findIndex(
+                item => item.id === data.item.id
+              );
+              if (existingIndex >= 0) {
+                // Update existing item quantity
+                const updatedItems = [...prevItems];
+                updatedItems[existingIndex] = data.item;
+                return updatedItems;
+              } else {
+                // Add new item
+                return [...prevItems, data.item];
+              }
+            });
+            // Update item count
+            setItemCount(prev => prev + quantity);
+          } else {
+            // Fallback to refresh if no item data returned
+            await refreshCart();
+          }
           return true;
         }
       } else {
