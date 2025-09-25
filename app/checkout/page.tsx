@@ -17,6 +17,7 @@ import {
   Truck,
   Store,
   AlertCircle,
+  CheckCircle,
 } from "lucide-react";
 import PaymentMethodSelector from "../components/PaymentMethodSelector";
 
@@ -38,12 +39,10 @@ export default function Checkout() {
     customerNotes: "",
   });
   const [paymentMethod, setPaymentMethod] = useState<
-    "online" | "on_delivery" | "on_pickup"
+    "online" // "on_delivery" and "on_pickup" commented out
   >("online");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [confirmTitle, setConfirmTitle] = useState("");
-  const [confirmSubtitle, setConfirmSubtitle] = useState("");
+  const [isPaymentSuccess, setIsPaymentSuccess] = useState(false);
   const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
   const PAYSTACK_PUBLIC_KEY = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "";
@@ -68,7 +67,7 @@ export default function Checkout() {
   };
 
   const handlePaymentMethodChange = (
-    method: "online" | "on_delivery" | "on_pickup"
+    method: "online" // "on_delivery" and "on_pickup" commented out
   ) => {
     setPaymentMethod(method);
   };
@@ -277,14 +276,17 @@ export default function Checkout() {
                   "[Paystack] Inline modal callback fired (success)",
                   paystackResponse
                 );
-                console.log("[Paystack] Starting verification process...");
+                
+                // Show loading state and redirect immediately
+                setIsPaymentSuccess(true);
+                setTimeout(() => {
+                  router.push("/order-success?payment=online");
+                }, 500); // Very short delay for smooth transition
+                
+                // Handle verification in background (don't wait for it)
                 (async () => {
                   try {
-                    // Verify transaction so backend creates the order from session
-                    console.log(
-                      "[Paystack] Calling verify endpoint with reference:",
-                      reference
-                    );
+                    console.log("[Paystack] Starting background verification...");
                     const verifyRes = await fetch(
                       `${API_BASE_URL}/payments/paystack/verify`,
                       {
@@ -296,51 +298,25 @@ export default function Checkout() {
                         body: JSON.stringify({ reference }),
                       }
                     );
-                    console.log(
-                      "[Paystack] Verify response status:",
-                      verifyRes.status
-                    );
-                    const verifyCT =
-                      verifyRes.headers.get("content-type") || "";
-                    const verifyData = verifyCT.includes("application/json")
-                      ? await verifyRes.json()
-                      : { success: false, message: await verifyRes.text() };
-                    console.log("[Paystack] Verify response data:", verifyData);
-
-                    if (verifyRes.ok && verifyData?.success) {
-                      await clearCart();
-                      setConfirmTitle("Payment successful");
-                      setConfirmSubtitle(
-                        "Your order has been created and paid successfully."
-                      );
-                      setShowConfirm(true);
-                    } else {
-                      console.warn(
-                        "[Paystack] Verify failed or not OK:",
-                        verifyData
-                      );
-                      if (!verifyRes.ok) {
-                        console.warn("[Paystack] Verify HTTP not ok", {
-                          status: verifyRes.status,
-                        });
+                    
+                    if (verifyRes.ok) {
+                      const verifyData = await verifyRes.json();
+                      if (verifyData?.success) {
+                        // Clear cart in background
+                        await clearCart();
+                        console.log("[Paystack] Background verification completed successfully");
                       }
-                      setConfirmTitle("Payment received");
-                      setConfirmSubtitle(
-                        "We are confirming your payment. Your order will appear in a moment."
-                      );
-                      setShowConfirm(true);
                     }
                   } catch (err) {
-                    console.error("[Paystack] Verify error:", err);
-                    setConfirmTitle("Payment received");
-                    setConfirmSubtitle(
-                      "We are confirming your payment. Your order will appear in a moment."
-                    );
-                    setShowConfirm(true);
+                    console.error("[Paystack] Background verification error:", err);
+                    // Still clear cart even if verification fails
+                    try {
+                      await clearCart();
+                    } catch (clearErr) {
+                      console.error("[Paystack] Cart clear error:", clearErr);
+                    }
                   }
-                })().catch((err) => {
-                  console.error("[Paystack] Async function error:", err);
-                });
+                })();
               },
             });
             if (handler) {
@@ -410,19 +386,9 @@ export default function Checkout() {
             "Payment initialization succeeded but no reference or redirect URL provided."
           );
         } else {
-          // Pay on delivery/pickup: pending payment
-          await clearCart();
-          setConfirmTitle(
-            paymentMethod === "on_delivery"
-              ? "Order placed - Pay on Delivery"
-              : "Order placed - Pay on Pickup"
-          );
-          setConfirmSubtitle(
-            paymentMethod === "on_delivery"
-              ? "We\u2019ll deliver your order and collect payment on delivery."
-              : "Please pay when you pick up your order at our store."
-          );
-          setShowConfirm(true);
+          // This should not happen since only online payment is allowed
+          alert("Only online payments are currently supported.");
+          setIsProcessing(false);
           return;
         }
       } else {
@@ -451,7 +417,30 @@ export default function Checkout() {
     return null;
   }
 
-  if (items.length === 0 && !showConfirm) {
+  // Payment success loading screen
+  if (isPaymentSuccess) {
+    return (
+      <>
+        <Navigation />
+        <div className="min-h-screen bg-black flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 animate-pulse">
+              <CheckCircle className="w-12 h-12 text-white" />
+            </div>
+            <h1 className="text-2xl font-bold text-white mb-4">
+              Payment Successful!
+            </h1>
+            <p className="text-gray-400 mb-6">
+              Redirecting you to your order confirmation...
+            </p>
+            <div className="w-8 h-8 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (items.length === 0) {
     return (
       <>
         <Navigation />
@@ -492,32 +481,6 @@ export default function Checkout() {
 
       <div className="min-h-screen bg-black py-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          {showConfirm && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center">
-              <div className="absolute inset-0 bg-black/70" />
-              <div className="relative z-10 w-full max-w-md bg-gray-800 rounded-lg p-6 shadow-xl">
-                <div className="flex items-center mb-2">
-                  <CreditCard className="w-5 h-5 text-yellow-400 mr-2" />
-                  <h3 className="text-xl font-semibold text-white">
-                    {confirmTitle}
-                  </h3>
-                </div>
-                <p className="text-gray-300 mb-6">{confirmSubtitle}</p>
-                <button
-                  onClick={async () => {
-                    try {
-                      await clearCart();
-                    } catch {}
-                    setShowConfirm(false);
-                    router.push("/orders");
-                  }}
-                  className="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-3 rounded-lg font-semibold transition-colors"
-                >
-                  Go to Orders
-                </button>
-              </div>
-            </div>
-          )}
           {/* Header */}
           <div className="mb-8">
             <button
@@ -625,7 +588,6 @@ export default function Checkout() {
                 <PaymentMethodSelector
                   onPaymentMethodChange={handlePaymentMethodChange}
                   initialMethod={paymentMethod}
-                  deliveryMethod={cart?.deliveryMethod}
                 />
               </div>
 
@@ -646,14 +608,10 @@ export default function Checkout() {
                       </div>
                       <div>
                         <div className="text-white font-medium">
-                          {paymentMethod === "on_delivery"
-                            ? "Pay on Delivery"
-                            : "Pay on Pickup"}
+                          Pay Online
                         </div>
                         <p className="text-gray-400 text-sm">
-                          {paymentMethod === "on_delivery"
-                            ? "You\u2019ll pay when your order is delivered to your address"
-                            : "You\u2019ll pay when you collect your order from our store"}
+                          Pay securely with card or mobile money
                         </p>
                         <p className="text-gray-500 text-xs mt-1">
                           We accept cash, mobile money, and card payments

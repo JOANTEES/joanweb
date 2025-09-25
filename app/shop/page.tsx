@@ -25,13 +25,22 @@ export default function Shop() {
     useState<ProductForModal | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Get unique categories from products
-  const categories = useMemo(() => {
-    const uniqueCategories = [
-      ...new Set(products.map((product) => product.category)),
-    ];
-    return ["All", ...uniqueCategories];
-  }, [products]);
+  // Define specific categories
+  const categories = [
+    "All",
+    "Students", 
+    "Women",
+    "Men",
+    "Jerseys",
+    "Tees",
+    "Shirts", 
+    "Sweat outfits",
+    "Jeans/Cargo pants",
+    "Two piece outfits",
+    "Slippers/Footwear",
+    "Sneakers",
+    "Bags/Belts"
+  ];
 
   const handleAddToCartClick = (product: ProductForModal) => {
     setSelectedProduct(product);
@@ -46,8 +55,31 @@ export default function Shop() {
   // Filter products based on category and search term
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
-      const matchesCategory =
-        selectedCategory === "All" || product.category === selectedCategory;
+      let matchesCategory = false;
+      
+      if (selectedCategory === "All") {
+        matchesCategory = true;
+      } else if (selectedCategory === "Students") {
+        // Students category - you can define what products belong here
+        matchesCategory = product.category.toLowerCase().includes("student") || 
+                         product.name.toLowerCase().includes("student");
+      } else if (selectedCategory === "Women") {
+        // Women category - you can define what products belong here
+        matchesCategory = product.category.toLowerCase().includes("women") || 
+                         product.category.toLowerCase().includes("female") ||
+                         product.name.toLowerCase().includes("women") ||
+                         product.name.toLowerCase().includes("female");
+      } else if (selectedCategory === "Men") {
+        // Men category - you can define what products belong here
+        matchesCategory = product.category.toLowerCase().includes("men") || 
+                         product.category.toLowerCase().includes("male") ||
+                         product.name.toLowerCase().includes("men") ||
+                         product.name.toLowerCase().includes("male");
+      } else {
+        // Exact category match for specific categories
+        matchesCategory = product.category === selectedCategory;
+      }
+      
       const matchesSearch =
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.description?.toLowerCase().includes(searchTerm.toLowerCase());

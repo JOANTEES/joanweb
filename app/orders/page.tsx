@@ -192,6 +192,8 @@ export default function Orders() {
         (o as { created_at?: string; date?: string }).created_at ||
         (o as { created_at?: string; date?: string }).date,
       status: o.status || "pending",
+      paymentStatus: o.paymentStatus || "pending",
+      paymentMethod: o.paymentMethod || "online",
       total:
         o.totals?.totalAmount ??
         (o as { totalAmount?: number; total?: number }).totalAmount ??
@@ -240,22 +242,6 @@ export default function Orders() {
     return null;
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "completed":
-        return <CheckCircle className="w-5 h-5 text-green-400" />;
-      case "delivered":
-        return <CheckCircle className="w-5 h-5 text-green-400" />;
-      case "shipped":
-        return <Package className="w-5 h-5 text-blue-400" />;
-      case "processing":
-        return <Clock className="w-5 h-5 text-yellow-400" />;
-      case "pending":
-        return <Clock className="w-5 h-5 text-yellow-400" />;
-      default:
-        return <XCircle className="w-5 h-5 text-red-400" />;
-    }
-  };
 
   const getStatusText = (status: string) => {
     switch (status) {
@@ -285,6 +271,95 @@ export default function Orders() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case "completed":
+        return "text-green-400 bg-green-400/10 border-green-400/20";
+      case "delivered":
+        return "text-green-400 bg-green-400/10 border-green-400/20";
+      case "shipped":
+        return "text-blue-400 bg-blue-400/10 border-blue-400/20";
+      case "processing":
+        return "text-yellow-400 bg-yellow-400/10 border-yellow-400/20";
+      case "pending":
+        return "text-yellow-400 bg-yellow-400/10 border-yellow-400/20";
+      case "confirmed":
+        return "text-blue-300 bg-blue-300/10 border-blue-300/20";
+      case "ready_for_pickup":
+        return "text-purple-300 bg-purple-300/10 border-purple-300/20";
+      case "out_for_delivery":
+        return "text-teal-300 bg-teal-300/10 border-teal-300/20";
+      case "refunded":
+        return "text-orange-300 bg-orange-300/10 border-orange-300/20";
+      case "cancelled":
+        return "text-red-400 bg-red-400/10 border-red-400/20";
+      default:
+        return "text-gray-300 bg-gray-300/10 border-gray-300/20";
+    }
+  };
+
+  // Enhanced status function that considers both order status and payment status
+  const getEnhancedStatus = (orderStatus: string, paymentStatus: string, paymentMethod: string) => {
+    // For online payments that are paid, show success even if order is pending
+    if (paymentMethod === "online" && paymentStatus === "paid") {
+      if (orderStatus === "pending") {
+        return "paid_pending";
+      }
+    }
+    
+    // For offline payments, show the order status
+    return orderStatus;
+  };
+
+  const getEnhancedStatusIcon = (status: string) => {
+    switch (status) {
+      case "paid_pending":
+        return <CheckCircle className="w-5 h-5 text-green-400" />;
+      case "completed":
+        return <CheckCircle className="w-5 h-5 text-green-400" />;
+      case "delivered":
+        return <CheckCircle className="w-5 h-5 text-green-400" />;
+      case "shipped":
+        return <Package className="w-5 h-5 text-blue-400" />;
+      case "processing":
+        return <Clock className="w-5 h-5 text-yellow-400" />;
+      case "pending":
+        return <Clock className="w-5 h-5 text-yellow-400" />;
+      default:
+        return <XCircle className="w-5 h-5 text-red-400" />;
+    }
+  };
+
+  const getEnhancedStatusText = (status: string) => {
+    switch (status) {
+      case "paid_pending":
+        return "Success";
+      case "completed":
+        return "Completed";
+      case "delivered":
+        return "Delivered";
+      case "shipped":
+        return "Shipped";
+      case "processing":
+        return "Processing";
+      case "pending":
+        return "Pending";
+      case "confirmed":
+        return "Confirmed";
+      case "ready_for_pickup":
+        return "Ready for Pickup";
+      case "out_for_delivery":
+        return "Out for Delivery";
+      default:
+        return status
+          ? status.charAt(0).toUpperCase() +
+              status.slice(1).replaceAll("_", " ")
+          : "Unknown";
+    }
+  };
+
+  const getEnhancedStatusColor = (status: string) => {
+    switch (status) {
+      case "paid_pending":
+        return "text-green-400 bg-green-400/10 border-green-400/20";
       case "completed":
         return "text-green-400 bg-green-400/10 border-green-400/20";
       case "delivered":
@@ -368,13 +443,13 @@ export default function Orders() {
                     </div>
                     <div className="flex items-center space-x-4 mt-4 md:mt-0">
                       <div
-                        className={`flex items-center space-x-2 px-3 py-1 rounded-full border ${getStatusColor(
-                          order.status
+                        className={`flex items-center space-x-2 px-3 py-1 rounded-full border ${getEnhancedStatusColor(
+                          getEnhancedStatus(order.status, order.paymentStatus, order.paymentMethod)
                         )}`}
                       >
-                        {getStatusIcon(order.status)}
+                        {getEnhancedStatusIcon(getEnhancedStatus(order.status, order.paymentStatus, order.paymentMethod))}
                         <span className="font-medium">
-                          {getStatusText(order.status)}
+                          {getEnhancedStatusText(getEnhancedStatus(order.status, order.paymentStatus, order.paymentMethod))}
                         </span>
                       </div>
                       <div className="text-right">

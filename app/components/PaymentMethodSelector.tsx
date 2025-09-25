@@ -1,27 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { CreditCard, HandCoins, AlertCircle } from "lucide-react";
+import { CreditCard, AlertCircle } from "lucide-react";
 
 interface PaymentMethodSelectorProps {
   onPaymentMethodChange: (
-    method: "online" | "on_delivery" | "on_pickup"
+    method: "online" // "on_delivery" and "on_pickup" commented out
   ) => void;
-  initialMethod?: "online" | "on_delivery" | "on_pickup";
-  deliveryMethod?: "delivery" | "pickup";
+  initialMethod?: "online"; // "on_delivery" and "on_pickup" commented out
 }
 
 export default function PaymentMethodSelector({
   onPaymentMethodChange,
   initialMethod = "online",
-  deliveryMethod = "delivery",
 }: PaymentMethodSelectorProps) {
   const [selectedMethod, setSelectedMethod] = useState<
-    "online" | "on_delivery" | "on_pickup"
+    "online" // "on_delivery" and "on_pickup" commented out
   >(initialMethod);
 
   const handleMethodChange = (
-    method: "online" | "on_delivery" | "on_pickup"
+    method: "online" // "on_delivery" and "on_pickup" commented out
   ) => {
     setSelectedMethod(method);
     onPaymentMethodChange(method);
@@ -29,41 +27,30 @@ export default function PaymentMethodSelector({
 
   // Determine available payment methods based on delivery method
   const getAvailableMethods = () => {
-    if (deliveryMethod === "pickup") {
-      return [
-        {
-          id: "online" as const,
-          name: "Pay Online",
-          description: "Pay securely with card or mobile money",
-          icon: CreditCard,
-          available: true,
-        },
-        {
-          id: "on_pickup" as const,
-          name: "Pay on Pickup",
-          description: "Pay when you collect your order",
-          icon: HandCoins,
-          available: true,
-        },
-      ];
-    } else {
-      return [
-        {
-          id: "online" as const,
-          name: "Pay Online",
-          description: "Pay securely with card or mobile money",
-          icon: CreditCard,
-          available: true,
-        },
-        {
-          id: "on_delivery" as const,
-          name: "Pay on Delivery",
-          description: "Pay when your order arrives",
-          icon: HandCoins,
-          available: true,
-        },
-      ];
-    }
+    // Only allow online payment for both delivery and pickup
+    return [
+      {
+        id: "online" as const,
+        name: "Pay Online",
+        description: "Pay securely with card or mobile money",
+        icon: CreditCard,
+        available: true,
+      },
+      // {
+      //   id: "on_delivery" as const,
+      //   name: "Pay on Delivery",
+      //   description: "Pay when your order arrives",
+      //   icon: HandCoins,
+      //   available: true,
+      // },
+      // {
+      //   id: "on_pickup" as const,
+      //   name: "Pay on Pickup",
+      //   description: "Pay when you collect your order",
+      //   icon: HandCoins,
+      //   available: true,
+      // },
+    ];
   };
 
   const availableMethods = getAvailableMethods();
@@ -135,7 +122,7 @@ export default function PaymentMethodSelector({
                   credit/debit cards or mobile money.
                 </p>
               </div>
-            ) : selectedMethod === "on_delivery" ? (
+            ) : /* selectedMethod === "on_delivery" ? (
               <div>
                 <p className="font-medium">Pay on Delivery</p>
                 <p className="text-xs mt-1">
@@ -143,7 +130,7 @@ export default function PaymentMethodSelector({
                   card payments.
                 </p>
               </div>
-            ) : (
+            ) : */ (
               <div>
                 <p className="font-medium">Pay on Pickup</p>
                 <p className="text-xs mt-1">
