@@ -268,7 +268,7 @@ export default function Cart() {
                   >
                     <div className="flex items-start space-x-4">
                       {/* Product Image */}
-                      <div className="w-20 h-20 bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <div className="w-24 h-24 bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
                         {item.imageUrl ? (
                           <>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -279,7 +279,7 @@ export default function Cart() {
                             />
                           </>
                         ) : (
-                          <span className="text-gray-300 text-xs font-medium">
+                          <span className="text-gray-300 text-sm font-medium">
                             IMG
                           </span>
                         )}
@@ -312,46 +312,53 @@ export default function Cart() {
                             Color: {item.color}
                           </p>
                         )}
+                        {/* Quantity Display */}
+                        <div className="mt-2">
+                          <p className="text-yellow-400 text-sm font-medium">
+                            Quantity: {item.quantity}
+                          </p>
+                        </div>
                       </div>
 
-                      {/* Quantity Controls */}
-                      <div className="flex items-center space-x-3">
+                      {/* Controls Section */}
+                      <div className="flex items-center justify-between mt-3">
+                        {/* Quantity Controls */}
                         <div className="flex items-center space-x-2">
                           <button
                             onClick={() =>
                               updateQuantity(item.id, item.quantity - 1)
                             }
-                            className="p-1 bg-gray-700 hover:bg-gray-600 rounded-full transition-colors"
+                            className="p-2 bg-gray-700 hover:bg-gray-600 active:bg-gray-500 rounded-full transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+                            aria-label="Decrease quantity"
                           >
                             <Minus className="w-4 h-4 text-white" />
                           </button>
-                          <span className="text-white font-medium min-w-[2rem] text-center">
-                            {item.quantity}
-                          </span>
                           <button
                             onClick={() =>
                               updateQuantity(item.id, item.quantity + 1)
                             }
-                            className="p-1 bg-gray-700 hover:bg-gray-600 rounded-full transition-colors"
+                            className="p-2 bg-gray-700 hover:bg-gray-600 active:bg-gray-500 rounded-full transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
+                            aria-label="Increase quantity"
                           >
                             <Plus className="w-4 h-4 text-white" />
                           </button>
                         </div>
 
-                        {/* Item Total */}
-                        <div className="text-right min-w-[5rem]">
-                          <div className="text-lg font-semibold text-white">
-                            ₵{item.subtotal.toFixed(2)}
+                        {/* Item Total and Remove */}
+                        <div className="flex items-center space-x-3">
+                          <div className="text-right">
+                            <div className="text-lg font-bold text-white">
+                              ₵{item.subtotal.toFixed(2)}
+                            </div>
                           </div>
+                          <button
+                            onClick={() => removeFromCart(item.id)}
+                            className="p-2 text-gray-400 hover:text-red-400 active:text-red-300 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full hover:bg-red-400/10"
+                            aria-label="Remove item"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
                         </div>
-
-                        {/* Remove Button */}
-                        <button
-                          onClick={() => removeFromCart(item.id)}
-                          className="p-2 text-gray-400 hover:text-red-400 transition-colors"
-                        >
-                          <X className="w-5 h-5" />
-                        </button>
                       </div>
                     </div>
                   </div>
@@ -525,7 +532,7 @@ export default function Cart() {
                         (activeTab === "delivery" && !localSelectedAddressId) ||
                         (activeTab === "pickup" && !localSelectedPickupId)
                       }
-                      onClick={async () => {
+                      onClick={() => {
                         if (activeTab === "delivery") {
                           if (!localSelectedAddressId) return;
                           const addr = (addresses ?? []).find(
@@ -533,7 +540,15 @@ export default function Cart() {
                               Number(a.id) === Number(localSelectedAddressId)
                           );
                           if (!addr) return;
-                          await updateCartDeliveryMethod(
+                          
+                          // Show immediate feedback
+                          setAppliedSelection({
+                            type: "delivery",
+                            id: Number(localSelectedAddressId),
+                          });
+                          
+                          // Update in background
+                          updateCartDeliveryMethod(
                             "delivery",
                             undefined,
                             {
@@ -546,10 +561,10 @@ export default function Cart() {
                                 addr.additionalInstructions,
                               contactPhone: addr.contactPhone,
                             }
-                          );
-                          setAppliedSelection({
-                            type: "delivery",
-                            id: Number(localSelectedAddressId),
+                          ).catch(error => {
+                            console.error("Error updating delivery method:", error);
+                            // Reset selection if failed
+                            setAppliedSelection(null);
                           });
                         } else {
                           if (!localSelectedPickupId) return;
@@ -558,20 +573,28 @@ export default function Cart() {
                               String(p.id) === String(localSelectedPickupId)
                           );
                           if (loc) {
-                            await updateCartDeliveryMethod("pickup");
+                            // Show immediate feedback
+                            setAppliedSelection({
+                              type: "pickup",
+                              id: String(localSelectedPickupId),
+                            });
+                            
                             try {
                               setSelectedPickupLocation?.(
                                 loc as unknown as import("../hooks/usePickupLocations").PickupLocation
                               );
                             } catch {}
-                            setAppliedSelection({
-                              type: "pickup",
-                              id: String(localSelectedPickupId),
+                            
+                            // Update in background
+                            updateCartDeliveryMethod("pickup").catch(error => {
+                              console.error("Error updating pickup method:", error);
+                              // Reset selection if failed
+                              setAppliedSelection(null);
                             });
                           }
                         }
                       }}
-                      className={`px-5 py-2 rounded-lg font-semibold transition-colors ${
+                      className={`px-5 py-2 rounded-lg font-semibold transition-all duration-150 transform hover:scale-105 active:scale-95 ${
                         (activeTab === "delivery" && !localSelectedAddressId) ||
                         (activeTab === "pickup" && !localSelectedPickupId)
                           ? "bg-gray-600 text-gray-300 cursor-not-allowed"
@@ -731,14 +754,17 @@ export default function Cart() {
                 </div>
 
                 <button
-                  onClick={() => router.push("/checkout")}
+                  onClick={() => {
+                    // Navigate instantly
+                    router.replace("/checkout");
+                  }}
                   disabled={
                     !!(
                       deliveryEligibilityIssues &&
                       deliveryEligibilityIssues.length > 0
                     )
                   }
-                  className={`w-full mt-6 py-4 rounded-lg font-semibold transition-colors duration-200 ${
+                  className={`w-full mt-6 py-4 rounded-lg font-semibold transition-all duration-150 transform hover:scale-[1.02] active:scale-[0.98] ${
                     deliveryEligibilityIssues &&
                     deliveryEligibilityIssues.length > 0
                       ? "bg-gray-600 text-gray-400 cursor-not-allowed"
@@ -752,8 +778,8 @@ export default function Cart() {
                 </button>
 
                 <button
-                  onClick={() => router.push("/shop")}
-                  className="w-full mt-3 bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-lg font-semibold transition-colors duration-200"
+                  onClick={() => router.replace("/shop")}
+                  className="w-full mt-3 bg-gray-700 hover:bg-gray-600 text-white py-3 rounded-lg font-semibold transition-all duration-150 transform hover:scale-[1.02] active:scale-[0.98]"
                 >
                   Continue Shopping
                 </button>

@@ -29,30 +29,26 @@ export default function AddToCartModal({
   const [quantity, setQuantity] = useState(1);
   const [size, setSize] = useState("");
   const [color, setColor] = useState("");
-  const [isAdding, setIsAdding] = useState(false);
 
-  const handleAddToCart = async () => {
-    setIsAdding(true);
-    try {
-      const success = await addToCart(
-        parseInt(product.id),
-        quantity,
-        size || undefined,
-        color || undefined
-      );
-
-      if (success) {
-        onClose();
-        // Reset form
-        setQuantity(1);
-        setSize("");
-        setColor("");
-      }
-    } catch (error) {
+  const handleAddToCart = () => {
+    // Close modal immediately - no delays
+    onClose();
+    
+    // Reset form immediately
+    setQuantity(1);
+    setSize("");
+    setColor("");
+    
+    // Add to cart in background - don't wait for it
+    addToCart(
+      parseInt(product.id),
+      quantity,
+      size || undefined,
+      color || undefined
+    ).catch(error => {
       console.error("Error adding to cart:", error);
-    } finally {
-      setIsAdding(false);
-    }
+      // Could show a toast notification here if needed
+    });
   };
 
   if (!isOpen) return null;
@@ -127,39 +123,57 @@ export default function AddToCartModal({
 
         {/* Size Selection */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-300 mb-3">
             Size (Optional)
           </label>
-          <input
-            type="text"
-            value={size}
-            onChange={(e) => setSize(e.target.value)}
-            placeholder="e.g., M, L, XL"
-            className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-          />
+          <div className="flex flex-wrap gap-2">
+            {["XS", "S", "M", "L", "XL", "XXL", "XXXL"].map((sizeOption) => (
+              <button
+                key={sizeOption}
+                onClick={() => setSize(size === sizeOption ? "" : sizeOption)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  size === sizeOption
+                    ? "bg-yellow-400 text-black"
+                    : "bg-gray-700 text-white hover:bg-gray-600"
+                }`}
+              >
+                {sizeOption}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Color Selection */}
         <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-300 mb-3">
             Color (Optional)
           </label>
-          <input
-            type="text"
-            value={color}
-            onChange={(e) => setColor(e.target.value)}
-            placeholder="e.g., Red, Blue, Black"
-            className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
-          />
+          <div className="flex flex-wrap gap-2">
+            {[
+              "Black", "White", "Red", "Blue", "Green", "Yellow", 
+              "Orange", "Purple", "Pink", "Brown", "Gray", "Navy"
+            ].map((colorOption) => (
+              <button
+                key={colorOption}
+                onClick={() => setColor(color === colorOption ? "" : colorOption)}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  color === colorOption
+                    ? "bg-yellow-400 text-black"
+                    : "bg-gray-700 text-white hover:bg-gray-600"
+                }`}
+              >
+                {colorOption}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Add to Cart Button */}
         <button
           onClick={handleAddToCart}
-          disabled={isAdding}
-          className="w-full bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-black py-4 rounded-lg font-semibold transition-colors duration-200"
+          className="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-4 rounded-lg font-semibold transition-colors duration-200"
         >
-          {isAdding ? "Adding..." : "Add to Cart"}
+          Add to Cart
         </button>
       </div>
     </div>

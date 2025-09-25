@@ -41,7 +41,6 @@ export default function Checkout() {
   const [paymentMethod, setPaymentMethod] = useState<
     "online" // "on_delivery" and "on_pickup" commented out
   >("online");
-  const [isProcessing, setIsProcessing] = useState(false);
   const [isPaymentSuccess, setIsPaymentSuccess] = useState(false);
   const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -54,6 +53,28 @@ export default function Checkout() {
       router.push("/login");
     }
   }, [isAuthenticated, loading, router, setRedirectUrl]);
+
+  // Preload Paystack script for instant payment opening
+  useEffect(() => {
+    if (paymentMethod === "online" && PAYSTACK_PUBLIC_KEY) {
+      // Check if script is already loaded
+      if (document.querySelector('script[src*="paystack"]')) {
+        return;
+      }
+      
+      // Preload Paystack script immediately
+      const script = document.createElement("script");
+      script.src = "https://js.paystack.co/v1/inline.js";
+      script.async = false;
+      script.onload = () => {
+        console.log("[Paystack] Script preloaded successfully");
+      };
+      script.onerror = () => {
+        console.error("[Paystack] Failed to preload script");
+      };
+      document.head.appendChild(script);
+    }
+  }, [paymentMethod, PAYSTACK_PUBLIC_KEY]);
 
   const handleInputChange = (
     e: React.ChangeEvent<
@@ -72,9 +93,14 @@ export default function Checkout() {
     setPaymentMethod(method);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsProcessing(true);
+    
+    // Process payment in background - no loading state, completely instant
+    processPaymentInBackground();
+  };
+
+  const processPaymentInBackground = async () => {
 
     try {
       // Preconditions
@@ -82,7 +108,6 @@ export default function Checkout() {
         // Require a valid delivery address selection
         if (!selectedDeliveryAddressId) {
           alert("Please select a delivery address before continuing.");
-          setIsProcessing(false);
           return;
         }
       }
@@ -97,14 +122,12 @@ export default function Checkout() {
       if (cart?.deliveryMethod === "pickup") {
         if (!selectedPickupLocation?.id) {
           alert("Please select a pickup location to continue.");
-          setIsProcessing(false);
           return;
         }
         orderData.pickupLocationId = Number(selectedPickupLocation.id);
       } else if (cart?.deliveryMethod === "delivery") {
         if (!selectedDeliveryAddressId) {
           alert("Please select a delivery address to continue.");
-          setIsProcessing(false);
           return;
         }
         orderData.deliveryAddressId = Number(selectedDeliveryAddressId);
@@ -338,26 +361,41 @@ export default function Checkout() {
             const w = window as unknown as PaystackGlobal;
             if (w.PaystackPop && typeof w.PaystackPop.setup === "function") {
               console.log(
-                "[Paystack] Inline script already available; opening modal"
+                "[Paystack] Script already loaded; opening modal instantly"
               );
               openInline();
               return;
             }
+            
+            // If script is preloaded but not ready yet, wait a tiny bit
+            const existingScript = document.querySelector('script[src*="paystack"]');
+            if (existingScript) {
+              // Script is loading, wait just a moment then try again
+              setTimeout(() => {
+                const w2 = window as unknown as PaystackGlobal;
+                if (w2.PaystackPop && typeof w2.PaystackPop.setup === "function") {
+                  openInline();
+                } else {
+                  // Fallback to redirect if script still not ready
+                  if (authorizationUrl) window.location.href = authorizationUrl;
+                }
+              }, 50); // Very short wait
+              return;
+            }
+            
+            // Fallback: load script if somehow not preloaded
             const script = document.createElement("script");
             script.src = "https://js.paystack.co/v1/inline.js";
-            script.async = true;
+            script.async = false;
             script.onload = () => {
-              console.log("[Paystack] Inline script loaded successfully");
+              console.log("[Paystack] Fallback script loaded");
               openInline();
             };
             script.onerror = () => {
-              console.error(
-                "[Paystack] Failed to load inline script. Falling back to redirect."
-              );
-              persistPaystackDebug("inline_script_load_failed");
+              console.error("[Paystack] Failed to load script");
               if (authorizationUrl) window.location.href = authorizationUrl;
             };
-            document.body.appendChild(script);
+            document.head.appendChild(script);
           };
 
           if (PAYSTACK_PUBLIC_KEY && reference) {
@@ -388,7 +426,6 @@ export default function Checkout() {
         } else {
           // This should not happen since only online payment is allowed
           alert("Only online payments are currently supported.");
-          setIsProcessing(false);
           return;
         }
       } else {
@@ -397,8 +434,6 @@ export default function Checkout() {
     } catch (error) {
       console.error("Error creating order:", error);
       alert("Failed to place order. Please try again.");
-    } finally {
-      setIsProcessing(false);
     }
   };
 
@@ -782,14 +817,9 @@ export default function Checkout() {
 
                 <button
                   onClick={handleSubmit}
-                  disabled={isProcessing}
-                  className="w-full mt-6 bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-600 text-black py-4 rounded-lg font-semibold transition-colors duration-200"
+                  className="w-full mt-6 bg-yellow-400 hover:bg-yellow-500 active:bg-yellow-600 text-black py-4 rounded-lg font-semibold transition-all duration-100 transform hover:scale-[1.01] active:scale-[0.99] shadow-lg hover:shadow-xl"
                 >
-                  {isProcessing
-                    ? "Processing..."
-                    : paymentMethod === "online"
-                    ? "Pay Now & Place Order"
-                    : "Place Order"}
+                  {paymentMethod === "online" ? "Pay Now & Place Order" : "Place Order"}
                 </button>
               </div>
             </div>
