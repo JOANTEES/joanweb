@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useProductVariants } from "../hooks/useProductVariants";
 import { useBrands } from "../hooks/useBrands";
 import { useCategories } from "../hooks/useCategories";
@@ -70,7 +69,6 @@ export default function ProductCard({
   } = useProductVariants(product.id);
   const { brands } = useBrands();
   const { getCategoryPath } = useCategories();
-  const [isHovered, setIsHovered] = useState(false);
 
   // Get brand information
   const brand = brands.find((b) => b.id === product.brand?.id);
@@ -95,17 +93,16 @@ export default function ProductCard({
   };
 
   return (
-    <div
-      className="group cursor-pointer"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
+    <div className="group cursor-pointer">
       <div className="bg-gray-800 rounded-2xl p-8 mb-4 h-64 flex items-center justify-center group-hover:shadow-lg transition-shadow duration-300 border border-gray-700">
-        {product.imageUrl || (product as any).image_url ? (
+        {product.imageUrl || (product as { image_url?: string }).image_url ? (
           <>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={product.imageUrl || (product as any).image_url}
+              src={
+                product.imageUrl ||
+                (product as { image_url?: string }).image_url
+              }
               alt={product.name}
               className="w-full h-full object-cover rounded-lg"
             />

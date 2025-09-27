@@ -5,6 +5,13 @@ import { useBrands } from "../hooks/useBrands";
 import { useCategories } from "../hooks/useCategories";
 import { X, ChevronDown, ChevronRight } from "lucide-react";
 
+// Define recursive category type
+type CategoryWithChildren = {
+  id: string;
+  name: string;
+  children?: CategoryWithChildren[];
+};
+
 interface FilterSidebarProps {
   selectedBrands: string[];
   selectedCategories: string[];
@@ -50,7 +57,10 @@ export default function FilterSidebar({
     }
   };
 
-  const renderCategoryTree = (categories: any[], level = 0) => {
+  const renderCategoryTree = (
+    categories: CategoryWithChildren[],
+    level = 0
+  ) => {
     return categories.map((category) => (
       <div key={category.id} className="ml-2">
         <label className="flex items-center space-x-2 py-1 cursor-pointer hover:bg-gray-700/50 rounded px-2">

@@ -5,6 +5,12 @@ import { useBrands } from "../hooks/useBrands";
 import { useCategories } from "../hooks/useCategories";
 import { useProducts } from "../hooks/useProducts";
 
+// Define recursive category type
+type CategoryWithChildren = {
+  id: string;
+  children?: CategoryWithChildren[];
+};
+
 interface TrendingPillsProps {
   selectedBrands: string[];
   selectedCategories: string[];
@@ -32,11 +38,12 @@ export default function TrendingPills({
 
     // Count products per category (including subcategories)
     const categoryCounts = categories.map((category) => {
-      const countProductsInCategory = (cat: any): number => {
+      const countProductsInCategory = (cat: CategoryWithChildren): number => {
         let count = products.filter((p) => p.category?.id === cat.id).length;
         if (cat.children) {
           count += cat.children.reduce(
-            (sum: number, child: any) => sum + countProductsInCategory(child),
+            (sum: number, child: CategoryWithChildren) =>
+              sum + countProductsInCategory(child),
             0
           );
         }

@@ -9,6 +9,54 @@ import ProductCard from "../components/ProductCard";
 import FilterSidebar from "../components/FilterSidebar";
 import TrendingPills from "../components/TrendingPills";
 
+// Import types from ProductCard component
+interface Product {
+  id: string;
+  name: string;
+  description?: string;
+  sku?: string;
+  costPrice?: number;
+  price: number;
+  discountPrice?: number;
+  discountPercent?: number;
+  effectivePrice: number;
+  profitMargin?: {
+    costPrice: number;
+    sellingPrice: number;
+    profit: number;
+    margin: number;
+  };
+  brand?: {
+    id: string;
+    name: string;
+  };
+  category?: {
+    id: string;
+    name: string;
+  };
+  legacyCategory?: string;
+  imageUrl?: string;
+  requiresSpecialDelivery: boolean;
+  deliveryEligible: boolean;
+  pickupEligible: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ProductVariant {
+  id: string;
+  productId: string;
+  productName: string;
+  sku: string;
+  size: string;
+  color: string;
+  stockQuantity: number;
+  imageUrl?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function Shop() {
   const { addToCart: _addToCart } = useCart(); // eslint-disable-line @typescript-eslint/no-unused-vars
   const { products, loading, error, refetch } = useProducts();
@@ -47,8 +95,22 @@ export default function Shop() {
     useState<ProductForModal | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleAddToCartClick = (product: ProductForModal) => {
-    setSelectedProduct(product);
+  const handleAddToCartClick = (
+    product: Product & { variants?: ProductVariant[] }
+  ) => {
+    const productForModal: ProductForModal = {
+      ...product,
+      hasDiscount: Boolean(
+        (product.discountPrice && product.discountPrice < product.price) ||
+          (product.discountPercent && product.discountPercent > 0)
+      ),
+      discountAmount: product.discountPrice
+        ? product.price - product.discountPrice
+        : product.discountPercent
+        ? product.price * (product.discountPercent / 100)
+        : undefined,
+    };
+    setSelectedProduct(productForModal);
     setIsModalOpen(true);
   };
 
@@ -300,10 +362,30 @@ export default function Shop() {
             id: String(selectedProduct.id),
             name: selectedProduct.name,
             description: selectedProduct.description,
-            price: String(selectedProduct.price),
+            price: selectedProduct.price,
+            effectivePrice: selectedProduct.effectivePrice,
+            discountPrice: selectedProduct.discountPrice,
+            discountPercent: selectedProduct.discountPercent,
+            hasDiscount: selectedProduct.hasDiscount,
+            discountAmount: selectedProduct.discountAmount,
             category: selectedProduct.category,
+            legacyCategory: selectedProduct.legacyCategory,
             imageUrl: selectedProduct.imageUrl,
-            stock_quantity: selectedProduct.stock_quantity,
+            deliveryEligible: selectedProduct.deliveryEligible,
+            pickupEligible: selectedProduct.pickupEligible,
+            variants: selectedProduct.variants?.map((variant) => ({
+              id: variant.id,
+              productId: selectedProduct.id,
+              productName: selectedProduct.name,
+              sku: variant.id, // Use variant id as sku fallback
+              size: variant.size,
+              color: variant.color,
+              stockQuantity: variant.stockQuantity,
+              imageUrl: variant.imageUrl,
+              isActive: true, // Default to active
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            })),
           }}
           isOpen={isModalOpen}
           onClose={handleCloseModal}
