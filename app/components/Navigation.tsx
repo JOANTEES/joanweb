@@ -147,8 +147,8 @@ export default function Navigation({
                       Profile
                     </Link>
                     <button
-                      onClick={() => {
-                        logout();
+                      onClick={async () => {
+                        await logout();
                         setIsDropdownOpen(false);
                       }}
                       className="flex items-center w-full px-4 py-2 text-white hover:bg-gray-700 transition-colors"
@@ -273,8 +273,8 @@ export default function Navigation({
                     Profile
                   </Link>
                   <button
-                    onClick={() => {
-                      logout();
+                    onClick={async () => {
+                      await logout();
                       setIsMenuOpen(false);
                     }}
                     className="w-full text-left text-white hover:text-yellow-300 transition-colors duration-150 font-medium px-3 py-3 rounded-lg inline-flex items-center hover:bg-gray-800/60 border border-transparent hover:border-gray-700"

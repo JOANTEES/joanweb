@@ -299,19 +299,28 @@ export default function Cart() {
                               </div>
                             )}
                         </div>
-                        <p className="text-gray-400 text-sm mb-2">
-                          ₵{item.price.toFixed(2)} each
-                        </p>
-                        {item.size && (
-                          <p className="text-gray-500 text-sm">
-                            Size: {item.size}
-                          </p>
-                        )}
-                        {item.color && (
-                          <p className="text-gray-500 text-sm">
-                            Color: {item.color}
-                          </p>
-                        )}
+                        <div className="text-gray-400 text-sm mb-2">
+                          {item.hasDiscount ? (
+                            <div className="flex items-center space-x-2">
+                              <span>
+                                ₵{item.effectivePrice.toFixed(2)} each
+                              </span>
+                              <span className="text-gray-500 line-through">
+                                ₵{item.price.toFixed(2)}
+                              </span>
+                              <span className="text-green-400 text-xs">
+                                Save ₵{item.discountAmount?.toFixed(2)}
+                              </span>
+                            </div>
+                          ) : (
+                            <span>₵{item.effectivePrice.toFixed(2)} each</span>
+                          )}
+                        </div>
+                        <div className="text-gray-500 text-sm space-y-1">
+                          <p>Size: {item.size}</p>
+                          <p>Color: {item.color}</p>
+                          <p>SKU: {item.sku}</p>
+                        </div>
                         {/* Quantity Display */}
                         <div className="mt-2">
                           <p className="text-yellow-400 text-sm font-medium">
@@ -540,29 +549,27 @@ export default function Cart() {
                               Number(a.id) === Number(localSelectedAddressId)
                           );
                           if (!addr) return;
-                          
+
                           // Show immediate feedback
                           setAppliedSelection({
                             type: "delivery",
                             id: Number(localSelectedAddressId),
                           });
-                          
+
                           // Update in background
-                          updateCartDeliveryMethod(
-                            "delivery",
-                            undefined,
-                            {
-                              addressId: addr.id,
-                              regionId: addr.regionId,
-                              cityId: addr.cityId,
-                              areaName: addr.areaName,
-                              landmark: addr.landmark,
-                              additionalInstructions:
-                                addr.additionalInstructions,
-                              contactPhone: addr.contactPhone,
-                            }
-                          ).catch(error => {
-                            console.error("Error updating delivery method:", error);
+                          updateCartDeliveryMethod("delivery", undefined, {
+                            addressId: addr.id,
+                            regionId: addr.regionId,
+                            cityId: addr.cityId,
+                            areaName: addr.areaName,
+                            landmark: addr.landmark,
+                            additionalInstructions: addr.additionalInstructions,
+                            contactPhone: addr.contactPhone,
+                          }).catch((error) => {
+                            console.error(
+                              "Error updating delivery method:",
+                              error
+                            );
                             // Reset selection if failed
                             setAppliedSelection(null);
                           });
@@ -578,19 +585,24 @@ export default function Cart() {
                               type: "pickup",
                               id: String(localSelectedPickupId),
                             });
-                            
+
                             try {
                               setSelectedPickupLocation?.(
                                 loc as unknown as import("../hooks/usePickupLocations").PickupLocation
                               );
                             } catch {}
-                            
+
                             // Update in background
-                            updateCartDeliveryMethod("pickup").catch(error => {
-                              console.error("Error updating pickup method:", error);
-                              // Reset selection if failed
-                              setAppliedSelection(null);
-                            });
+                            updateCartDeliveryMethod("pickup").catch(
+                              (error) => {
+                                console.error(
+                                  "Error updating pickup method:",
+                                  error
+                                );
+                                // Reset selection if failed
+                                setAppliedSelection(null);
+                              }
+                            );
                           }
                         }
                       }}
