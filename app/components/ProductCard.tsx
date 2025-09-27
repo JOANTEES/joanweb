@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useProductVariants } from "../hooks/useProductVariants";
+import { useBrands } from "../hooks/useBrands";
+import { useCategories } from "../hooks/useCategories";
 
 interface ProductVariant {
   id: string;
@@ -66,7 +68,17 @@ export default function ProductCard({
     loading: variantsLoading,
     error: variantsError,
   } = useProductVariants(product.id);
+  const { brands } = useBrands();
+  const { getCategoryPath } = useCategories();
   const [isHovered, setIsHovered] = useState(false);
+
+  // Get brand information
+  const brand = brands.find((b) => b.id === product.brand?.id);
+
+  // Get category path (e.g., "Men's Clothing / T-Shirts")
+  const categoryPath = product.category?.id
+    ? getCategoryPath(product.category.id)
+    : product.legacyCategory || "Uncategorized";
 
   // Calculate total stock across all variants
   const totalStock = variants.reduce(
@@ -109,9 +121,24 @@ export default function ProductCard({
       </div>
 
       <div className="space-y-2">
-        <p className="text-sm text-yellow-400 font-medium">
-          {product.category?.name || product.legacyCategory || "Uncategorized"}
-        </p>
+        {/* Brand and Category */}
+        <div className="space-y-1">
+          {brand && (
+            <div className="flex items-center space-x-2">
+              {brand.logoUrl && (
+                <img
+                  src={brand.logoUrl}
+                  alt={brand.name}
+                  className="w-4 h-4 object-contain"
+                />
+              )}
+              <span className="text-xs text-blue-400 font-medium">
+                {brand.name}
+              </span>
+            </div>
+          )}
+          <p className="text-sm text-yellow-400 font-medium">{categoryPath}</p>
+        </div>
 
         <h3 className="text-lg font-semibold text-white group-hover:text-yellow-400 transition-colors">
           {product.name}
