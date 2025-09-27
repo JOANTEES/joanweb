@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import Navigation from "../components/Navigation";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -135,8 +136,14 @@ export default function Login() {
           <div className="bg-gray-800/90 backdrop-blur-sm rounded-2xl p-8 shadow-2xl border border-gray-700">
             <div className="text-center mb-8">
               <div className="flex items-center justify-center space-x-2 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center">
-                  <span className="text-black font-bold text-xl">J</span>
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden">
+                  <Image 
+                    src="/logo.png" 
+                    alt="Joan Tees Logo" 
+                    width={40}
+                    height={40}
+                    className="w-full h-full object-contain"
+                  />
                 </div>
                 <span className="text-3xl font-bold text-white">JoanTee</span>
               </div>
