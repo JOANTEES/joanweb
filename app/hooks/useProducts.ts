@@ -2,20 +2,56 @@
 
 import { useState, useEffect, useCallback } from "react";
 
+interface ProductVariant {
+  id: string;
+  productId: string;
+  productName: string;
+  sku: string;
+  size: string;
+  color: string;
+  stockQuantity: number;
+  imageUrl?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
 interface Product {
-  id: number;
+  id: string;
   name: string;
   description?: string;
-  price: string;
-  category: string;
-  size?: string;
-  color?: string;
-  stock_quantity: number;
-  image_url?: string;
-  created_at: string;
+  sku?: string;
+  costPrice?: number;
+  price: number;
+  discountPrice?: number;
+  discountPercent?: number;
+  effectivePrice: number;
+  profitMargin?: {
+    costPrice: number;
+    sellingPrice: number;
+    profit: number;
+    margin: number;
+  };
+  brand?: {
+    id: string;
+    name: string;
+  };
+  category?: {
+    id: string;
+    name: string;
+  };
+  legacyCategory?: string;
+  imageUrl?: string;
+  requiresSpecialDelivery: boolean;
+  deliveryEligible: boolean;
+  pickupEligible: boolean;
+  createdAt: string;
+  updatedAt: string;
+  variants?: ProductVariant[];
 }
 
 interface ProductsResponse {
+  success: boolean;
   message: string;
   count: number;
   products: Product[];
@@ -54,10 +90,10 @@ export function useProducts(): UseProductsReturn {
 
       const data: ProductsResponse = await response.json();
 
-      if (data.products) {
+      if (data.success && data.products) {
         setProducts(data.products);
       } else {
-        throw new Error("Invalid response format");
+        throw new Error(data.message || "Invalid response format");
       }
     } catch (err) {
       console.error("Error fetching products:", err);

@@ -3,15 +3,41 @@
 import { useState } from "react";
 import { X, Plus, Minus } from "lucide-react";
 import { useCart } from "../contexts/CartContext";
+import VariantSelector from "./VariantSelector";
+
+interface ProductVariant {
+  id: string;
+  productId: string;
+  productName: string;
+  sku: string;
+  size: string;
+  color: string;
+  stockQuantity: number;
+  imageUrl?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
 interface Product {
   id: string;
   name: string;
   description?: string;
-  price: string;
-  category: string;
+  price: number;
+  effectivePrice: number;
+  discountPrice?: number;
+  discountPercent?: number;
+  hasDiscount: boolean;
+  discountAmount?: number;
+  category?: {
+    id: string;
+    name: string;
+  };
+  legacyCategory?: string;
   imageUrl?: string;
-  stock_quantity: number;
+  deliveryEligible: boolean;
+  pickupEligible: boolean;
+  variants?: ProductVariant[];
 }
 
 interface AddToCartModalProps {
@@ -27,25 +53,24 @@ export default function AddToCartModal({
 }: AddToCartModalProps) {
   const { addToCart } = useCart();
   const [quantity, setQuantity] = useState(1);
-  const [size, setSize] = useState("");
-  const [color, setColor] = useState("");
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(
+    null
+  );
 
   const handleAddToCart = () => {
+    if (!selectedVariant) {
+      return; // Don't add if no variant selected
+    }
+
     // Close modal immediately - no delays
     onClose();
-    
+
     // Reset form immediately
     setQuantity(1);
-    setSize("");
-    setColor("");
-    
+    setSelectedVariant(null);
+
     // Add to cart in background - don't wait for it
-    addToCart(
-      parseInt(product.id),
-      quantity,
-      size || undefined,
-      color || undefined
-    ).catch(error => {
+    addToCart(selectedVariant.id, quantity).catch((error) => {
       console.error("Error adding to cart:", error);
       // Could show a toast notification here if needed
     });
@@ -86,10 +111,41 @@ export default function AddToCartModal({
             </div>
             <div className="flex-1">
               <h3 className="text-white font-medium">{product.name}</h3>
-              <p className="text-yellow-400 font-semibold">₵{product.price}</p>
-              <p className="text-gray-400 text-sm">{product.category}</p>
+              <div className="flex items-center space-x-2">
+                {product.hasDiscount ? (
+                  <>
+                    <p className="text-yellow-400 font-semibold">
+                      ₵{product.effectivePrice}
+                    </p>
+                    <p className="text-gray-400 text-sm line-through">
+                      ₵{product.price}
+                    </p>
+                    <span className="text-green-400 text-xs">
+                      Save ₵{product.discountAmount}
+                    </span>
+                  </>
+                ) : (
+                  <p className="text-yellow-400 font-semibold">
+                    ₵{product.effectivePrice}
+                  </p>
+                )}
+              </div>
+              <p className="text-gray-400 text-sm">
+                {product.category?.name ||
+                  product.legacyCategory ||
+                  "Uncategorized"}
+              </p>
             </div>
           </div>
+        </div>
+
+        {/* Variant Selection */}
+        <div className="mb-6">
+          <VariantSelector
+            productId={product.id}
+            onVariantSelect={setSelectedVariant}
+            selectedVariant={selectedVariant}
+          />
         </div>
 
         {/* Quantity Selection */}
@@ -109,71 +165,33 @@ export default function AddToCartModal({
             </span>
             <button
               onClick={() =>
-                setQuantity(Math.min(product.stock_quantity, quantity + 1))
+                setQuantity(
+                  Math.min(selectedVariant?.stockQuantity || 0, quantity + 1)
+                )
               }
               className="p-2 bg-gray-700 hover:bg-gray-600 rounded-full transition-colors"
             >
               <Plus className="w-4 h-4 text-white" />
             </button>
             <span className="text-gray-400 text-sm ml-2">
-              {product.stock_quantity} available
+              {selectedVariant
+                ? `${selectedVariant.stockQuantity} available`
+                : "Select variant first"}
             </span>
-          </div>
-        </div>
-
-        {/* Size Selection */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-300 mb-3">
-            Size (Optional)
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {["XS", "S", "M", "L", "XL", "XXL", "XXXL"].map((sizeOption) => (
-              <button
-                key={sizeOption}
-                onClick={() => setSize(size === sizeOption ? "" : sizeOption)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  size === sizeOption
-                    ? "bg-yellow-400 text-black"
-                    : "bg-gray-700 text-white hover:bg-gray-600"
-                }`}
-              >
-                {sizeOption}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Color Selection */}
-        <div className="mb-6">
-          <label className="block text-sm font-medium text-gray-300 mb-3">
-            Color (Optional)
-          </label>
-          <div className="flex flex-wrap gap-2">
-            {[
-              "Black", "White", "Red", "Blue", "Green", "Yellow", 
-              "Orange", "Purple", "Pink", "Brown", "Gray", "Navy"
-            ].map((colorOption) => (
-              <button
-                key={colorOption}
-                onClick={() => setColor(color === colorOption ? "" : colorOption)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  color === colorOption
-                    ? "bg-yellow-400 text-black"
-                    : "bg-gray-700 text-white hover:bg-gray-600"
-                }`}
-              >
-                {colorOption}
-              </button>
-            ))}
           </div>
         </div>
 
         {/* Add to Cart Button */}
         <button
           onClick={handleAddToCart}
-          className="w-full bg-yellow-400 hover:bg-yellow-500 text-black py-4 rounded-lg font-semibold transition-colors duration-200"
+          disabled={!selectedVariant || selectedVariant.stockQuantity === 0}
+          className="w-full bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-black py-4 rounded-lg font-semibold transition-colors duration-200"
         >
-          Add to Cart
+          {!selectedVariant
+            ? "Select Size & Color"
+            : selectedVariant.stockQuantity === 0
+            ? "Out of Stock"
+            : "Add to Cart"}
         </button>
       </div>
     </div>

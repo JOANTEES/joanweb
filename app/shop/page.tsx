@@ -5,6 +5,7 @@ import Navigation from "../components/Navigation";
 import { useCart } from "../contexts/CartContext";
 import { useProducts } from "../hooks/useProducts";
 import AddToCartModal from "../components/AddToCartModal";
+import ProductCard from "../components/ProductCard";
 
 export default function Shop() {
   const { addToCart: _addToCart } = useCart(); // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -12,13 +13,30 @@ export default function Shop() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchTerm, setSearchTerm] = useState("");
   type ProductForModal = {
-    id: string | number;
+    id: string;
     name: string;
     description?: string;
-    price: string | number;
-    category: string;
+    price: number;
+    effectivePrice: number;
+    discountPrice?: number;
+    discountPercent?: number;
+    hasDiscount: boolean;
+    discountAmount?: number;
+    category?: {
+      id: string;
+      name: string;
+    };
+    legacyCategory?: string;
     imageUrl?: string;
-    stock_quantity: number;
+    deliveryEligible: boolean;
+    pickupEligible: boolean;
+    variants?: Array<{
+      id: string;
+      size: string;
+      color: string;
+      stockQuantity: number;
+      imageUrl?: string;
+    }>;
   };
 
   const [selectedProduct, setSelectedProduct] =
@@ -28,18 +46,18 @@ export default function Shop() {
   // Define specific categories
   const categories = [
     "All",
-    "Students", 
+    "Students",
     "Women",
     "Men",
     "Jerseys",
     "Tees",
-    "Shirts", 
+    "Shirts",
     "Sweat outfits",
     "Jeans/Cargo pants",
     "Two piece outfits",
     "Slippers/Footwear",
     "Sneakers",
-    "Bags/Belts"
+    "Bags/Belts",
   ];
 
   const handleAddToCartClick = (product: ProductForModal) => {
@@ -56,30 +74,41 @@ export default function Shop() {
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       let matchesCategory = false;
-      
+
       if (selectedCategory === "All") {
         matchesCategory = true;
       } else if (selectedCategory === "Students") {
         // Students category - you can define what products belong here
-        matchesCategory = product.category.toLowerCase().includes("student") || 
-                         product.name.toLowerCase().includes("student");
+        const categoryName =
+          product.category?.name || product.legacyCategory || "";
+        matchesCategory =
+          categoryName.toLowerCase().includes("student") ||
+          product.name.toLowerCase().includes("student");
       } else if (selectedCategory === "Women") {
         // Women category - you can define what products belong here
-        matchesCategory = product.category.toLowerCase().includes("women") || 
-                         product.category.toLowerCase().includes("female") ||
-                         product.name.toLowerCase().includes("women") ||
-                         product.name.toLowerCase().includes("female");
+        const categoryName =
+          product.category?.name || product.legacyCategory || "";
+        matchesCategory =
+          categoryName.toLowerCase().includes("women") ||
+          categoryName.toLowerCase().includes("female") ||
+          product.name.toLowerCase().includes("women") ||
+          product.name.toLowerCase().includes("female");
       } else if (selectedCategory === "Men") {
         // Men category - you can define what products belong here
-        matchesCategory = product.category.toLowerCase().includes("men") || 
-                         product.category.toLowerCase().includes("male") ||
-                         product.name.toLowerCase().includes("men") ||
-                         product.name.toLowerCase().includes("male");
+        const categoryName =
+          product.category?.name || product.legacyCategory || "";
+        matchesCategory =
+          categoryName.toLowerCase().includes("men") ||
+          categoryName.toLowerCase().includes("male") ||
+          product.name.toLowerCase().includes("men") ||
+          product.name.toLowerCase().includes("male");
       } else {
         // Exact category match for specific categories
-        matchesCategory = product.category === selectedCategory;
+        const categoryName =
+          product.category?.name || product.legacyCategory || "";
+        matchesCategory = categoryName === selectedCategory;
       }
-      
+
       const matchesSearch =
         product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         product.description?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -200,63 +229,11 @@ export default function Shop() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                 {filteredProducts.map((product) => (
-                  <div key={product.id} className="group cursor-pointer">
-                    <div className="bg-gray-800 rounded-2xl p-8 mb-4 h-64 flex items-center justify-center group-hover:shadow-lg transition-shadow duration-300 border border-gray-700">
-                      {product.image_url ? (
-                        <>
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={product.image_url}
-                            alt={product.name}
-                            className="w-full h-full object-cover rounded-lg"
-                          />
-                        </>
-                      ) : (
-                        <div className="text-center">
-                          <div className="w-20 h-20 bg-yellow-400 rounded-full mx-auto mb-4 flex items-center justify-center">
-                            <span className="text-3xl">👕</span>
-                          </div>
-                          <p className="text-gray-300">Product Image</p>
-                        </div>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-sm text-yellow-400 font-medium">
-                        {product.category}
-                      </p>
-                      <h3 className="text-lg font-semibold text-white group-hover:text-yellow-400 transition-colors">
-                        {product.name}
-                      </h3>
-                      {product.description && (
-                        <p className="text-gray-400 text-sm line-clamp-2">
-                          {product.description}
-                        </p>
-                      )}
-                      <div className="flex items-center justify-between">
-                        <p className="text-2xl font-bold text-white">
-                          ₵{product.price}
-                        </p>
-                        {product.stock_quantity > 0 ? (
-                          <span className="text-green-400 text-sm">
-                            In Stock
-                          </span>
-                        ) : (
-                          <span className="text-red-400 text-sm">
-                            Out of Stock
-                          </span>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => handleAddToCartClick(product)}
-                        disabled={product.stock_quantity === 0}
-                        className="w-full bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-black py-3 rounded-full font-semibold transition-colors duration-200"
-                      >
-                        {product.stock_quantity > 0
-                          ? "Add to Cart"
-                          : "Out of Stock"}
-                      </button>
-                    </div>
-                  </div>
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onAddToCartClick={handleAddToCartClick}
+                  />
                 ))}
               </div>
             </>

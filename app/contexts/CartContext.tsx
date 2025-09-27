@@ -16,12 +16,18 @@ interface CartItem {
   productName: string;
   description?: string;
   price: number;
-  category: string;
+  discountPrice?: number;
+  discountPercent?: number;
+  effectivePrice: number;
+  discountAmount?: number;
+  hasDiscount: boolean;
+  quantity: number;
+  variantId: string;
+  sku: string;
+  size: string;
+  color: string;
   imageUrl?: string;
   stockQuantity: number;
-  quantity: number;
-  size?: string;
-  color?: string;
   subtotal: number;
   deliveryEligible: boolean;
   pickupEligible: boolean;
@@ -115,12 +121,7 @@ interface CartContextType {
   setSelectedDeliveryAddressId: (addressId: string | null) => void;
   selectedDeliveryAddress: SelectedDeliveryAddress | null;
   setSelectedDeliveryAddress: (address: SelectedDeliveryAddress | null) => void;
-  addToCart: (
-    productId: number,
-    quantity?: number,
-    size?: string,
-    color?: string
-  ) => Promise<boolean>;
+  addToCart: (variantId: string, quantity?: number) => Promise<boolean>;
   removeFromCart: (itemId: string) => Promise<boolean>;
   updateQuantity: (itemId: string, quantity: number) => Promise<boolean>;
   updateCartDeliveryMethod: (
@@ -237,10 +238,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [isAuthenticated, refreshCart]);
 
   const addToCart = async (
-    productId: number,
-    quantity: number = 1,
-    size?: string,
-    color?: string
+    variantId: string,
+    quantity: number = 1
   ): Promise<boolean> => {
     if (!isAuthenticated) {
       // Store current page for redirect after login with cart context
@@ -260,38 +259,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
         method: "POST",
         headers: getAuthHeaders(),
         body: JSON.stringify({
-          productId,
+          variantId,
           quantity,
-          size,
-          color,
         }),
       });
 
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          // Optimize: Update cart state directly instead of full refresh
-          if (data.item) {
-            setItems(prevItems => {
-              const existingIndex = prevItems.findIndex(
-                item => item.id === data.item.id
-              );
-              if (existingIndex >= 0) {
-                // Update existing item quantity
-                const updatedItems = [...prevItems];
-                updatedItems[existingIndex] = data.item;
-                return updatedItems;
-              } else {
-                // Add new item
-                return [...prevItems, data.item];
-              }
-            });
-            // Update item count
-            setItemCount(prev => prev + quantity);
-          } else {
-            // Fallback to refresh if no item data returned
-            await refreshCart();
-          }
+          // Refresh cart to get updated data with variants
+          await refreshCart();
           return true;
         }
       } else {
