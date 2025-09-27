@@ -44,7 +44,7 @@ interface AuthContextType {
   ) => Promise<{ success: boolean; message: string }>;
   verifyResetToken: (
     token: string
-  ) => Promise<{ success: boolean; message: string; user?: any }>;
+  ) => Promise<{ success: boolean; message: string; user?: unknown }>;
   resetPassword: (
     token: string,
     password: string
@@ -429,7 +429,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Verify reset token
   const verifyResetToken = async (
     token: string
-  ): Promise<{ success: boolean; message: string; user?: any }> => {
+  ): Promise<{ success: boolean; message: string; user?: unknown }> => {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/verify-reset-token`, {
         method: "POST",

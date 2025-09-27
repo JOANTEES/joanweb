@@ -1,18 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Navigation from "../components/Navigation";
 import { useAuth } from "../contexts/AuthContext";
 
-export default function ResetPassword() {
+function ResetPasswordContent() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<{ first_name: string } | null>(null);
   const [token, setToken] = useState("");
 
   const router = useRouter();
@@ -34,7 +34,7 @@ export default function ResetPassword() {
       try {
         const result = await verifyResetToken(tokenParam);
         if (result.success && result.user) {
-          setUser(result.user);
+          setUser(result.user as { first_name: string });
         } else {
           setError(result.message);
         }
@@ -275,5 +275,19 @@ export default function ResetPassword() {
         </div>
       </section>
     </>
+  );
+}
+
+export default function ResetPassword() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400"></div>
+        </div>
+      }
+    >
+      <ResetPasswordContent />
+    </Suspense>
   );
 }
