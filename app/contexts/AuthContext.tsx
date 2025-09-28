@@ -401,7 +401,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Google OAuth login
   const googleLogin = () => {
     if (typeof window !== "undefined") {
-      window.location.href = `${API_BASE_URL}/auth/google`;
+      window.location.href = `${API_BASE_URL}/auth/google?state=user`;
     }
   };
 
