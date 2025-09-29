@@ -31,11 +31,11 @@ export default function Home() {
               <div className="space-y-4">
                 <h1 className="text-5xl lg:text-7xl font-bold text-white leading-tight">
                   Premium
-                  <span className="block text-yellow-400">Clothings & Apparels</span>
+                  <span className="block text-yellow-400">Clothing & Apparel</span>
                   <span className="block text-4xl lg:text-5xl font-light">for Everyone</span>
                 </h1>
                 <p className="text-xl text-gray-300 max-w-lg">
-                  Discover the latest trends in fashion with JoanTees. Quality clothing with fast delivery service right to your doorstep.
+                  Discover the latest trends in fashion with JoanTee. Quality clothing with fast delivery service right to your doorstep.
                 </p>
               </div>
               
@@ -92,7 +92,7 @@ export default function Home() {
       <section className="py-20 bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-white mb-4">Why Choose JoanTees?</h2>
+            <h2 className="text-4xl font-bold text-white mb-4">Why Choose JoanTee?</h2>
             <p className="text-xl text-gray-300 max-w-2xl mx-auto">
               We deliver anyday, anytime, anywhere.
             </p>
@@ -191,8 +191,8 @@ export default function Home() {
             <div>
               <h3 className="text-lg font-semibold mb-4">Connect</h3>
               <div className="flex space-x-4">
-                <a href="https://vm.tiktok.com/ZMAhGntUb/0" className="text-gray-400 hover:text-yellow-400 transition-colors">Instagram</a>
-                <a href="https://www.instagram.com/p/DOEN1PBCEM0/?igsh=MW5lYjJ1YmZqaWxsOA==" className="text-gray-400 hover:text-yellow-400 transition-colors">TikTok</a>
+                <a href="https://www.instagram.com/p/DOEN1PBCEM0/?igsh=MW5lYjJ1YmZqaWxsOA==" className="text-gray-400 hover:text-yellow-400 transition-colors">Instagram</a>
+                <a href="https://vm.tiktok.com/ZMAhGntUb/0" className="text-gray-400 hover:text-yellow-400 transition-colors">TikTok</a>
                 <a href="https://snapchat.com/t/B1sJXJdX" className="text-gray-400 hover:text-yellow-400 transition-colors">Snapchat</a>
               </div>
             </div>
