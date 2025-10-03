@@ -46,12 +46,7 @@ export default function Home() {
                 >
                   Shop Now
                 </Link>
-                <Link
-                  href="/pick-drop"
-                  className="border-2 border-white hover:bg-white hover:text-black text-white px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300"
-                >
-                  Request Pick-Up
-                </Link>
+              
               </div>
             </div>
 
@@ -123,7 +118,7 @@ export default function Home() {
               <div className="w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-2xl">💳</span>
               </div>
-              <h3 className="text-2xl font-semibold text-white mb-4">Easy Orders</h3>
+              <h3 className="text-2xl font-semibold text-white mb-4">Easy Tracking</h3>
               <p className="text-gray-300">
                 Track your orders and manage your purchases with our simple interface.
               </p>
