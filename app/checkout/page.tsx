@@ -22,7 +22,7 @@ import {
 import PaymentMethodSelector from "../components/PaymentMethodSelector";
 
 export default function Checkout() {
-  const { isAuthenticated, loading, setRedirectUrl } = useAuth();
+  const { isAuthenticated, loading, setRedirectUrl, user } = useAuth();
   const {
     cart,
     items,
@@ -202,6 +202,11 @@ export default function Checkout() {
             hasAuthToken: !!authToken,
             body: initBody,
           });
+          console.log("[Paystack] User context check:", {
+            user,
+            userEmail: user?.email,
+            isAuthenticated,
+          });
           const initRes = await fetch(initEndpoint, {
             method: "POST",
             headers: {
@@ -221,6 +226,10 @@ export default function Checkout() {
             status: initRes.status,
             ok: initRes.ok,
             initData,
+          });
+          console.log("[Paystack] Backend email data:", {
+            backendEmail: initData?.data?.email,
+            frontendUserEmail: user?.email,
           });
           if (!initRes.ok || !initData?.data) {
             alert(initData?.message || "Failed to initialize payment");
@@ -284,13 +293,14 @@ export default function Checkout() {
               currency: "GHS",
             });
             console.log("[Paystack] Using reference:", reference);
+            console.log("[Paystack] User data:", {
+              user,
+              userEmail: user?.email,
+            });
             const w = window as unknown as PaystackGlobal;
             const handler = w.PaystackPop?.setup?.({
               key: PAYSTACK_PUBLIC_KEY,
-              email:
-                (typeof window !== "undefined" &&
-                  localStorage.getItem("userEmail")) ||
-                "customer@example.com",
+              email: user?.email || "customer@example.com",
               amount: inlineAmountKobo,
               currency: "GHS",
               ref: reference,
