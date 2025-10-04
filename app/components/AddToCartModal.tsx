@@ -35,6 +35,7 @@ interface Product {
   };
   legacyCategory?: string;
   imageUrl?: string;
+  images?: string[]; // NEW: Array of all product and variant images
   deliveryEligible: boolean;
   pickupEligible: boolean;
   variants?: ProductVariant[];
@@ -95,19 +96,39 @@ export default function AddToCartModal({
         {/* Product Info */}
         <div className="mb-6">
           <div className="flex items-center space-x-4 mb-4">
-            <div className="w-16 h-16 bg-gray-600 rounded-lg flex items-center justify-center flex-shrink-0">
-              {product.imageUrl ? (
-                <>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={product.imageUrl}
-                    alt={product.name}
-                    className="w-full h-full object-cover rounded-lg"
-                  />
-                </>
-              ) : (
-                <span className="text-gray-300 text-xs font-medium">IMG</span>
-              )}
+            <div className="w-16 h-16 bg-gray-600 rounded-lg flex items-center justify-center flex-shrink-0 relative overflow-hidden">
+              {(() => {
+                // Get display image - prioritize selected variant image, then product images
+                const displayImage =
+                  selectedVariant?.imageUrl ||
+                  (product.images && product.images.length > 0
+                    ? product.images[0]
+                    : null) ||
+                  product.imageUrl;
+
+                return displayImage ? (
+                  <>
+                    <img
+                      src={displayImage}
+                      alt={product.name}
+                      className="w-full h-full object-cover rounded-lg transition-all duration-300"
+                      onError={(e) => {
+                        // Fallback for broken images
+                        const target = e.target as HTMLImageElement;
+                        target.src = "/placeholder-image.svg";
+                      }}
+                    />
+                    {/* Show image count if multiple images available */}
+                    {product.images && product.images.length > 1 && (
+                      <div className="absolute bottom-0 right-0 bg-black/50 text-white text-xs px-1 rounded-tl">
+                        {product.images.length}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <span className="text-gray-300 text-xs font-medium">IMG</span>
+                );
+              })()}
             </div>
             <div className="flex-1">
               <h3 className="text-white font-medium">{product.name}</h3>

@@ -42,6 +42,7 @@ interface Product {
   };
   legacyCategory?: string;
   imageUrl?: string;
+  images?: string[]; // NEW: Array of all product and variant images
   requiresSpecialDelivery: boolean;
   deliveryEligible: boolean;
   pickupEligible: boolean;
