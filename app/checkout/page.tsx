@@ -38,9 +38,7 @@ export default function Checkout() {
   const [formData, setFormData] = useState({
     customerNotes: "",
   });
-  const [paymentMethod, setPaymentMethod] = useState<
-    "online" // "on_delivery" and "on_pickup" commented out
-  >("online");
+  const [paymentMethod, setPaymentMethod] = useState<"online">("online"); // "on_delivery" and "on_pickup" commented out
   const [isPaymentSuccess, setIsPaymentSuccess] = useState(false);
   const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -61,7 +59,7 @@ export default function Checkout() {
       if (document.querySelector('script[src*="paystack"]')) {
         return;
       }
-      
+
       // Preload Paystack script immediately
       const script = document.createElement("script");
       script.src = "https://js.paystack.co/v1/inline.js";
@@ -95,13 +93,12 @@ export default function Checkout() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Process payment in background - no loading state, completely instant
     processPaymentInBackground();
   };
 
   const processPaymentInBackground = async () => {
-
     try {
       // Preconditions
       if (cart?.deliveryMethod === "delivery") {
@@ -156,6 +153,9 @@ export default function Checkout() {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${authToken}`,
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
         },
         body: JSON.stringify(orderData),
       });
@@ -207,6 +207,9 @@ export default function Checkout() {
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${authToken}`,
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+              Pragma: "no-cache",
+              Expires: "0",
             },
             body: initBody ? JSON.stringify(initBody) : undefined,
           });
@@ -299,39 +302,50 @@ export default function Checkout() {
                   "[Paystack] Inline modal callback fired (success)",
                   paystackResponse
                 );
-                
+
                 // Show loading state and redirect immediately
                 setIsPaymentSuccess(true);
                 setTimeout(() => {
                   router.push("/order-success?payment=online");
                 }, 500); // Very short delay for smooth transition
-                
+
                 // Handle verification in background (don't wait for it)
                 (async () => {
                   try {
-                    console.log("[Paystack] Starting background verification...");
+                    console.log(
+                      "[Paystack] Starting background verification..."
+                    );
                     const verifyRes = await fetch(
                       `${API_BASE_URL}/payments/paystack/verify`,
                       {
                         method: "POST",
                         headers: {
                           "Content-Type": "application/json",
+                          "Cache-Control":
+                            "no-cache, no-store, must-revalidate",
+                          Pragma: "no-cache",
+                          Expires: "0",
                           Authorization: `Bearer ${authToken}`,
                         },
                         body: JSON.stringify({ reference }),
                       }
                     );
-                    
+
                     if (verifyRes.ok) {
                       const verifyData = await verifyRes.json();
                       if (verifyData?.success) {
                         // Clear cart in background
                         await clearCart();
-                        console.log("[Paystack] Background verification completed successfully");
+                        console.log(
+                          "[Paystack] Background verification completed successfully"
+                        );
                       }
                     }
                   } catch (err) {
-                    console.error("[Paystack] Background verification error:", err);
+                    console.error(
+                      "[Paystack] Background verification error:",
+                      err
+                    );
                     // Still clear cart even if verification fails
                     try {
                       await clearCart();
@@ -366,14 +380,19 @@ export default function Checkout() {
               openInline();
               return;
             }
-            
+
             // If script is preloaded but not ready yet, wait a tiny bit
-            const existingScript = document.querySelector('script[src*="paystack"]');
+            const existingScript = document.querySelector(
+              'script[src*="paystack"]'
+            );
             if (existingScript) {
               // Script is loading, wait just a moment then try again
               setTimeout(() => {
                 const w2 = window as unknown as PaystackGlobal;
-                if (w2.PaystackPop && typeof w2.PaystackPop.setup === "function") {
+                if (
+                  w2.PaystackPop &&
+                  typeof w2.PaystackPop.setup === "function"
+                ) {
                   openInline();
                 } else {
                   // Fallback to redirect if script still not ready
@@ -382,7 +401,7 @@ export default function Checkout() {
               }, 50); // Very short wait
               return;
             }
-            
+
             // Fallback: load script if somehow not preloaded
             const script = document.createElement("script");
             script.src = "https://js.paystack.co/v1/inline.js";
@@ -642,9 +661,7 @@ export default function Checkout() {
                         <CreditCard className="w-5 h-5 text-green-400" />
                       </div>
                       <div>
-                        <div className="text-white font-medium">
-                          Pay Online
-                        </div>
+                        <div className="text-white font-medium">Pay Online</div>
                         <p className="text-gray-400 text-sm">
                           Pay securely with card or mobile money
                         </p>
@@ -819,7 +836,9 @@ export default function Checkout() {
                   onClick={handleSubmit}
                   className="w-full mt-6 bg-yellow-400 hover:bg-yellow-500 active:bg-yellow-600 text-black py-4 rounded-lg font-semibold transition-all duration-100 transform hover:scale-[1.01] active:scale-[0.99] shadow-lg hover:shadow-xl"
                 >
-                  {paymentMethod === "online" ? "Pay Now & Place Order" : "Place Order"}
+                  {paymentMethod === "online"
+                    ? "Pay Now & Place Order"
+                    : "Place Order"}
                 </button>
               </div>
             </div>

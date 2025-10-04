@@ -118,6 +118,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         ...options.headers,
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
       },
     });
 
@@ -138,6 +141,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               ...options.headers,
               Authorization: `Bearer ${newToken}`,
               "Content-Type": "application/json",
+              "Cache-Control": "no-cache, no-store, must-revalidate",
+              Pragma: "no-cache",
+              Expires: "0",
             },
           });
         } else {
