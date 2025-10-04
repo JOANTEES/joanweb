@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface ImageGalleryProps {
@@ -48,17 +48,17 @@ export default function ImageGallery({
   };
 
   // Navigation functions
-  const goToPrevious = () => {
+  const goToPrevious = useCallback(() => {
     setSelectedImageIndex((prev) =>
       prev === 0 ? displayImages.length - 1 : prev - 1
     );
-  };
+  }, [displayImages.length]);
 
-  const goToNext = () => {
+  const goToNext = useCallback(() => {
     setSelectedImageIndex((prev) =>
       prev === displayImages.length - 1 ? 0 : prev + 1
     );
-  };
+  }, [displayImages.length]);
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -74,7 +74,7 @@ export default function ImageGallery({
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [goToPrevious, goToNext]);
 
   // Don't render if no images
   if (displayImages.length === 0) {
@@ -91,9 +91,6 @@ export default function ImageGallery({
   }
 
   const currentImage = displayImages[selectedImageIndex];
-  const thumbnailImages = showThumbnails
-    ? displayImages.slice(0, maxThumbnails)
-    : [];
 
   return (
     <div className={`space-y-4 ${className}`}>

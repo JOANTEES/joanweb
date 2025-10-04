@@ -70,7 +70,7 @@ export default function ProductDetailModal({
   onClose,
 }: ProductDetailModalProps) {
   const { addToCart } = useCart();
-  const { variants, loading: variantsLoading } = useProductVariants(product.id);
+  const { variants } = useProductVariants(product.id);
   const { brands } = useBrands();
   const { getCategoryPath } = useCategories();
 
@@ -78,7 +78,6 @@ export default function ProductDetailModal({
     null
   );
   const [quantity, setQuantity] = useState(1);
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   // Get brand information
   const brand = brands.find((b) => b.id === product.brand?.id);
@@ -124,14 +123,6 @@ export default function ProductDetailModal({
 
   const handleVariantSelect = (variant: ProductVariant | null) => {
     setSelectedVariant(variant);
-    // Update selected image to variant image if available
-    if (variant?.imageUrl) {
-      setSelectedImage(variant.imageUrl);
-    }
-  };
-
-  const handleImageSelect = (imageUrl: string) => {
-    setSelectedImage(imageUrl);
   };
 
   if (!isOpen) return null;
@@ -158,7 +149,6 @@ export default function ProductDetailModal({
             <ImageGallery
               images={displayImages}
               mainImage={mainImage}
-              onImageSelect={handleImageSelect}
               showThumbnails={true}
               maxThumbnails={6}
               className="h-full max-h-96 lg:max-h-none"
@@ -206,7 +196,8 @@ export default function ProductDetailModal({
               <div className="space-y-2">
                 <h3 className="text-lg font-semibold text-white">Pricing</h3>
                 <div className="flex items-center space-x-4">
-                  {product.hasDiscount ? (
+                  {product.discountPrice &&
+                  product.discountPrice < product.price ? (
                     <>
                       <span className="text-3xl font-bold text-yellow-400">
                         ₵{product.effectivePrice}
@@ -215,7 +206,7 @@ export default function ProductDetailModal({
                         ₵{product.price}
                       </span>
                       <span className="bg-green-500 text-white px-2 py-1 rounded text-sm font-medium">
-                        Save ₵{product.discountAmount}
+                        Save ₵{product.price - product.effectivePrice}
                       </span>
                     </>
                   ) : (
