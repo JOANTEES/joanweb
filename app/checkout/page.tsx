@@ -581,9 +581,9 @@ export default function Checkout() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
-            {/* Checkout Form */}
-            <div className="space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8">
+            {/* Checkout Form - Takes 7 columns on desktop */}
+            <div className="lg:col-span-7 space-y-8">
               {/* Delivery Method */}
               <div className="bg-gray-800 rounded-lg p-6">
                 <div className="flex items-center mb-4">
@@ -741,8 +741,8 @@ export default function Checkout() {
               </div>
             </div>
 
-            {/* Order Summary */}
-            <div className="space-y-6">
+            {/* Order Summary - Takes 5 columns on desktop */}
+            <div className="lg:col-span-5 space-y-6">
               <div className="bg-gray-800 rounded-lg p-4 sm:p-6">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-lg sm:text-xl font-semibold text-white">
@@ -759,8 +759,8 @@ export default function Checkout() {
                       key={item.id}
                       className="flex flex-col sm:flex-row sm:items-center gap-3 sm:space-x-4 p-3 bg-gray-700/50 rounded-lg"
                     >
-                      <div className="flex items-center w-full sm:w-auto">
-                        <div className="w-16 h-16 bg-gray-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <div className="flex items-start w-full sm:w-auto">
+                        <div className="w-16 h-16 bg-gray-600 rounded-lg flex items-center justify-center flex-shrink-0 mr-4">
                           {item.imageUrl ? (
                             <>
                               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -776,7 +776,7 @@ export default function Checkout() {
                             </span>
                           )}
                         </div>
-                        <div className="flex-1 min-w-0 ml-3 sm:ml-0">
+                        <div className="flex-1 min-w-0 pl-2">
                           <h3 className="text-white font-medium truncate">
                             {item.productName}
                           </h3>

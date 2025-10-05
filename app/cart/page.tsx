@@ -274,9 +274,9 @@ export default function Cart() {
                     }`}
                   >
                     {/* Mobile-optimized layout */}
-                    <div className="flex flex-col sm:flex-row sm:items-start sm:space-x-4">
+                    <div className="flex flex-col sm:flex-row sm:items-start">
                       {/* Product Image */}
-                      <div className="w-full sm:w-24 h-32 sm:h-24 bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 mb-3 sm:mb-0">
+                      <div className="w-full sm:w-24 h-32 sm:h-24 bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 mb-3 sm:mb-0 sm:mr-6">
                         {item.imageUrl ? (
                           <>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -293,7 +293,7 @@ export default function Cart() {
                         )}
                       </div>
 
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0 sm:pl-2">
                         {/* Product Details */}
                         <div className="flex flex-wrap items-center gap-2 mb-2">
                           <h3 className="text-lg font-semibold text-white">
