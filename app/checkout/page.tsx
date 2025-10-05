@@ -40,6 +40,7 @@ export default function Checkout() {
   });
   const [paymentMethod, setPaymentMethod] = useState<"online">("online"); // "on_delivery" and "on_pickup" commented out
   const [isPaymentSuccess, setIsPaymentSuccess] = useState(false);
+  const [isPayLoading, setIsPayLoading] = useState(false);
   const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
   const PAYSTACK_PUBLIC_KEY = process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "";
@@ -112,9 +113,9 @@ export default function Checkout() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Process payment in background - no loading state, completely instant
-    processPaymentInBackground();
+    setIsPayLoading(true);
+    // Process payment in background
+    processPaymentInBackground().catch(() => setIsPayLoading(false));
   };
 
   const processPaymentInBackground = async () => {
@@ -124,6 +125,7 @@ export default function Checkout() {
         // Require a valid delivery address selection
         if (!selectedDeliveryAddressId) {
           alert("Please select a delivery address before continuing.");
+          setIsPayLoading(false);
           return;
         }
       }
@@ -138,12 +140,14 @@ export default function Checkout() {
       if (cart?.deliveryMethod === "pickup") {
         if (!selectedPickupLocation?.id) {
           alert("Please select a pickup location to continue.");
+          setIsPayLoading(false);
           return;
         }
         orderData.pickupLocationId = Number(selectedPickupLocation.id);
       } else if (cart?.deliveryMethod === "delivery") {
         if (!selectedDeliveryAddressId) {
           alert("Please select a delivery address to continue.");
+          setIsPayLoading(false);
           return;
         }
         orderData.deliveryAddressId = Number(selectedDeliveryAddressId);
@@ -252,6 +256,7 @@ export default function Checkout() {
           });
           if (!initRes.ok || !initData?.data) {
             alert(initData?.message || "Failed to initialize payment");
+            setIsPayLoading(false);
             return;
           }
 
@@ -325,6 +330,7 @@ export default function Checkout() {
               ref: reference,
               onClose: () => {
                 console.warn("[Paystack] Inline modal closed by user");
+                setIsPayLoading(false);
               },
               callback: (paystackResponse: unknown) => {
                 console.log(
@@ -334,6 +340,7 @@ export default function Checkout() {
 
                 // Show loading state and redirect immediately
                 setIsPaymentSuccess(true);
+                setIsPayLoading(false);
                 setTimeout(() => {
                   router.push("/order-success?payment=online");
                 }, 500); // Very short delay for smooth transition
@@ -892,11 +899,23 @@ export default function Checkout() {
 
                 <button
                   onClick={handleSubmit}
-                  className="w-full mt-4 sm:mt-6 bg-yellow-400 hover:bg-yellow-500 active:bg-yellow-600 text-black py-3 sm:py-4 rounded-lg font-semibold transition-all duration-100 transform hover:scale-[1.01] active:scale-[0.99] shadow-lg hover:shadow-xl text-sm sm:text-base"
+                  disabled={isPayLoading}
+                  className={`w-full mt-4 sm:mt-6 rounded-lg font-semibold text-sm sm:text-base py-3 sm:py-4 transition-all duration-100 transform shadow-lg hover:shadow-xl ${
+                    isPayLoading
+                      ? "bg-gray-600 text-gray-300 cursor-not-allowed"
+                      : "bg-yellow-400 hover:bg-yellow-500 active:bg-yellow-600 text-black hover:scale-[1.01] active:scale-[0.99]"
+                  }`}
                 >
-                  {paymentMethod === "online"
-                    ? "Pay Now & Place Order"
-                    : "Place Order"}
+                  {isPayLoading ? (
+                    <span className="inline-flex items-center justify-center">
+                      <span className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin mr-2"></span>
+                      Initializing payment...
+                    </span>
+                  ) : paymentMethod === "online" ? (
+                    "Pay Now & Place Order"
+                  ) : (
+                    "Place Order"
+                  )}
                 </button>
               </div>
             </div>
