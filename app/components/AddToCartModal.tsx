@@ -58,6 +58,8 @@ export default function AddToCartModal({
     null
   );
 
+  const isVariantSelected = !!selectedVariant;
+
   const handleAddToCart = () => {
     if (!selectedVariant) {
       return; // Don't add if no variant selected
@@ -176,8 +178,13 @@ export default function AddToCartModal({
           </label>
           <div className="flex items-center space-x-4">
             <button
-              onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="p-2 bg-gray-700 hover:bg-gray-600 rounded-full transition-colors"
+              onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+              disabled={!isVariantSelected}
+              className={`p-2 rounded-full transition-colors ${
+                !isVariantSelected
+                  ? "bg-gray-700/60 cursor-not-allowed"
+                  : "bg-gray-700 hover:bg-gray-600"
+              }`}
             >
               <Minus className="w-4 h-4 text-white" />
             </button>
@@ -185,12 +192,18 @@ export default function AddToCartModal({
               {quantity}
             </span>
             <button
-              onClick={() =>
-                setQuantity(
-                  Math.min(selectedVariant?.stockQuantity || 0, quantity + 1)
-                )
-              }
-              className="p-2 bg-gray-700 hover:bg-gray-600 rounded-full transition-colors"
+              onClick={() => {
+                if (!selectedVariant) return;
+                setQuantity((q) =>
+                  Math.min(selectedVariant.stockQuantity, q + 1)
+                );
+              }}
+              disabled={!isVariantSelected}
+              className={`p-2 rounded-full transition-colors ${
+                !isVariantSelected
+                  ? "bg-gray-700/60 cursor-not-allowed"
+                  : "bg-gray-700 hover:bg-gray-600"
+              }`}
             >
               <Plus className="w-4 h-4 text-white" />
             </button>

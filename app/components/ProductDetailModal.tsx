@@ -79,6 +79,10 @@ export default function ProductDetailModal({
   );
   const [quantity, setQuantity] = useState(1);
 
+  const variantRequired = variants.length > 0;
+  const isVariantSelected = !!selectedVariant;
+  const quantityDisabled = variantRequired && !isVariantSelected;
+
   // Get brand information
   const brand = brands.find((b) => b.id === product.brand?.id);
 
@@ -267,8 +271,13 @@ export default function ProductDetailModal({
                 <h3 className="text-lg font-semibold text-white">Quantity</h3>
                 <div className="flex items-center space-x-4">
                   <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-10 h-10 bg-gray-700 hover:bg-gray-600 rounded-lg flex items-center justify-center text-white transition-colors"
+                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                    disabled={quantityDisabled}
+                    className={`w-10 h-10 rounded-lg flex items-center justify-center text-white transition-colors ${
+                      quantityDisabled
+                        ? "bg-gray-700/60 cursor-not-allowed"
+                        : "bg-gray-700 hover:bg-gray-600"
+                    }`}
                   >
                     -
                   </button>
@@ -276,12 +285,22 @@ export default function ProductDetailModal({
                     {quantity}
                   </span>
                   <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="w-10 h-10 bg-gray-700 hover:bg-gray-600 rounded-lg flex items-center justify-center text-white transition-colors"
+                    onClick={() => setQuantity((q) => q + 1)}
+                    disabled={quantityDisabled}
+                    className={`w-10 h-10 rounded-lg flex items-center justify-center text-white transition-colors ${
+                      quantityDisabled
+                        ? "bg-gray-700/60 cursor-not-allowed"
+                        : "bg-gray-700 hover:bg-gray-600"
+                    }`}
                   >
                     +
                   </button>
                 </div>
+                {quantityDisabled && (
+                  <div className="text-xs text-gray-400">
+                    Select a variant to set quantity.
+                  </div>
+                )}
               </div>
 
               {/* Delivery Options */}
@@ -330,7 +349,7 @@ export default function ProductDetailModal({
             <div className="pt-4 mt-6 border-t border-gray-700 flex-shrink-0">
               <button
                 onClick={handleAddToCart}
-                disabled={variants.length > 0 && !selectedVariant}
+                disabled={variantRequired && !isVariantSelected}
                 className="w-full bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-black font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center space-x-2"
               >
                 <ShoppingCart className="w-5 h-5" />
