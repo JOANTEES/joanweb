@@ -209,9 +209,20 @@ export default function Navigation({
                 </button>
 
                 {isDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-xl border border-gray-700 py-2 z-50">
+                  <div className="absolute right-0 mt-2 w-60 bg-gray-800 rounded-lg shadow-xl border border-gray-700 py-2 z-50">
                     <div className="px-4 py-2 border-b border-gray-700">
-                      <p className="text-sm text-gray-300">{user?.email}</p>
+                      <div
+                        className="text-white text-sm font-medium max-w-[13rem] truncate"
+                        title={user?.name || undefined}
+                      >
+                        {user?.name}
+                      </div>
+                      <p
+                        className="text-sm text-gray-300 max-w-[13rem] truncate"
+                        title={user?.email || undefined}
+                      >
+                        {user?.email}
+                      </p>
                     </div>
                     <Link
                       href="/profile"
