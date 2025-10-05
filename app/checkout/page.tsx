@@ -52,6 +52,25 @@ export default function Checkout() {
     }
   }, [isAuthenticated, loading, router, setRedirectUrl]);
 
+  // Guard: ensure an applied location exists before proceeding on checkout
+  useEffect(() => {
+    if (loading || !isAuthenticated) return;
+    if (!cart?.deliveryMethod) return;
+    if (cart.deliveryMethod === "delivery" && !selectedDeliveryAddressId) {
+      router.replace("/cart");
+    }
+    if (cart.deliveryMethod === "pickup" && !selectedPickupLocation) {
+      router.replace("/cart");
+    }
+  }, [
+    loading,
+    isAuthenticated,
+    cart?.deliveryMethod,
+    selectedDeliveryAddressId,
+    selectedPickupLocation,
+    router,
+  ]);
+
   // Preload Paystack script for instant payment opening
   useEffect(() => {
     if (paymentMethod === "online" && PAYSTACK_PUBLIC_KEY) {

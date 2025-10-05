@@ -163,7 +163,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   >(null);
   const [selectedDeliveryAddress, setSelectedDeliveryAddress] =
     useState<SelectedDeliveryAddress | null>(null);
-  const { isAuthenticated, setRedirectUrl } = useAuth();
+  const { isAuthenticated, setRedirectUrl, user } = useAuth();
 
   const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -179,6 +179,57 @@ export function CartProvider({ children }: { children: ReactNode }) {
       Expires: "0",
     };
   };
+
+  // Key used to persist the selected delivery address per authenticated user
+  const storageKey =
+    typeof window !== "undefined" && user?.id
+      ? `cart:selectedAddress:${user.id}`
+      : null;
+
+  // Hydrate selected delivery address from localStorage when authenticated
+  useEffect(() => {
+    if (!isAuthenticated || !storageKey) return;
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as {
+        selectedDeliveryAddressId?: string | null;
+        selectedDeliveryAddress?: SelectedDeliveryAddress | null;
+      };
+      if (parsed.selectedDeliveryAddressId !== undefined) {
+        setSelectedDeliveryAddressId(parsed.selectedDeliveryAddressId);
+      }
+      if (parsed.selectedDeliveryAddress !== undefined) {
+        setSelectedDeliveryAddress(parsed.selectedDeliveryAddress);
+      }
+    } catch {
+      // ignore malformed storage
+    }
+  }, [
+    isAuthenticated,
+    storageKey,
+    setSelectedDeliveryAddressId,
+    setSelectedDeliveryAddress,
+  ]);
+
+  // Persist selection to localStorage when it changes (authenticated only)
+  useEffect(() => {
+    if (!isAuthenticated || !storageKey) return;
+    try {
+      const payload = JSON.stringify({
+        selectedDeliveryAddressId,
+        selectedDeliveryAddress,
+      });
+      localStorage.setItem(storageKey, payload);
+    } catch {
+      // ignore storage errors
+    }
+  }, [
+    isAuthenticated,
+    storageKey,
+    selectedDeliveryAddressId,
+    selectedDeliveryAddress,
+  ]);
 
   // Define refreshCart with useCallback to avoid recreation on each render
   const refreshCart = useCallback(async () => {
@@ -237,6 +288,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setSelectedPickupLocation(null);
       setSelectedDeliveryAddressId(null);
       setSelectedDeliveryAddress(null);
+      // Also clear any persisted selection keys
+      if (typeof window !== "undefined") {
+        try {
+          const keysToRemove: string[] = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith("cart:selectedAddress:")) {
+              keysToRemove.push(key);
+            }
+          }
+          keysToRemove.forEach((k) => localStorage.removeItem(k));
+        } catch {
+          // ignore storage errors
+        }
+      }
     }
   }, [isAuthenticated, refreshCart]);
 

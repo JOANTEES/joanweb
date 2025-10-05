@@ -29,7 +29,8 @@ export default function Cart() {
     updateQuantity,
     removeFromCart,
     updateCartDeliveryMethod,
-    // selectedDeliveryAddressId, // Unused but kept for future use
+    selectedDeliveryAddressId,
+    selectedPickupLocation,
     setSelectedPickupLocation,
   } = useCart();
   const { zones: deliveryZones, loading: zonesLoading } = useDeliveryZones();
@@ -47,6 +48,7 @@ export default function Cart() {
   const [appliedSelection, setAppliedSelection] = useState<
     { type: "delivery"; id: number } | { type: "pickup"; id: string } | null
   >(null);
+  const [isApplying, setIsApplying] = useState(false);
   const [isAddressFormOpen, setIsAddressFormOpen] = useState(false);
 
   // Addresses hook utilities
@@ -557,6 +559,7 @@ export default function Cart() {
                           });
 
                           // Update in background
+                          setIsApplying(true);
                           updateCartDeliveryMethod("delivery", undefined, {
                             addressId: addr.id,
                             regionId: addr.regionId,
@@ -565,14 +568,16 @@ export default function Cart() {
                             landmark: addr.landmark,
                             additionalInstructions: addr.additionalInstructions,
                             contactPhone: addr.contactPhone,
-                          }).catch((error) => {
-                            console.error(
-                              "Error updating delivery method:",
-                              error
-                            );
-                            // Reset selection if failed
-                            setAppliedSelection(null);
-                          });
+                          })
+                            .catch((error) => {
+                              console.error(
+                                "Error updating delivery method:",
+                                error
+                              );
+                              // Reset selection if failed
+                              setAppliedSelection(null);
+                            })
+                            .finally(() => setIsApplying(false));
                         } else {
                           if (!localSelectedPickupId) return;
                           const loc = (pickupLocations ?? []).find(
@@ -593,16 +598,17 @@ export default function Cart() {
                             } catch {}
 
                             // Update in background
-                            updateCartDeliveryMethod("pickup").catch(
-                              (error) => {
+                            setIsApplying(true);
+                            updateCartDeliveryMethod("pickup")
+                              .catch((error) => {
                                 console.error(
                                   "Error updating pickup method:",
                                   error
                                 );
                                 // Reset selection if failed
                                 setAppliedSelection(null);
-                              }
-                            );
+                              })
+                              .finally(() => setIsApplying(false));
                           }
                         }
                       }}
@@ -771,21 +777,39 @@ export default function Cart() {
                     router.replace("/checkout");
                   }}
                   disabled={
-                    !!(
-                      deliveryEligibilityIssues &&
-                      deliveryEligibilityIssues.length > 0
-                    )
+                    isApplying ||
+                    (deliveryEligibilityIssues &&
+                      deliveryEligibilityIssues.length > 0) ||
+                    (cart?.deliveryMethod === "delivery" &&
+                      !selectedDeliveryAddressId) ||
+                    (cart?.deliveryMethod === "pickup" &&
+                      !selectedPickupLocation)
                   }
                   className={`w-full mt-6 py-4 rounded-lg font-semibold transition-all duration-150 transform hover:scale-[1.02] active:scale-[0.98] ${
-                    deliveryEligibilityIssues &&
-                    deliveryEligibilityIssues.length > 0
+                    isApplying ||
+                    (deliveryEligibilityIssues &&
+                      deliveryEligibilityIssues.length > 0) ||
+                    (cart?.deliveryMethod === "delivery" &&
+                      !selectedDeliveryAddressId) ||
+                    (cart?.deliveryMethod === "pickup" &&
+                      !selectedPickupLocation)
                       ? "bg-gray-600 text-gray-400 cursor-not-allowed"
                       : "bg-yellow-400 hover:bg-yellow-500 text-black"
                   }`}
                 >
-                  {deliveryEligibilityIssues &&
-                  deliveryEligibilityIssues.length > 0
+                  {isApplying
+                    ? activeTab === "delivery"
+                      ? "Validating address..."
+                      : "Applying pickup location..."
+                    : deliveryEligibilityIssues &&
+                      deliveryEligibilityIssues.length > 0
                     ? "Resolve Delivery Issues First"
+                    : cart?.deliveryMethod === "delivery" &&
+                      !selectedDeliveryAddressId
+                    ? "Apply Delivery Address First"
+                    : cart?.deliveryMethod === "pickup" &&
+                      !selectedPickupLocation
+                    ? "Select Pickup Location First"
                     : "Proceed to Checkout"}
                 </button>
 
