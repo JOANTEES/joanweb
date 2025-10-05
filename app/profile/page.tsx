@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Navigation from "../components/Navigation";
 import { useAuth } from "../contexts/AuthContext";
 import { useCustomerAddresses } from "../hooks/useCustomerAddresses";
+import { api } from "../utils/api";
 import {
   User,
   MapPin,
@@ -25,12 +26,42 @@ export default function Profile() {
   const [profileData, setProfileData] = useState({
     name: user?.name || "",
     email: user?.email || "",
-    phone: "+233 24 123 4567",
-    address: "123 Main Street, Accra, Ghana",
-    city: "Accra",
-    zipCode: "GA-123-4567",
-    country: "Ghana",
+    phone: "",
+    address: "",
+    city: "",
+    zipCode: "",
+    country: "",
   });
+
+  // Keep profileData in sync with authenticated user after hydration/refresh
+  useEffect(() => {
+    if (!isEditing) {
+      setProfileData((prev) => ({
+        ...prev,
+        name: user?.name || "",
+        email: user?.email || "",
+      }));
+    }
+  }, [user?.name, user?.email, isEditing]);
+  const [recentOrders, setRecentOrders] = useState<
+    Array<{
+      id: string | number;
+      createdAt?: string;
+      status?: string;
+      totals?: { totalAmount?: number };
+      items?: Array<{ productName?: string }>;
+      orderNumber?: string | number;
+      reference?: string;
+      created_at?: string;
+      date?: string;
+      orderStatus?: string;
+      state?: string;
+      paymentStatus?: string;
+      fulfillmentStatus?: string;
+    }>
+  >([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [totalOrdersCount, setTotalOrdersCount] = useState<number>(0);
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -39,6 +70,42 @@ export default function Profile() {
       router.push("/login");
     }
   }, [isAuthenticated, loading, router, setRedirectUrl]);
+
+  useEffect(() => {
+    const loadOrders = async () => {
+      if (!isAuthenticated) return;
+      setOrdersLoading(true);
+      try {
+        // Fetch recent orders once; backend returns either in data or top-level
+        const res = await api.get<any>("/orders?limit=5");
+        const payload = (res?.data as any) ?? res;
+
+        const list: any[] = Array.isArray(payload?.orders)
+          ? payload.orders
+          : Array.isArray(res?.data)
+          ? (res.data as any[])
+          : Array.isArray((res as any)?.orders)
+          ? ((res as any).orders as any[])
+          : [];
+        setRecentOrders(list);
+
+        const totalFromCount =
+          typeof payload?.count === "number"
+            ? payload.count
+            : typeof (res as any)?.count === "number"
+            ? (res as any).count
+            : 0;
+        setTotalOrdersCount(totalFromCount);
+      } catch {
+        setRecentOrders([]);
+        setTotalOrdersCount(0);
+      } finally {
+        setOrdersLoading(false);
+      }
+    };
+    loadOrders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
@@ -60,11 +127,11 @@ export default function Profile() {
     setProfileData({
       name: user?.name || "",
       email: user?.email || "",
-      phone: "+233 24 123 4567",
-      address: "123 Main Street, Accra, Ghana",
-      city: "Accra",
-      zipCode: "GA-123-4567",
-      country: "Ghana",
+      phone: "",
+      address: "",
+      city: "",
+      zipCode: "",
+      country: "",
     });
     setIsEditing(false);
   };
@@ -84,30 +151,30 @@ export default function Profile() {
     return null;
   }
 
-  // Sample recent orders for the profile
-  const recentOrders = [
-    {
-      id: "ORD-001",
-      date: "2024-01-15",
-      status: "delivered",
-      total: 269.98,
-      items: ["Classic White Tee", "Premium Hoodie"],
-    },
-    {
-      id: "ORD-002",
-      date: "2024-01-20",
-      status: "shipped",
-      total: 149.99,
-      items: ["Casual Dress"],
-    },
-    {
-      id: "ORD-003",
-      date: "2024-01-25",
-      status: "processing",
-      total: 344.98,
-      items: ["Designer Jeans", "Sporty Shorts"],
-    },
-  ];
+  // const recentOrders = [
+  //   {
+  //     id: "ORD-001",
+  //     date: "2024-01-15",
+  //     status: "delivered",
+  //     total: 269.98,
+  //     items: ["Classic White Tee", "Premium Hoodie"],
+  //   },
+  //   {
+  //     id: "ORD-002",
+  //     date: "2024-01-20",
+  //     status: "shipped",
+  //     total: 149.99,
+  //     items: ["Casual Dress"],
+  //   },
+  //   {
+  //     id: "ORD-003",
+  //     date: "2024-01-25",
+  //     status: "processing",
+  //     total: 344.98,
+  //     items: ["Designer Jeans", "Sporty Shorts"],
+  //   },
+  // ];
+  // Replaced with fetched state above
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -123,15 +190,23 @@ export default function Profile() {
   };
 
   const getStatusText = (status: string) => {
-    switch (status) {
+    switch ((status || "").toLowerCase()) {
       case "delivered":
         return "Delivered";
       case "shipped":
         return "Shipped";
       case "processing":
         return "Processing";
+      case "confirmed":
+        return "Confirmed";
+      case "pending":
+        return "Pending";
+      case "paid":
+        return "Paid";
+      case "partial":
+        return "Partially Paid";
       default:
-        return "Unknown";
+        return "Pending";
     }
   };
 
@@ -202,7 +277,11 @@ export default function Profile() {
                         className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
                       />
                     ) : (
-                      <p className="text-white py-3">{profileData.name}</p>
+                      <p className="text-white py-3">
+                        {profileData.name || (
+                          <span className="text-gray-400">Not provided</span>
+                        )}
+                      </p>
                     )}
                   </div>
 
@@ -219,7 +298,11 @@ export default function Profile() {
                         className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
                       />
                     ) : (
-                      <p className="text-white py-3">{profileData.email}</p>
+                      <p className="text-white py-3">
+                        {profileData.email || (
+                          <span className="text-gray-400">Not provided</span>
+                        )}
+                      </p>
                     )}
                   </div>
 
@@ -236,7 +319,11 @@ export default function Profile() {
                         className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
                       />
                     ) : (
-                      <p className="text-white py-3">{profileData.phone}</p>
+                      <p className="text-white py-3">
+                        {profileData.phone || (
+                          <span className="text-gray-400">Not provided</span>
+                        )}
+                      </p>
                     )}
                   </div>
 
@@ -257,7 +344,11 @@ export default function Profile() {
                         <option value="South Africa">South Africa</option>
                       </select>
                     ) : (
-                      <p className="text-white py-3">{profileData.country}</p>
+                      <p className="text-white py-3">
+                        {profileData.country || (
+                          <span className="text-gray-400">Not provided</span>
+                        )}
+                      </p>
                     )}
                   </div>
                 </div>
@@ -374,37 +465,77 @@ export default function Profile() {
                 </div>
 
                 <div className="space-y-4">
-                  {recentOrders.map((order) => (
-                    <div
-                      key={order.id}
-                      className="border border-gray-700 rounded-lg p-4"
-                    >
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center">
-                          {getStatusIcon(order.status)}
-                          <span className="ml-2 text-white font-medium">
-                            #{order.id}
+                  {ordersLoading ? (
+                    <div className="p-4 bg-gray-700/50 rounded-lg flex items-center justify-center">
+                      <div className="w-5 h-5 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin mr-2"></div>
+                      <span className="text-gray-300">Loading orders...</span>
+                    </div>
+                  ) : recentOrders.length === 0 ? (
+                    <div className="p-4 bg-gray-700/50 rounded-lg text-center text-gray-300">
+                      No recent orders.
+                    </div>
+                  ) : (
+                    recentOrders.map((order) => (
+                      <div
+                        key={String(
+                          order.id ?? order.orderNumber ?? order.reference
+                        )}
+                        className="border border-gray-700 rounded-lg p-4"
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center">
+                            {getStatusIcon(
+                              (order.status ||
+                                order.orderStatus ||
+                                order.state ||
+                                order.paymentStatus ||
+                                order.fulfillmentStatus ||
+                                "processing") as string
+                            )}
+                            <span className="ml-2 text-white font-medium">
+                              #
+                              {String(
+                                order.orderNumber ?? order.reference ?? order.id
+                              )}
+                            </span>
+                          </div>
+                          <span className="text-gray-400 text-sm">
+                            {(
+                              order.createdAt ||
+                              order.created_at ||
+                              order.date ||
+                              ""
+                            )
+                              ?.toString()
+                              ?.slice(0, 10)}
                           </span>
                         </div>
-                        <span className="text-gray-400 text-sm">
-                          {order.date}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-gray-300 text-sm">
-                            {order.items.join(", ")}
-                          </p>
-                          <p className="text-yellow-400 text-sm font-medium">
-                            {getStatusText(order.status)}
-                          </p>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-gray-300 text-sm">
+                              {(order.items || [])
+                                .map((it) => it?.productName)
+                                .filter(Boolean)
+                                .join(", ")}
+                            </p>
+                            <p className="text-yellow-400 text-sm font-medium">
+                              {getStatusText(
+                                (order.status ||
+                                  order.orderStatus ||
+                                  order.state ||
+                                  order.paymentStatus ||
+                                  order.fulfillmentStatus ||
+                                  "pending") as string
+                              )}
+                            </p>
+                          </div>
+                          <span className="text-white font-semibold">
+                            ₵{(order.totals?.totalAmount ?? 0).toFixed(2)}
+                          </span>
                         </div>
-                        <span className="text-white font-semibold">
-                          ${order.total.toFixed(2)}
-                        </span>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </div>
             </div>
@@ -436,7 +567,7 @@ export default function Profile() {
                     </div>
                   </button>
 
-                  <button
+                  {/* <button
                     onClick={() => router.push("/pick-drop")}
                     className="w-full text-left p-3 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors"
                   >
@@ -444,7 +575,7 @@ export default function Profile() {
                       <MapPin className="w-5 h-5 text-yellow-400 mr-3" />
                       <span className="text-white">Pick & Drop</span>
                     </div>
-                  </button>
+                  </button> */}
 
                   <button
                     onClick={() => router.push("/shop")}
@@ -466,16 +597,8 @@ export default function Profile() {
                   <div className="flex justify-between">
                     <span className="text-gray-400">Total Orders</span>
                     <span className="text-white font-semibold">
-                      {recentOrders.length}
+                      {totalOrdersCount}
                     </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Member Since</span>
-                    <span className="text-white font-semibold">Jan 2024</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Loyalty Points</span>
-                    <span className="text-white font-semibold">1,250</span>
                   </div>
                 </div>
               </div>
