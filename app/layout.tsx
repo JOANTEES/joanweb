@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "./contexts/AuthContext";
 import { CartProvider } from "./contexts/CartContext";
+import MaintenanceMode from "./components/MaintenanceMode";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,18 +25,25 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Check if maintenance mode is enabled
+  const isMaintenanceMode = process.env.NEXT_PUBLIC_MAINTENANCE_MODE === 'true';
+
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-white`}
       >
-        <AuthProvider>
-          <CartProvider>
-            <div className="min-h-screen flex flex-col">
-              {children}
-            </div>
-          </CartProvider>
-        </AuthProvider>
+        {isMaintenanceMode ? (
+          <MaintenanceMode />
+        ) : (
+          <AuthProvider>
+            <CartProvider>
+              <div className="min-h-screen flex flex-col">
+                {children}
+              </div>
+            </CartProvider>
+          </AuthProvider>
+        )}
       </body>
     </html>
   );
