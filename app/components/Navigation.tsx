@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { UserRound, LogOut, User, ShoppingCart } from "lucide-react";
-import { Home, ShoppingBag, ClipboardList, Truck } from "lucide-react";
+import { Home, ShoppingBag, ClipboardList } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
@@ -111,13 +111,14 @@ export default function Navigation({
         }
       }
     } catch {}
-  }, [isAuthenticated]);
+  }, [isAuthenticated, addToCart]);
 
   const navItems = [
     { name: "Home", href: "/", Icon: Home, protected: false },
     { name: "Shop", href: "/shop", Icon: ShoppingBag, protected: false },
     { name: "Orders", href: "/orders", Icon: ClipboardList, protected: true },
-    { name: "Pick & Drop", href: "/pick-drop", Icon: Truck, protected: true },
+    // PICKUP_DISABLED: Temporarily hide Pick & Drop from navigation (keep route intact for future use)
+    // { name: "Pick & Drop", href: "/pick-drop", Icon: Truck, protected: true },
   ];
 
   const handleProtectedLinkClick = (href: string) => {

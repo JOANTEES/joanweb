@@ -18,7 +18,8 @@ import {
 import { useState } from "react";
 import { useCustomerAddresses } from "../hooks/useCustomerAddresses";
 import AddressForm from "../components/AddressForm";
-import { usePickupLocations } from "../hooks/usePickupLocations";
+// PICKUP_DISABLED: Temporarily disable pickup feature UI (keep code for future)
+// import { usePickupLocations } from "../hooks/usePickupLocations";
 
 export default function Cart() {
   const { isAuthenticated, loading, setRedirectUrl } = useAuth();
@@ -37,14 +38,16 @@ export default function Cart() {
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState<"delivery" | "pickup">(
-    (cart?.deliveryMethod as "delivery" | "pickup") || "delivery"
+    // PICKUP_DISABLED: Force delivery tab only
+    "delivery"
   );
   const [localSelectedAddressId, setLocalSelectedAddressId] = useState<
     number | null
   >(null);
-  const [localSelectedPickupId, setLocalSelectedPickupId] = useState<
-    string | null
-  >(null);
+  // PICKUP_DISABLED: Remove local pickup selection state
+  // const [localSelectedPickupId, setLocalSelectedPickupId] = useState<
+  //   string | null
+  // >(null);
   const [appliedSelection, setAppliedSelection] = useState<
     { type: "delivery"; id: number } | { type: "pickup"; id: string } | null
   >(null);
@@ -60,8 +63,9 @@ export default function Cart() {
     refetch: refetchAddresses,
   } = useCustomerAddresses();
   // Pickup locations
-  const { locations: pickupLocations, loading: pickupsLoading } =
-    usePickupLocations();
+  // PICKUP_DISABLED: Temporarily disable pickup locations hook
+  // const { locations: pickupLocations, loading: pickupsLoading } =
+  //   usePickupLocations();
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -106,18 +110,17 @@ export default function Cart() {
     }
   }, [addressesLoading, addresses, localSelectedAddressId]);
 
-  const handleSwitchToPickup = async () => {
-    try {
-      const success = await updateCartDeliveryMethod("pickup");
-      if (success) {
-        setDeliveryEligibilityIssues(null);
-        // setValidationError(null); // Commented out as variable is unused
-      }
-    } catch (error) {
-      console.error("Error switching to pickup:", error);
-      // setValidationError("Failed to switch to pickup"); // Commented out as variable is unused
-    }
-  };
+  // PICKUP_DISABLED: Temporarily disable switch to pickup action
+  // const handleSwitchToPickup = async () => {
+  //   try {
+  //     const success = await updateCartDeliveryMethod("pickup");
+  //     if (success) {
+  //       setDeliveryEligibilityIssues(null);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error switching to pickup:", error);
+  //   }
+  // };
 
   if (loading) {
     return (
@@ -202,8 +205,7 @@ export default function Cart() {
                   </div>
                 ) : (deliveryZones ?? []).length === 0 ? (
                   <div className="text-gray-400 text-sm">
-                    No delivery zones available right now. You can still choose
-                    Pickup.
+                    No delivery zones available right now.
                   </div>
                 ) : (
                   <div className="text-gray-300 text-sm">
@@ -227,14 +229,15 @@ export default function Cart() {
                 )}
                 <div className="text-gray-500 text-xs mt-2">
                   Pick an address that falls within one of these zones to enable
-                  Delivery, or switch to Pickup.
+                  Delivery.
                 </div>
               </div>
             </div>
           </div>
 
           {/* Simple delivery eligibility notice */}
-          {deliveryEligibilityIssues &&
+          {/* PICKUP_DISABLED: Hide pickup eligibility notice and CTA */}
+          {/* {deliveryEligibilityIssues &&
             deliveryEligibilityIssues.length > 0 && (
               <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4 mb-6">
                 <div className="flex items-center justify-between">
@@ -252,7 +255,7 @@ export default function Cart() {
                   </button>
                 </div>
               </div>
-            )}
+            )} */}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Cart Items */}
@@ -393,16 +396,8 @@ export default function Cart() {
                   >
                     Delivery
                   </button>
-                  <button
-                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ml-2 ${
-                      activeTab === "pickup"
-                        ? "border-yellow-400 text-yellow-400"
-                        : "border-transparent text-gray-400 hover:text-gray-200"
-                    }`}
-                    onClick={() => setActiveTab("pickup")}
-                  >
-                    Pickup
-                  </button>
+                  {/* PICKUP_DISABLED: Hide pickup tab */}
+                  {/* <button ...>Pickup</button> */}
                 </div>
 
                 {/* Panel Content */}
@@ -479,69 +474,12 @@ export default function Cart() {
                         )}
                       </div>
                     </div>
-                  ) : (
-                    <div className="bg-gray-700/50 rounded p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="text-sm text-gray-300 font-medium">
-                          Select a pickup location
-                        </div>
-                      </div>
-                      <div className="max-h-60 overflow-auto pr-1 space-y-2">
-                        {pickupsLoading ? (
-                          <div className="text-gray-400 text-sm">
-                            Loading pickup locations...
-                          </div>
-                        ) : (pickupLocations ?? []).length === 0 ? (
-                          <div className="text-gray-400 text-sm">
-                            No pickup locations available.
-                          </div>
-                        ) : (
-                          (pickupLocations ?? []).map((loc) => (
-                            <label
-                              key={loc.id}
-                              className={`flex items-start p-3 rounded border cursor-pointer transition-colors ${
-                                localSelectedPickupId === String(loc.id)
-                                  ? "border-yellow-400 bg-yellow-400/5"
-                                  : "border-gray-600 hover:border-gray-500"
-                              }`}
-                            >
-                              <input
-                                type="radio"
-                                name="pickupLocation"
-                                className="mt-1 mr-3 accent-yellow-400"
-                                checked={
-                                  localSelectedPickupId === String(loc.id)
-                                }
-                                onChange={() =>
-                                  setLocalSelectedPickupId(String(loc.id))
-                                }
-                              />
-                              <div className="text-sm">
-                                <div className="text-white font-medium">
-                                  {loc.name}
-                                </div>
-                                <div className="text-gray-300">
-                                  {[loc.areaName, loc.cityName, loc.regionName]
-                                    .filter(Boolean)
-                                    .join(", ")}
-                                </div>
-                                {loc.landmark && (
-                                  <div className="text-gray-500 text-xs mt-0.5">
-                                    Near {loc.landmark}
-                                  </div>
-                                )}
-                              </div>
-                            </label>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  )}
+                  ) : // PICKUP_DISABLED: Hide pickup panel
+                  null}
                   <div className="flex justify-end">
                     <button
                       disabled={
-                        (activeTab === "delivery" && !localSelectedAddressId) ||
-                        (activeTab === "pickup" && !localSelectedPickupId)
+                        activeTab === "delivery" && !localSelectedAddressId
                       }
                       onClick={() => {
                         if (activeTab === "delivery") {
@@ -579,42 +517,11 @@ export default function Cart() {
                             })
                             .finally(() => setIsApplying(false));
                         } else {
-                          if (!localSelectedPickupId) return;
-                          const loc = (pickupLocations ?? []).find(
-                            (p) =>
-                              String(p.id) === String(localSelectedPickupId)
-                          );
-                          if (loc) {
-                            // Show immediate feedback
-                            setAppliedSelection({
-                              type: "pickup",
-                              id: String(localSelectedPickupId),
-                            });
-
-                            try {
-                              setSelectedPickupLocation?.(
-                                loc as unknown as import("../hooks/usePickupLocations").PickupLocation
-                              );
-                            } catch {}
-
-                            // Update in background
-                            setIsApplying(true);
-                            updateCartDeliveryMethod("pickup")
-                              .catch((error) => {
-                                console.error(
-                                  "Error updating pickup method:",
-                                  error
-                                );
-                                // Reset selection if failed
-                                setAppliedSelection(null);
-                              })
-                              .finally(() => setIsApplying(false));
-                          }
+                          // PICKUP_DISABLED: Hide pickup apply branch
                         }
                       }}
                       className={`px-5 py-2 rounded-lg font-semibold transition-all duration-150 transform hover:scale-105 active:scale-95 ${
-                        (activeTab === "delivery" && !localSelectedAddressId) ||
-                        (activeTab === "pickup" && !localSelectedPickupId)
+                        activeTab === "delivery" && !localSelectedAddressId
                           ? "bg-gray-600 text-gray-300 cursor-not-allowed"
                           : "bg-yellow-400 hover:bg-yellow-500 text-black"
                       }`}
@@ -624,9 +531,6 @@ export default function Cart() {
                           appliedSelection.id === Number(localSelectedAddressId)
                           ? "Applied"
                           : "Apply"
-                        : appliedSelection?.type === "pickup" &&
-                          appliedSelection.id === String(localSelectedPickupId)
-                        ? "Applied"
                         : "Apply"}
                     </button>
                   </div>
@@ -721,34 +625,21 @@ export default function Cart() {
                     <span>₵{totals.tax.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center text-gray-300">
-                    {cart?.deliveryMethod === "pickup" ? (
-                      <>
-                        <span className="flex items-center">
-                          <span>Pickup</span>
-                          <span className="ml-2 text-xs bg-green-900/30 text-green-400 px-2 py-0.5 rounded">
-                            Free
-                          </span>
+                    <span className="flex items-center">
+                      <span>Delivery</span>
+                      {cart?.deliveryZoneName && (
+                        <span className="ml-2 text-xs bg-blue-900/30 text-blue-400 px-2 py-0.5 rounded">
+                          {cart.deliveryZoneName}
                         </span>
-                        <span>₵0.00</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="flex items-center">
-                          <span>Delivery</span>
-                          {cart?.deliveryZoneName && (
-                            <span className="ml-2 text-xs bg-blue-900/30 text-blue-400 px-2 py-0.5 rounded">
-                              {cart.deliveryZoneName}
-                            </span>
-                          )}
-                        </span>
-                        <span>₵{totals.shipping.toFixed(2)}</span>
-                      </>
-                    )}
+                      )}
+                    </span>
+                    <span>₵{totals.shipping.toFixed(2)}</span>
                   </div>
 
-                  {cart?.deliveryMethod === "pickup" && (
+                  {/* PICKUP_DISABLED: Hide pickup summary */}
+                  {/* {cart?.deliveryMethod === "pickup" && (
                     <PickupLocationSummary />
-                  )}
+                  )} */}
 
                   {/* Show special delivery notice if applicable */}
                   {totals.shipping > 0 &&
@@ -828,44 +719,5 @@ export default function Cart() {
   );
 }
 
-function PickupLocationSummary() {
-  const { selectedPickupLocation } = useCart();
-  if (!selectedPickupLocation) {
-    return (
-      <div className="mt-2 text-xs text-orange-400">
-        Please choose a pickup location.
-      </div>
-    );
-  }
-  return (
-    <div className="mt-3 p-3 bg-gray-700/50 rounded">
-      <div className="text-sm text-gray-300 font-medium">
-        {selectedPickupLocation.name}
-      </div>
-      <div className="text-xs text-gray-400">
-        {[
-          selectedPickupLocation.areaName,
-          selectedPickupLocation.cityName,
-          selectedPickupLocation.regionName,
-        ]
-          .filter(Boolean)
-          .join(", ")}
-      </div>
-      {selectedPickupLocation.landmark && (
-        <div className="text-xs text-gray-500 mt-1">
-          Near {selectedPickupLocation.landmark}
-        </div>
-      )}
-      {selectedPickupLocation.googleMapsLink && (
-        <a
-          href={selectedPickupLocation.googleMapsLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-yellow-400 hover:text-yellow-300 text-xs mt-2 inline-block"
-        >
-          View on Maps
-        </a>
-      )}
-    </div>
-  );
-}
+// PICKUP_DISABLED: Hide pickup summary component (kept for future use)
+// function PickupLocationSummary() { ... }
