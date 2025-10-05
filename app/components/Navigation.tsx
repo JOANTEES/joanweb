@@ -295,7 +295,7 @@ export default function Navigation({
         {/* Mobile Navigation Menu */}
         {isMenuOpen && (
           <div className="md:hidden border-t border-gray-800 bg-black/90 backdrop-blur-sm shadow-xl ring-1 ring-gray-800/60 rounded-b-2xl py-3 px-3">
-            <div className="flex flex-col space-y-2">
+            <div className="flex flex-col space-y-1">
               {navItems.map((item) => {
                 const isActive = pathname === item.href;
                 const ItemIcon = item.Icon;
@@ -313,65 +313,49 @@ export default function Navigation({
                       isActive
                         ? "bg-gray-800/80 text-white ring-1 ring-gray-700"
                         : "text-white/90 hover:text-white hover:bg-gray-800/60"
-                    } transition-colors duration-150 font-medium px-3 py-3 rounded-lg inline-flex items-center gap-3 border border-transparent hover:border-gray-700`}
+                    } transition-colors duration-150 font-medium px-3 py-2.5 rounded-lg inline-flex items-center gap-3 border border-transparent hover:border-gray-700`}
                   >
-                    <ItemIcon className="w-5 h-5" />
-                    {item.name}
+                    <ItemIcon className="w-5 h-5 flex-shrink-0" />
+                    <span className="truncate">{item.name}</span>
                   </Link>
                 );
               })}
-              <div className="mt-1 pt-2 border-t border-gray-800/70" />
-
-              {/* Cart Link for Mobile */}
-              <Link
-                href="/cart"
-                className="text-white hover:text-yellow-300 transition-colors duration-150 font-medium px-3 py-3 rounded-lg inline-flex items-center hover:bg-gray-800/60 border border-transparent hover:border-gray-700 relative"
-                onClick={() => {
-                  if (!isAuthenticated) {
-                    setRedirectUrl("/cart", "cart");
-                  }
-                  setIsMenuOpen(false);
-                }}
-              >
-                <div className="relative">
-                  <ShoppingCart className="w-5 h-5 mr-2" />
-                  {itemCount > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-yellow-400 text-black text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center min-w-[16px]">
-                      {itemCount > 99 ? "99+" : itemCount}
-                    </span>
-                  )}
-                </div>
-                Cart
-              </Link>
+              <div className="my-2 border-t border-gray-800/70" />
 
               {isAuthenticated ? (
                 <>
-                  <div className="px-3 py-2 text-sm text-gray-300">
-                    <p className="font-medium">{user?.name}</p>
-                    <p className="text-xs">{user?.email}</p>
-                  </div>
                   <Link
                     href="/profile"
-                    className="text-white hover:text-yellow-300 transition-colors duration-150 font-medium px-3 py-3 rounded-lg inline-flex items-center hover:bg-gray-800/60 border border-transparent hover:border-gray-700"
+                    className="text-white hover:text-yellow-300 transition-colors duration-150 font-medium px-3 py-2.5 rounded-lg inline-flex items-center hover:bg-gray-800/60 border border-transparent hover:border-gray-700 gap-3"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    <User className="w-5 h-5 mr-2" />
-                    Profile
+                    <User className="w-5 h-5" />
+                    <span className="truncate">Profile</span>
                   </Link>
                   <button
                     onClick={() => {
                       setIsLogoutConfirmOpen(true);
                     }}
-                    className="w-full text-left text-white hover:text-yellow-300 transition-colors duration-150 font-medium px-3 py-3 rounded-lg inline-flex items-center hover:bg-gray-800/60 border border-transparent hover:border-gray-700"
+                    className="w-full text-left text-white hover:text-yellow-300 transition-colors duration-150 font-medium px-3 py-2.5 rounded-lg inline-flex items-center hover:bg-gray-800/60 border border-transparent hover:border-gray-700 gap-3"
                   >
-                    <LogOut className="w-5 h-5 mr-2" />
-                    Logout
+                    <LogOut className="w-5 h-5" />
+                    <span className="truncate">Logout</span>
                   </button>
+
+                  <div className="my-2 border-t border-gray-800/70" />
+                  <div className="px-3 py-2 rounded-md bg-gray-800/50 border border-gray-800/70">
+                    <p className="font-medium text-white truncate">
+                      {user?.name}
+                    </p>
+                    <p className="text-xs text-gray-400 truncate">
+                      {user?.email}
+                    </p>
+                  </div>
                 </>
               ) : (
                 <Link
                   href="/login"
-                  className="text-white hover:text-yellow-300 transition-colors duration-150 font-medium px-3 py-3 rounded-lg inline-flex items-center hover:bg-gray-800/60 border border-transparent hover:border-gray-700"
+                  className="text-white hover:text-yellow-300 transition-colors duration-150 font-medium px-3 py-2.5 rounded-lg inline-flex items-center hover:bg-gray-800/60 border border-transparent hover:border-gray-700 gap-3"
                   onClick={() => {
                     // Store current page for generic login
                     if (typeof window !== "undefined") {
@@ -380,8 +364,8 @@ export default function Navigation({
                     setIsMenuOpen(false);
                   }}
                 >
-                  <UserRound className="w-5 h-5 mr-2" />
-                  Login
+                  <UserRound className="w-5 h-5" />
+                  <span className="truncate">Login</span>
                 </Link>
               )}
             </div>
