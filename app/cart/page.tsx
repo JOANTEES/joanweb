@@ -329,7 +329,8 @@ export default function Cart() {
                         <div className="text-gray-500 text-sm space-y-1">
                           <p>Size: {item.size}</p>
                           <p>Color: {item.color}</p>
-                          <p>SKU: {item.sku}</p>
+                          {/** SKU temporarily hidden until SKU feature is enabled */}
+                          {/** <p>SKU: {item.sku}</p> */}
                         </div>
 
                         {/* Mobile Controls Section */}

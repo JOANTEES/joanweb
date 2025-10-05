@@ -10,7 +10,7 @@ interface ProductVariant {
   id: string;
   productId: string;
   productName: string;
-  sku: string;
+  // sku: string; // Temporarily disabled
   size: string;
   color: string;
   stockQuantity: number;
@@ -24,7 +24,7 @@ interface Product {
   id: string;
   name: string;
   description?: string;
-  sku?: string;
+  // sku?: string; // Temporarily disabled
   costPrice?: number;
   price: number;
   discountPrice?: number;

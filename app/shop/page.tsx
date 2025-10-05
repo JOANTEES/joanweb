@@ -14,7 +14,7 @@ interface Product {
   id: string;
   name: string;
   description?: string;
-  sku?: string;
+  // sku?: string; // Temporarily disabled
   costPrice?: number;
   price: number;
   discountPrice?: number;

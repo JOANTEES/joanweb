@@ -23,7 +23,7 @@ interface CartItem {
   hasDiscount: boolean;
   quantity: number;
   variantId: string;
-  sku: string;
+  // sku: string; // Temporarily disabled
   size: string;
   color: string;
   imageUrl?: string;

@@ -15,7 +15,7 @@ interface ProductVariant {
   id: string;
   productId: string;
   productName: string;
-  sku: string;
+  // sku: string; // Temporarily disabled
   size: string;
   color: string;
   stockQuantity: number;
@@ -192,6 +192,8 @@ export default function ProductDetailModal({
                   Category:{" "}
                   <span className="text-white font-medium">{categoryPath}</span>
                 </div>
+                {/** SKU temporarily hidden until SKU feature is enabled */}
+                {/**
                 {product.sku && (
                   <div className="text-sm text-gray-400">
                     SKU:{" "}
@@ -200,6 +202,7 @@ export default function ProductDetailModal({
                     </span>
                   </div>
                 )}
+                */}
               </div>
 
               {/* Description */}
