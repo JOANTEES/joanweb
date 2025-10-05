@@ -175,15 +175,17 @@ export default function Cart() {
       <div className="min-h-screen bg-black py-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-4">
+          <div className="flex flex-wrap items-center justify-between mb-6 sm:mb-8 gap-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <button
                 onClick={() => router.back()}
                 className="text-gray-400 hover:text-white transition-colors"
               >
-                <ArrowLeft className="w-6 h-6" />
+                <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
-              <h1 className="text-3xl font-bold text-white">Shopping Cart</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white">
+                Shopping Cart
+              </h1>
             </div>
             <div className="text-gray-400">
               {items.length} item{items.length !== 1 ? "s" : ""}
@@ -212,7 +214,7 @@ export default function Cart() {
                     {(deliveryZones ?? []).map((z) => (
                       <span
                         key={z.id}
-                        className="inline-flex items-center px-2 py-0.5 mr-2 mb-2 rounded border border-gray-600 bg-gray-700/50"
+                        className="inline-flex items-center px-2 py-0.5 mr-2 mb-2 rounded border border-gray-600 bg-gray-700/50 text-xs sm:text-sm"
                         title={`${
                           z.description
                         } • Fee: ₵${z.deliveryFee.toFixed(2)} • ETA: ${
@@ -220,7 +222,7 @@ export default function Cart() {
                         }`}
                       >
                         {z.name}
-                        <span className="ml-2 text-xs text-gray-400">
+                        <span className="ml-1 text-xs text-gray-400">
                           ₵{z.deliveryFee.toFixed(2)}
                         </span>
                       </span>
@@ -257,23 +259,24 @@ export default function Cart() {
               </div>
             )} */}
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
             {/* Cart Items */}
             <div className="lg:col-span-2">
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {items.map((item) => (
                   <div
                     key={item.id}
-                    className={`rounded-lg p-6 ${
+                    className={`rounded-lg p-4 sm:p-6 ${
                       cart?.deliveryMethod === "delivery" &&
                       !item.deliveryEligible
                         ? "bg-blue-900/10 border border-blue-500/30"
                         : "bg-gray-800"
                     }`}
                   >
-                    <div className="flex items-start space-x-4">
+                    {/* Mobile-optimized layout */}
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:space-x-4">
                       {/* Product Image */}
-                      <div className="w-24 h-24 bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <div className="w-full sm:w-24 h-32 sm:h-24 bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 mb-3 sm:mb-0">
                         {item.imageUrl ? (
                           <>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -290,9 +293,9 @@ export default function Cart() {
                         )}
                       </div>
 
-                      {/* Product Details */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2 mb-2">
+                        {/* Product Details */}
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
                           <h3 className="text-lg font-semibold text-white">
                             {item.productName}
                           </h3>
@@ -304,9 +307,10 @@ export default function Cart() {
                               </div>
                             )}
                         </div>
+
                         <div className="text-gray-400 text-sm mb-2">
                           {item.hasDiscount ? (
-                            <div className="flex items-center space-x-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <span>
                                 ₵{item.effectivePrice.toFixed(2)} each
                               </span>
@@ -321,57 +325,57 @@ export default function Cart() {
                             <span>₵{item.effectivePrice.toFixed(2)} each</span>
                           )}
                         </div>
+
                         <div className="text-gray-500 text-sm space-y-1">
                           <p>Size: {item.size}</p>
                           <p>Color: {item.color}</p>
                           <p>SKU: {item.sku}</p>
                         </div>
-                        {/* Quantity Display */}
-                        <div className="mt-2">
-                          <p className="text-yellow-400 text-sm font-medium">
-                            Quantity: {item.quantity}
-                          </p>
-                        </div>
-                      </div>
 
-                      {/* Controls Section */}
-                      <div className="flex items-center justify-between mt-3">
-                        {/* Quantity Controls */}
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() =>
-                              updateQuantity(item.id, item.quantity - 1)
-                            }
-                            className="p-2 bg-gray-700 hover:bg-gray-600 active:bg-gray-500 rounded-full transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
-                            aria-label="Decrease quantity"
-                          >
-                            <Minus className="w-4 h-4 text-white" />
-                          </button>
-                          <button
-                            onClick={() =>
-                              updateQuantity(item.id, item.quantity + 1)
-                            }
-                            className="p-2 bg-gray-700 hover:bg-gray-600 active:bg-gray-500 rounded-full transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
-                            aria-label="Increase quantity"
-                          >
-                            <Plus className="w-4 h-4 text-white" />
-                          </button>
-                        </div>
-
-                        {/* Item Total and Remove */}
-                        <div className="flex items-center space-x-3">
-                          <div className="text-right">
-                            <div className="text-lg font-bold text-white">
-                              ₵{item.subtotal.toFixed(2)}
+                        {/* Mobile Controls Section */}
+                        <div className="flex items-center justify-between mt-4">
+                          {/* Quantity Controls */}
+                          <div className="flex items-center">
+                            <span className="text-yellow-400 text-sm font-medium mr-3">
+                              Qty: {item.quantity}
+                            </span>
+                            <div className="flex items-center space-x-2">
+                              <button
+                                onClick={() =>
+                                  updateQuantity(item.id, item.quantity - 1)
+                                }
+                                className="p-1.5 sm:p-2 bg-gray-700 hover:bg-gray-600 active:bg-gray-500 rounded-full transition-colors min-h-[32px] min-w-[32px] sm:min-h-[40px] sm:min-w-[40px] flex items-center justify-center"
+                                aria-label="Decrease quantity"
+                              >
+                                <Minus className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+                              </button>
+                              <button
+                                onClick={() =>
+                                  updateQuantity(item.id, item.quantity + 1)
+                                }
+                                className="p-1.5 sm:p-2 bg-gray-700 hover:bg-gray-600 active:bg-gray-500 rounded-full transition-colors min-h-[32px] min-w-[32px] sm:min-h-[40px] sm:min-w-[40px] flex items-center justify-center"
+                                aria-label="Increase quantity"
+                              >
+                                <Plus className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+                              </button>
                             </div>
                           </div>
-                          <button
-                            onClick={() => removeFromCart(item.id)}
-                            className="p-2 text-gray-400 hover:text-red-400 active:text-red-300 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full hover:bg-red-400/10"
-                            aria-label="Remove item"
-                          >
-                            <X className="w-5 h-5" />
-                          </button>
+
+                          {/* Item Total and Remove */}
+                          <div className="flex items-center space-x-3">
+                            <div className="text-right">
+                              <div className="text-lg font-bold text-white">
+                                ₵{item.subtotal.toFixed(2)}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => removeFromCart(item.id)}
+                              className="p-1.5 sm:p-2 text-gray-400 hover:text-red-400 active:text-red-300 transition-colors min-h-[32px] min-w-[32px] sm:min-h-[40px] sm:min-w-[40px] flex items-center justify-center rounded-full hover:bg-red-400/10"
+                              aria-label="Remove item"
+                            >
+                              <X className="w-4 h-4 sm:w-5 sm:h-5" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -380,7 +384,7 @@ export default function Cart() {
               </div>
 
               {/* Delivery Options Card (New - Tabs Scaffold) */}
-              <div className="bg-gray-800 rounded-lg p-6 mt-8">
+              <div className="bg-gray-800 rounded-lg p-4 sm:p-6 mt-8">
                 <h2 className="text-xl font-semibold text-white mb-4">
                   Delivery Options
                 </h2>
@@ -403,13 +407,13 @@ export default function Cart() {
                 {/* Panel Content */}
                 <div className="grid grid-cols-1 gap-4">
                   {activeTab === "delivery" ? (
-                    <div className="bg-gray-700/50 rounded p-4">
-                      <div className="flex items-center justify-between mb-3">
+                    <div className="bg-gray-700/50 rounded p-3 sm:p-4">
+                      <div className="flex flex-wrap items-center justify-between mb-3 gap-2">
                         <div className="text-sm text-gray-300 font-medium">
                           Select a delivery address
                         </div>
                         <button
-                          className="text-yellow-400 hover:text-yellow-300 text-sm"
+                          className="text-yellow-400 hover:text-yellow-300 text-sm whitespace-nowrap"
                           onClick={() => setIsAddressFormOpen(true)}
                         >
                           + Add New
@@ -428,7 +432,7 @@ export default function Cart() {
                           (addresses ?? []).map((addr) => (
                             <label
                               key={addr.id}
-                              className={`flex items-start p-3 rounded border cursor-pointer transition-colors ${
+                              className={`flex items-start p-2 sm:p-3 rounded border cursor-pointer transition-colors ${
                                 localSelectedAddressId === Number(addr.id)
                                   ? "border-yellow-400 bg-yellow-400/5"
                                   : "border-gray-600 hover:border-gray-500"
@@ -437,7 +441,7 @@ export default function Cart() {
                               <input
                                 type="radio"
                                 name="deliveryAddress"
-                                className="mt-1 mr-3 accent-yellow-400"
+                                className="mt-1 mr-2 sm:mr-3 accent-yellow-400"
                                 checked={
                                   localSelectedAddressId === Number(addr.id)
                                 }
@@ -445,11 +449,11 @@ export default function Cart() {
                                   setLocalSelectedAddressId(Number(addr.id))
                                 }
                               />
-                              <div className="text-sm">
+                              <div className="text-xs sm:text-sm">
                                 <div className="text-white font-medium">
                                   {addr.areaName}
                                   {addr.isDefault && (
-                                    <span className="ml-2 text-xxs uppercase tracking-wide bg-gray-600 text-white px-1.5 py-0.5 rounded">
+                                    <span className="ml-1 sm:ml-2 text-xxs uppercase tracking-wide bg-gray-600 text-white px-1 py-0.5 rounded">
                                       Default
                                     </span>
                                   )}
@@ -607,7 +611,7 @@ export default function Cart() {
 
             {/* Order Summary */}
             <div className="lg:col-span-1">
-              <div className="bg-gray-800 rounded-lg p-6 sticky top-8">
+              <div className="bg-gray-800 rounded-lg p-4 sm:p-6 sticky top-8">
                 <h2 className="text-xl font-semibold text-white mb-6">
                   Order Summary
                 </h2>
