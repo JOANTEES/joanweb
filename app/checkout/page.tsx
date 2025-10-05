@@ -565,19 +565,23 @@ export default function Checkout() {
       <div className="min-h-screen bg-black py-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
-          <div className="mb-8">
+          <div className="mb-6 sm:mb-8">
             <button
               onClick={() => router.back()}
-              className="flex items-center text-yellow-400 hover:text-yellow-300 mb-4 transition-colors"
+              className="flex items-center text-yellow-400 hover:text-yellow-300 mb-3 sm:mb-4 transition-colors"
             >
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              Back to Cart
+              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
+              <span className="text-sm sm:text-base">Back to Cart</span>
             </button>
-            <h1 className="text-3xl font-bold text-white">Checkout</h1>
-            <p className="text-gray-400 mt-2">Complete your order</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white">
+              Checkout
+            </h1>
+            <p className="text-gray-400 mt-1 sm:mt-2 text-sm sm:text-base">
+              Complete your order
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
             {/* Checkout Form */}
             <div className="space-y-8">
               {/* Delivery Method */}
@@ -730,9 +734,9 @@ export default function Checkout() {
 
             {/* Order Summary */}
             <div className="space-y-6">
-              <div className="bg-gray-800 rounded-lg p-6">
+              <div className="bg-gray-800 rounded-lg p-4 sm:p-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold text-white">
+                  <h2 className="text-lg sm:text-xl font-semibold text-white">
                     Order Summary
                   </h2>
                   <span className="text-gray-400 text-sm">
@@ -744,116 +748,132 @@ export default function Checkout() {
                   {items.map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-center space-x-4 p-3 bg-gray-700/50 rounded-lg"
+                      className="flex flex-col sm:flex-row sm:items-center gap-3 sm:space-x-4 p-3 bg-gray-700/50 rounded-lg"
                     >
-                      <div className="w-16 h-16 bg-gray-600 rounded-lg flex items-center justify-center flex-shrink-0">
-                        {item.imageUrl ? (
-                          <>
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={item.imageUrl}
-                              alt={item.productName}
-                              className="w-full h-full object-cover rounded-lg"
-                            />
-                          </>
-                        ) : (
-                          <span className="text-gray-300 text-xs font-medium">
-                            IMG
+                      <div className="flex items-center w-full sm:w-auto">
+                        <div className="w-16 h-16 bg-gray-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                          {item.imageUrl ? (
+                            <>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={item.imageUrl}
+                                alt={item.productName}
+                                className="w-full h-full object-cover rounded-lg"
+                              />
+                            </>
+                          ) : (
+                            <span className="text-gray-300 text-xs font-medium">
+                              IMG
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0 ml-3 sm:ml-0">
+                          <h3 className="text-white font-medium truncate">
+                            {item.productName}
+                          </h3>
+                          <p className="text-gray-400 text-sm">
+                            ₵{item.price.toFixed(2)} each
+                          </p>
+                          <div className="flex flex-wrap gap-x-3">
+                            {item.size && (
+                              <p className="text-gray-500 text-xs">
+                                Size: {item.size}
+                              </p>
+                            )}
+                            {item.color && (
+                              <p className="text-gray-500 text-xs">
+                                Color: {item.color}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between w-full sm:w-auto sm:justify-start mt-2 sm:mt-0">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() =>
+                              updateQuantity(item.id, item.quantity - 1)
+                            }
+                            className="p-1 bg-gray-600 hover:bg-gray-500 rounded-full transition-colors"
+                          >
+                            <Minus className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+                          </button>
+                          <span className="text-white font-medium min-w-[1.5rem] sm:min-w-[2rem] text-center">
+                            {item.quantity}
                           </span>
-                        )}
+                          <button
+                            onClick={() =>
+                              updateQuantity(item.id, item.quantity + 1)
+                            }
+                            className="p-1 bg-gray-600 hover:bg-gray-500 rounded-full transition-colors"
+                          >
+                            <Plus className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+                          </button>
+                        </div>
+
+                        <div className="flex items-center">
+                          <div className="text-white font-semibold text-base sm:text-lg min-w-[4rem] sm:min-w-[5rem] text-right mr-2 sm:mr-0">
+                            ₵{item.subtotal.toFixed(2)}
+                          </div>
+                          <button
+                            onClick={() => removeFromCart(item.id)}
+                            className="p-1 text-gray-400 hover:text-red-400 transition-colors"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-white font-medium truncate">
-                          {item.productName}
-                        </h3>
-                        <p className="text-gray-400 text-sm">
-                          ₵{item.price.toFixed(2)} each
-                        </p>
-                        {item.size && (
-                          <p className="text-gray-500 text-xs">
-                            Size: {item.size}
-                          </p>
-                        )}
-                        {item.color && (
-                          <p className="text-gray-500 text-xs">
-                            Color: {item.color}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() =>
-                            updateQuantity(item.id, item.quantity - 1)
-                          }
-                          className="p-1 bg-gray-600 hover:bg-gray-500 rounded-full transition-colors"
-                        >
-                          <Minus className="w-4 h-4 text-white" />
-                        </button>
-                        <span className="text-white font-medium min-w-[2rem] text-center">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() =>
-                            updateQuantity(item.id, item.quantity + 1)
-                          }
-                          className="p-1 bg-gray-600 hover:bg-gray-500 rounded-full transition-colors"
-                        >
-                          <Plus className="w-4 h-4 text-white" />
-                        </button>
-                      </div>
-                      <div className="text-white font-semibold text-lg min-w-[5rem] text-right">
-                        ₵{item.subtotal.toFixed(2)}
-                      </div>
-                      <button
-                        onClick={() => removeFromCart(item.id)}
-                        className="p-1 text-gray-400 hover:text-red-400 transition-colors"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
                     </div>
                   ))}
                 </div>
 
-                <div className="border-t border-gray-700 mt-6 pt-4">
+                <div className="border-t border-gray-700 mt-4 sm:mt-6 pt-4">
                   <div className="space-y-3">
                     <div className="flex justify-between items-center text-gray-300">
-                      <span>
+                      <span className="text-sm sm:text-base">
                         Subtotal ({items.length}{" "}
                         {items.length === 1 ? "item" : "items"})
                       </span>
-                      <span>₵{totals.subtotal.toFixed(2)}</span>
+                      <span className="text-sm sm:text-base">
+                        ₵{totals.subtotal.toFixed(2)}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center text-gray-300">
-                      <span>Tax</span>
-                      <span>₵{totals.tax.toFixed(2)}</span>
+                      <span className="text-sm sm:text-base">Tax</span>
+                      <span className="text-sm sm:text-base">
+                        ₵{totals.tax.toFixed(2)}
+                      </span>
                     </div>
                     <div className="flex justify-between items-center text-gray-300">
                       {cart?.deliveryMethod === "pickup" ? (
                         <>
-                          <span className="flex items-center">
+                          <span className="flex items-center text-sm sm:text-base">
                             <span>Pickup</span>
-                            <span className="ml-2 text-xs bg-green-900/30 text-green-400 px-2 py-0.5 rounded">
+                            <span className="ml-1 sm:ml-2 text-xs bg-green-900/30 text-green-400 px-1 sm:px-2 py-0.5 rounded">
                               Free
                             </span>
                           </span>
-                          <span>₵0.00</span>
+                          <span className="text-sm sm:text-base">₵0.00</span>
                         </>
                       ) : (
                         <>
-                          <span className="flex items-center">
+                          <span className="flex flex-wrap items-center text-sm sm:text-base">
                             <span>Delivery</span>
                             {cart?.deliveryZoneName && (
-                              <span className="ml-2 text-xs bg-blue-900/30 text-blue-400 px-2 py-0.5 rounded">
+                              <span className="ml-1 sm:ml-2 text-xs bg-blue-900/30 text-blue-400 px-1 sm:px-2 py-0.5 rounded">
                                 {cart.deliveryZoneName}
                               </span>
                             )}
                           </span>
-                          <span>₵{totals.shipping.toFixed(2)}</span>
+                          <span className="text-sm sm:text-base">
+                            ₵{totals.shipping.toFixed(2)}
+                          </span>
                         </>
                       )}
                     </div>
                     <div className="border-t border-gray-600 pt-3">
-                      <div className="flex justify-between items-center text-lg font-semibold text-white">
+                      <div className="flex justify-between items-center text-base sm:text-lg font-semibold text-white">
                         <span>Total</span>
                         <span>₵{totals.total.toFixed(2)}</span>
                       </div>
@@ -863,7 +883,7 @@ export default function Checkout() {
 
                 <button
                   onClick={handleSubmit}
-                  className="w-full mt-6 bg-yellow-400 hover:bg-yellow-500 active:bg-yellow-600 text-black py-4 rounded-lg font-semibold transition-all duration-100 transform hover:scale-[1.01] active:scale-[0.99] shadow-lg hover:shadow-xl"
+                  className="w-full mt-4 sm:mt-6 bg-yellow-400 hover:bg-yellow-500 active:bg-yellow-600 text-black py-3 sm:py-4 rounded-lg font-semibold transition-all duration-100 transform hover:scale-[1.01] active:scale-[0.99] shadow-lg hover:shadow-xl text-sm sm:text-base"
                 >
                   {paymentMethod === "online"
                     ? "Pay Now & Place Order"
