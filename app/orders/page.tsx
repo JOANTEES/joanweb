@@ -302,11 +302,7 @@ export default function Orders() {
   };
 
   // Enhanced status function that considers both order status and payment status
-  const getEnhancedStatus = (
-    orderStatus: string,
-    _paymentStatus: string,
-    _paymentMethod: string
-  ) => {
+  const getEnhancedStatus = (orderStatus: string) => {
     // Business rule: show the real order status from backend (e.g., pending until admin confirms)
     return orderStatus || "pending";
   };
@@ -440,27 +436,13 @@ export default function Orders() {
                     <div className="flex items-center space-x-4 mt-4 md:mt-0">
                       <div
                         className={`flex items-center space-x-2 px-3 py-1 rounded-full border ${getEnhancedStatusColor(
-                          getEnhancedStatus(
-                            order.status,
-                            order.paymentStatus,
-                            order.paymentMethod
-                          )
+                          getEnhancedStatus(order.status)
                         )}`}
                       >
-                        {getEnhancedStatusIcon(
-                          getEnhancedStatus(
-                            order.status,
-                            order.paymentStatus,
-                            order.paymentMethod
-                          )
-                        )}
+                        {getEnhancedStatusIcon(getEnhancedStatus(order.status))}
                         <span className="font-medium">
                           {getEnhancedStatusText(
-                            getEnhancedStatus(
-                              order.status,
-                              order.paymentStatus,
-                              order.paymentMethod
-                            )
+                            getEnhancedStatus(order.status)
                           )}
                         </span>
                       </div>

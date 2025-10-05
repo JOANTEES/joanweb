@@ -32,7 +32,6 @@ export default function Cart() {
     updateCartDeliveryMethod,
     selectedDeliveryAddressId,
     selectedPickupLocation,
-    setSelectedPickupLocation,
   } = useCart();
   const { zones: deliveryZones, loading: zonesLoading } = useDeliveryZones();
   const router = useRouter();

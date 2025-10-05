@@ -123,6 +123,7 @@ export default function ProductCard({
           {mainImage ? (
             <>
               {/* Main Image */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={mainImage}
                 alt={product.name}
@@ -139,6 +140,7 @@ export default function ProductCard({
                 <div className="absolute inset-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <div className="grid grid-cols-2 gap-1 h-full">
                     {additionalImages.slice(0, 3).map((image, index) => (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         key={index}
                         src={image}
@@ -184,6 +186,7 @@ export default function ProductCard({
             {brand && (
               <div className="flex items-center space-x-2">
                 {brand.logoUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={brand.logoUrl}
                     alt={brand.name}

@@ -131,6 +131,7 @@ export default function AddToCartModal({
 
                 return displayImage ? (
                   <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={displayImage}
                       alt={product.name}

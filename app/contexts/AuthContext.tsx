@@ -6,6 +6,7 @@ import {
   useEffect,
   useState,
   ReactNode,
+  useCallback,
 } from "react";
 
 interface User {
@@ -100,68 +101,108 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return true;
   };
 
-  // Helper function to make authenticated API requests
-  const makeAuthenticatedRequest = async (
-    url: string,
-    options: RequestInit = {}
-  ): Promise<Response> => {
-    const token =
-      typeof window !== "undefined" ? localStorage.getItem("authToken") : null;
+  // Refresh token function
+  const refreshToken = useCallback(async (): Promise<boolean> => {
+    try {
+      const refreshTokenValue =
+        typeof window !== "undefined"
+          ? localStorage.getItem("refreshToken")
+          : null;
 
-    if (!token) {
-      throw new Error("No authentication token found");
-    }
+      if (!refreshTokenValue) {
+        return false;
+      }
 
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        ...options.headers,
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        Pragma: "no-cache",
-        Expires: "0",
-      },
-    });
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ refreshToken: refreshTokenValue }),
+      });
 
-    // Handle token expiration
-    if (response.status === 401) {
       const data = await response.json();
-      if (data.errorCode === "TOKEN_EXPIRED") {
-        const refreshed = await refreshToken();
-        if (refreshed) {
-          // Retry the original request with new token
-          const newToken =
-            typeof window !== "undefined"
-              ? localStorage.getItem("authToken")
-              : null;
-          return fetch(url, {
-            ...options,
-            headers: {
-              ...options.headers,
-              Authorization: `Bearer ${newToken}`,
-              "Content-Type": "application/json",
-              "Cache-Control": "no-cache, no-store, must-revalidate",
-              Pragma: "no-cache",
-              Expires: "0",
-            },
-          });
-        } else {
-          // Refresh failed, redirect to login
-          clearTokens();
-          setIsAuthenticated(false);
-          setUser(null);
-          window.location.href = "/login";
-          throw new Error("Authentication failed");
+
+      if (response.ok && data.success && data.token && data.refreshToken) {
+        // Store new tokens
+        storeTokens(data.token, data.refreshToken);
+        return true;
+      } else {
+        // Refresh failed, clear tokens
+        clearTokens();
+        return false;
+      }
+    } catch (error) {
+      console.error("Token refresh error:", error);
+      clearTokens();
+      return false;
+    }
+  }, [API_BASE_URL]);
+
+  // Helper function to make authenticated API requests
+  const makeAuthenticatedRequest = useCallback(
+    async (url: string, options: RequestInit = {}): Promise<Response> => {
+      const token =
+        typeof window !== "undefined"
+          ? localStorage.getItem("authToken")
+          : null;
+
+      if (!token) {
+        throw new Error("No authentication token found");
+      }
+
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          ...options.headers,
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      });
+
+      // Handle token expiration
+      if (response.status === 401) {
+        const data = await response.json();
+        if (data.errorCode === "TOKEN_EXPIRED") {
+          const refreshed = await refreshToken();
+          if (refreshed) {
+            // Retry the original request with new token
+            const newToken =
+              typeof window !== "undefined"
+                ? localStorage.getItem("authToken")
+                : null;
+            return fetch(url, {
+              ...options,
+              headers: {
+                ...options.headers,
+                Authorization: `Bearer ${newToken}`,
+                "Content-Type": "application/json",
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                Pragma: "no-cache",
+                Expires: "0",
+              },
+            });
+          } else {
+            // Refresh failed, redirect to login
+            clearTokens();
+            setIsAuthenticated(false);
+            setUser(null);
+            window.location.href = "/login";
+            throw new Error("Authentication failed");
+          }
         }
       }
-    }
 
-    return response;
-  };
+      return response;
+    },
+    [refreshToken]
+  );
 
   // Helper to hydrate user state from existing tokens in storage (used by listeners)
-  const syncAuthFromStorage = async () => {
+  const syncAuthFromStorage = useCallback(async () => {
     try {
       if (typeof window === "undefined") return false;
       const token = localStorage.getItem("authToken");
@@ -208,7 +249,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error("syncAuthFromStorage error:", e);
       return false;
     }
-  };
+  }, [API_BASE_URL, refreshToken]);
 
   useEffect(() => {
     // Check if user is authenticated on app load
@@ -270,7 +311,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     checkAuth();
-  }, [API_BASE_URL]);
+  }, [API_BASE_URL, makeAuthenticatedRequest, refreshToken]);
 
   // Listen for token updates set outside the provider (e.g., OAuth callback page)
   useEffect(() => {
@@ -288,7 +329,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       window.removeEventListener("auth:token-set", handleTokenSignal);
     };
-  }, []);
+  }, [syncAuthFromStorage]);
 
   const login = async (
     email: string,
@@ -432,44 +473,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setIsAuthenticated(false);
     setUser(null);
-  };
-
-  // Refresh token function
-  const refreshToken = async (): Promise<boolean> => {
-    try {
-      const refreshTokenValue =
-        typeof window !== "undefined"
-          ? localStorage.getItem("refreshToken")
-          : null;
-
-      if (!refreshTokenValue) {
-        return false;
-      }
-
-      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ refreshToken: refreshTokenValue }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success && data.token && data.refreshToken) {
-        // Store new tokens
-        storeTokens(data.token, data.refreshToken);
-        return true;
-      } else {
-        // Refresh failed, clear tokens
-        clearTokens();
-        return false;
-      }
-    } catch (error) {
-      console.error("Token refresh error:", error);
-      clearTokens();
-      return false;
-    }
   };
 
   // Google OAuth login

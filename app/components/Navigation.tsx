@@ -21,7 +21,7 @@ export default function Navigation({
   const [toastMessage, setToastMessage] = useState("");
   const pathname = usePathname();
   const router = useRouter();
-  const { isAuthenticated, user, logout, setRedirectUrl, loading } = useAuth();
+  const { isAuthenticated, user, logout, setRedirectUrl } = useAuth();
   const { itemCount, addToCart } = useCart();
   const dropdownRef = useRef<HTMLDivElement>(null);
 

@@ -18,6 +18,37 @@ import {
   ExternalLink,
 } from "lucide-react";
 
+interface OrderItem {
+  productName?: string;
+}
+
+interface Order {
+  id: string | number;
+  createdAt?: string;
+  status?: string;
+  totals?: { totalAmount?: number };
+  items?: OrderItem[];
+  orderNumber?: string | number;
+  reference?: string;
+  created_at?: string;
+  date?: string;
+  orderStatus?: string;
+  state?: string;
+  paymentStatus?: string;
+  fulfillmentStatus?: string;
+  total?: number; // fallback for totals.totalAmount
+}
+
+interface OrdersResponse {
+  success: boolean;
+  orders: Order[];
+  count: number;
+}
+
+interface OrdersResponseContainer {
+  data: OrdersResponse;
+}
+
 export default function Profile() {
   const { isAuthenticated, loading, setRedirectUrl, user } = useAuth();
   const { addresses, loading: addressesLoading } = useCustomerAddresses();
@@ -43,23 +74,7 @@ export default function Profile() {
       }));
     }
   }, [user?.name, user?.email, isEditing]);
-  const [recentOrders, setRecentOrders] = useState<
-    Array<{
-      id: string | number;
-      createdAt?: string;
-      status?: string;
-      totals?: { totalAmount?: number };
-      items?: Array<{ productName?: string }>;
-      orderNumber?: string | number;
-      reference?: string;
-      created_at?: string;
-      date?: string;
-      orderStatus?: string;
-      state?: string;
-      paymentStatus?: string;
-      fulfillmentStatus?: string;
-    }>
-  >([]);
+  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [totalOrdersCount, setTotalOrdersCount] = useState<number>(0);
 
@@ -77,25 +92,23 @@ export default function Profile() {
       setOrdersLoading(true);
       try {
         // Fetch recent orders once; backend returns either in data or top-level
-        const res = await api.get<any>("/orders?limit=5");
-        const payload = (res?.data as any) ?? res;
+        const res = await api.get<OrdersResponse | OrdersResponseContainer>(
+          "/orders?limit=5"
+        );
 
-        const list: any[] = Array.isArray(payload?.orders)
-          ? payload.orders
-          : Array.isArray(res?.data)
-          ? (res.data as any[])
-          : Array.isArray((res as any)?.orders)
-          ? ((res as any).orders as any[])
-          : [];
+        let list: Order[] = [];
+        let total = 0;
+
+        if ("data" in res && res.data && "orders" in res.data) {
+          list = res.data.orders || [];
+          total = res.data.count || 0;
+        } else if ("orders" in res) {
+          list = (res as OrdersResponse).orders || [];
+          total = (res as OrdersResponse).count || 0;
+        }
+
         setRecentOrders(list);
-
-        const totalFromCount =
-          typeof payload?.count === "number"
-            ? payload.count
-            : typeof (res as any)?.count === "number"
-            ? (res as any).count
-            : 0;
-        setTotalOrdersCount(totalFromCount);
+        setTotalOrdersCount(total);
       } catch {
         setRecentOrders([]);
         setTotalOrdersCount(0);
@@ -104,7 +117,6 @@ export default function Profile() {
       }
     };
     loadOrders();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
   const handleInputChange = (

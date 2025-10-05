@@ -48,7 +48,7 @@ interface ProductVariant {
   id: string;
   productId: string;
   productName: string;
-  sku: string;
+  // sku: string; // Temporarily disabled
   size: string;
   color: string;
   stockQuantity: number;

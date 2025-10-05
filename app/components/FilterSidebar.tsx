@@ -141,10 +141,11 @@ export default function FilterSidebar({
                   />
                   <div className="flex items-center space-x-2">
                     {brand.logoUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={brand.logoUrl}
-                        alt={brand.name}
-                        className="w-4 h-4 object-contain"
+                        alt={`${brand.name} logo`}
+                        className="w-8 h-8 object-contain"
                       />
                     )}
                     <span className="text-sm text-gray-300">{brand.name}</span>
