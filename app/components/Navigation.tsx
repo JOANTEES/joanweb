@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { UserRound, LogOut, User, ShoppingCart } from "lucide-react";
 import { Home, ShoppingBag, ClipboardList, Truck } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
 
@@ -16,7 +16,11 @@ export default function Navigation({
 }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+  const [showLogoutNotice, setShowLogoutNotice] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
   const pathname = usePathname();
+  const router = useRouter();
   const { isAuthenticated, user, logout, setRedirectUrl } = useAuth();
   const { itemCount } = useCart();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -37,6 +41,27 @@ export default function Navigation({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  // Cross-route toast: read from sessionStorage when route changes
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = sessionStorage.getItem("app:toast");
+      if (!raw) return;
+      const payload = JSON.parse(raw) as { type?: string; message?: string };
+      if (payload && payload.message) {
+        setToastMessage(payload.message);
+        setShowLogoutNotice(true);
+        // remove and auto-hide
+        sessionStorage.removeItem("app:toast");
+        const t = setTimeout(() => {
+          setShowLogoutNotice(false);
+          setToastMessage("");
+        }, 2500);
+        return () => clearTimeout(t);
+      }
+    } catch {}
+  }, [pathname]);
 
   const navItems = [
     { name: "Home", href: "/", Icon: Home, protected: false },
@@ -147,9 +172,8 @@ export default function Navigation({
                       Profile
                     </Link>
                     <button
-                      onClick={async () => {
-                        await logout();
-                        setIsDropdownOpen(false);
+                      onClick={() => {
+                        setIsLogoutConfirmOpen(true);
                       }}
                       className="flex items-center w-full px-4 py-2 text-white hover:bg-gray-700 transition-colors"
                     >
@@ -273,9 +297,8 @@ export default function Navigation({
                     Profile
                   </Link>
                   <button
-                    onClick={async () => {
-                      await logout();
-                      setIsMenuOpen(false);
+                    onClick={() => {
+                      setIsLogoutConfirmOpen(true);
                     }}
                     className="w-full text-left text-white hover:text-yellow-300 transition-colors duration-150 font-medium px-3 py-3 rounded-lg inline-flex items-center hover:bg-gray-800/60 border border-transparent hover:border-gray-700"
                   >
@@ -303,6 +326,82 @@ export default function Navigation({
           </div>
         )}
       </div>
+      {/* Logout Confirmation Modal */}
+      {isLogoutConfirmOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60">
+          <div className="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-sm mx-4 shadow-xl">
+            <div className="px-5 py-4 border-b border-gray-800">
+              <h3 className="text-white text-lg font-semibold">Sign out</h3>
+              <p className="text-gray-400 text-sm mt-1">
+                Are you sure you want to sign out?
+              </p>
+            </div>
+            <div className="px-5 py-4 flex justify-end gap-3">
+              <button
+                onClick={() => setIsLogoutConfirmOpen(false)}
+                className="px-4 py-2 rounded-md bg-gray-700 hover:bg-gray-600 text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  // close UI immediately
+                  setIsDropdownOpen(false);
+                  setIsMenuOpen(false);
+                  setIsLogoutConfirmOpen(false);
+                  // show toast locally
+                  setToastMessage("You have been signed out.");
+                  setShowLogoutNotice(true);
+                  const hideTimer = setTimeout(() => {
+                    setShowLogoutNotice(false);
+                    setToastMessage("");
+                  }, 2500);
+                  // also queue for next route just in case
+                  try {
+                    sessionStorage.setItem(
+                      "app:toast",
+                      JSON.stringify({
+                        type: "success",
+                        message: "You have been signed out.",
+                      })
+                    );
+                  } catch {}
+                  // navigate to a public page first to avoid protected-page redirects
+                  router.push("/");
+                  // perform logout shortly after navigation starts
+                  setTimeout(() => {
+                    logout().catch(() => {});
+                    clearTimeout(hideTimer);
+                  }, 150);
+                }}
+                className="px-4 py-2 rounded-md bg-yellow-400 hover:bg-yellow-500 text-black font-semibold transition-colors"
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Logout Toast/Notice */}
+      {showLogoutNotice && (
+        <div className="fixed top-4 right-4 z-[70]">
+          <div className="bg-gray-900 border border-gray-700 text-white px-4 py-2 rounded-md shadow-lg flex items-center space-x-2">
+            <span className="text-sm">
+              {toastMessage || "You have been signed out."}
+            </span>
+            <button
+              onClick={() => {
+                setShowLogoutNotice(false);
+                setToastMessage("");
+              }}
+              className="text-gray-400 hover:text-white"
+              aria-label="Dismiss"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
