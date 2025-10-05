@@ -634,9 +634,18 @@ export default function Checkout() {
                           )}
                         </div>
                         <p className="text-gray-400 text-sm mt-1">
-                          {cart?.deliveryZoneName
-                            ? `Your order will be delivered to your address in ${cart.deliveryZoneName}.`
-                            : "Your order will be delivered to your address."}
+                          {(() => {
+                            const parts = [
+                              selectedDeliveryAddress?.areaName,
+                              selectedDeliveryAddress?.cityName,
+                              selectedDeliveryAddress?.regionName,
+                            ].filter(Boolean);
+                            return parts.length > 0
+                              ? `Your order will be delivered to: ${parts.join(
+                                  ", "
+                                )}.`
+                              : "Your order will be delivered to your address.";
+                          })()}
                         </p>
                         <div className="mt-2 flex items-center">
                           <span className="text-gray-300 text-sm">

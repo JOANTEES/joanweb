@@ -639,6 +639,25 @@ export default function Cart() {
                     </span>
                     <span>₵{totals.shipping.toFixed(2)}</span>
                   </div>
+                  {cart?.deliveryMethod === "delivery" &&
+                    selectedDeliveryAddressId && (
+                      <div className="text-gray-500 text-xs -mt-2 mb-2">
+                        {(() => {
+                          const addr = (addresses ?? []).find(
+                            (a) =>
+                              Number(a.id) === Number(selectedDeliveryAddressId)
+                          );
+                          const parts = [
+                            addr?.areaName,
+                            addr?.cityName,
+                            addr?.regionName,
+                          ]
+                            .filter(Boolean)
+                            .join(", ");
+                          return parts ? `To: ${parts}` : null;
+                        })()}
+                      </div>
+                    )}
 
                   {/* PICKUP_DISABLED: Hide pickup summary */}
                   {/* {cart?.deliveryMethod === "pickup" && (
