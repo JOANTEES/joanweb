@@ -160,6 +160,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return response;
   };
 
+  // Helper to hydrate user state from existing tokens in storage (used by listeners)
+  const syncAuthFromStorage = async () => {
+    try {
+      if (typeof window === "undefined") return false;
+      const token = localStorage.getItem("authToken");
+      const refreshTokenValue = localStorage.getItem("refreshToken");
+      if (!token || !refreshTokenValue) return false;
+
+      // If token appears expired, try refresh
+      let ensuredToken = token;
+      if (isTokenExpired()) {
+        const refreshed = await refreshToken();
+        if (!refreshed) {
+          clearTokens();
+          return false;
+        }
+        ensuredToken = localStorage.getItem("authToken") || "";
+      }
+
+      const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+        headers: {
+          Authorization: `Bearer ${ensuredToken}`,
+          "Content-Type": "application/json",
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      });
+      if (!response.ok) return false;
+      const data = await response.json();
+      if (!data?.user) return false;
+      const user = {
+        id: data.user.id.toString(),
+        email: data.user.email,
+        name: `${data.user.first_name} ${data.user.last_name}`.trim(),
+        phone: data.user.phone || "",
+        address: data.user.address || "",
+        city: data.user.city || "",
+        zipCode: data.user.zipCode || "",
+        country: data.user.country || "",
+      };
+      setIsAuthenticated(true);
+      setUser(user);
+      return true;
+    } catch (e) {
+      console.error("syncAuthFromStorage error:", e);
+      return false;
+    }
+  };
+
   useEffect(() => {
     // Check if user is authenticated on app load
     const checkAuth = async () => {
@@ -221,6 +271,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     checkAuth();
   }, [API_BASE_URL]);
+
+  // Listen for token updates set outside the provider (e.g., OAuth callback page)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleTokenSignal = () => {
+      // Do not block UI with loading spinner here; silent sync
+      syncAuthFromStorage();
+    };
+    window.addEventListener("auth:token-set", handleTokenSignal);
+    window.addEventListener("storage", (evt) => {
+      if (evt.key === "authToken" || evt.key === "refreshToken") {
+        handleTokenSignal();
+      }
+    });
+    return () => {
+      window.removeEventListener("auth:token-set", handleTokenSignal);
+    };
+  }, []);
 
   const login = async (
     email: string,
