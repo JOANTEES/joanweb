@@ -87,6 +87,11 @@ export default function AddressForm({
       return;
     }
 
+    // Require contact phone
+    if (!formData.contactPhone || !formData.contactPhone.trim()) {
+      setError("Please enter a contact phone number");
+      return;
+    }
     if (
       formData.contactPhone &&
       !/^\+?[0-9\s-()]+$/.test(formData.contactPhone)
@@ -223,7 +228,7 @@ export default function AddressForm({
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-2">
               <Phone className="w-4 h-4 inline mr-2" />
-              Contact Phone (Optional)
+              Contact Phone <span className="text-red-400">*</span>
             </label>
             <input
               type="tel"
@@ -231,6 +236,7 @@ export default function AddressForm({
               value={formData.contactPhone}
               onChange={handleInputChange}
               placeholder="e.g., +233123456789"
+              required
               className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent"
             />
           </div>
