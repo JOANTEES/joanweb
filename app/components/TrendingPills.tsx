@@ -108,17 +108,20 @@ export default function TrendingPills({
                     : "bg-gray-700 text-gray-300 hover:bg-blue-500 hover:text-white"
                 }`}
               >
-                {brand.logoUrl && (
-                  <img
-                    src={brand.logoUrl}
-                    alt={brand.name}
-                    className="w-4 h-4 object-contain"
-                  />
-                )}
-                <span>{brand.name}</span>
-                <span className="text-xs opacity-75">
-                  ({brand.productCount})
-                </span>
+                <div className="flex items-center space-x-2">
+                  {brand.logoUrl && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={brand.logoUrl}
+                      alt={brand.name}
+                      className="w-4 h-4 object-contain"
+                    />
+                  )}
+                  <span>{brand.name}</span>
+                  <span className="text-xs opacity-75">
+                    ({brand.productCount})
+                  </span>
+                </div>
               </button>
             ))}
           </div>

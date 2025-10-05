@@ -8,12 +8,14 @@ import { useCart } from "../contexts/CartContext";
 import { useProductVariants } from "../hooks/useProductVariants";
 import { useBrands } from "../hooks/useBrands";
 import { useCategories } from "../hooks/useCategories";
+import { useAuth } from "../contexts/AuthContext";
+import { useRouter } from "next/navigation";
 
 interface ProductVariant {
   id: string;
   productId: string;
   productName: string;
-  sku: string;
+  // sku: string; // Temporarily disabled
   size: string;
   color: string;
   stockQuantity: number;
@@ -70,6 +72,8 @@ export default function ProductDetailModal({
   onClose,
 }: ProductDetailModalProps) {
   const { addToCart } = useCart();
+  const { isAuthenticated, setRedirectUrl } = useAuth();
+  const router = useRouter();
   const { variants } = useProductVariants(product.id);
   const { brands } = useBrands();
   const { getCategoryPath } = useCategories();
@@ -78,6 +82,11 @@ export default function ProductDetailModal({
     null
   );
   const [quantity, setQuantity] = useState(1);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
+
+  const variantRequired = variants.length > 0;
+  const isVariantSelected = !!selectedVariant;
+  const quantityDisabled = variantRequired && !isVariantSelected;
 
   // Get brand information
   const brand = brands.find((b) => b.id === product.brand?.id);
@@ -104,6 +113,19 @@ export default function ProductDetailModal({
   );
 
   const handleAddToCart = () => {
+    if (!isAuthenticated) {
+      // Persist pending add-to-cart intent if variant is selected
+      try {
+        if (selectedVariant) {
+          sessionStorage.setItem(
+            "cart:intent",
+            JSON.stringify({ variantId: selectedVariant.id, quantity })
+          );
+        }
+      } catch {}
+      setShowLoginPrompt(true);
+      return;
+    }
     if (variants.length > 0 && !selectedVariant) {
       // Show error - variant selection required
       return;
@@ -170,6 +192,8 @@ export default function ProductDetailModal({
                   Category:{" "}
                   <span className="text-white font-medium">{categoryPath}</span>
                 </div>
+                {/** SKU temporarily hidden until SKU feature is enabled */}
+                {/**
                 {product.sku && (
                   <div className="text-sm text-gray-400">
                     SKU:{" "}
@@ -178,6 +202,7 @@ export default function ProductDetailModal({
                     </span>
                   </div>
                 )}
+                */}
               </div>
 
               {/* Description */}
@@ -267,8 +292,13 @@ export default function ProductDetailModal({
                 <h3 className="text-lg font-semibold text-white">Quantity</h3>
                 <div className="flex items-center space-x-4">
                   <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-10 h-10 bg-gray-700 hover:bg-gray-600 rounded-lg flex items-center justify-center text-white transition-colors"
+                    onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                    disabled={quantityDisabled}
+                    className={`w-10 h-10 rounded-lg flex items-center justify-center text-white transition-colors ${
+                      quantityDisabled
+                        ? "bg-gray-700/60 cursor-not-allowed"
+                        : "bg-gray-700 hover:bg-gray-600"
+                    }`}
                   >
                     -
                   </button>
@@ -276,12 +306,22 @@ export default function ProductDetailModal({
                     {quantity}
                   </span>
                   <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="w-10 h-10 bg-gray-700 hover:bg-gray-600 rounded-lg flex items-center justify-center text-white transition-colors"
+                    onClick={() => setQuantity((q) => q + 1)}
+                    disabled={quantityDisabled}
+                    className={`w-10 h-10 rounded-lg flex items-center justify-center text-white transition-colors ${
+                      quantityDisabled
+                        ? "bg-gray-700/60 cursor-not-allowed"
+                        : "bg-gray-700 hover:bg-gray-600"
+                    }`}
                   >
                     +
                   </button>
                 </div>
+                {quantityDisabled && (
+                  <div className="text-xs text-gray-400">
+                    Select a variant to set quantity.
+                  </div>
+                )}
               </div>
 
               {/* Delivery Options */}
@@ -330,7 +370,7 @@ export default function ProductDetailModal({
             <div className="pt-4 mt-6 border-t border-gray-700 flex-shrink-0">
               <button
                 onClick={handleAddToCart}
-                disabled={variants.length > 0 && !selectedVariant}
+                disabled={variantRequired && !isVariantSelected}
                 className="w-full bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-black font-semibold py-3 px-6 rounded-lg transition-colors flex items-center justify-center space-x-2"
               >
                 <ShoppingCart className="w-5 h-5" />
@@ -347,6 +387,40 @@ export default function ProductDetailModal({
           </div>
         </div>
       </div>
+      {/* Login Prompt Modal */}
+      {showLoginPrompt && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60">
+          <div className="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-sm mx-4 shadow-xl">
+            <div className="px-5 py-4 border-b border-gray-800">
+              <h3 className="text-white text-lg font-semibold">
+                Sign in required
+              </h3>
+              <p className="text-gray-400 text-sm mt-1">
+                Please sign in to add items to your cart.
+              </p>
+            </div>
+            <div className="px-5 py-4 flex justify-end gap-3">
+              <button
+                onClick={() => setShowLoginPrompt(false)}
+                className="px-4 py-2 rounded-md bg-gray-700 hover:bg-gray-600 text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    setRedirectUrl(window.location.pathname, "cart");
+                  }
+                  router.push("/login");
+                }}
+                className="px-4 py-2 rounded-md bg-yellow-400 hover:bg-yellow-500 text-black font-semibold transition-colors"
+              >
+                Sign in
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -10,7 +10,7 @@ interface ProductVariant {
   id: string;
   productId: string;
   productName: string;
-  sku: string;
+  // sku: string; // Temporarily disabled
   size: string;
   color: string;
   stockQuantity: number;
@@ -24,7 +24,7 @@ interface Product {
   id: string;
   name: string;
   description?: string;
-  sku?: string;
+  // sku?: string; // Temporarily disabled
   costPrice?: number;
   price: number;
   discountPrice?: number;
@@ -115,11 +115,15 @@ export default function ProductCard({
 
   return (
     <>
-      <div className="group cursor-pointer" onClick={handleCardClick}>
+      <div
+        className="group cursor-pointer flex flex-col w-full"
+        onClick={handleCardClick}
+      >
         <div className="bg-gray-800 rounded-2xl p-8 mb-4 h-64 flex items-center justify-center group-hover:shadow-lg transition-shadow duration-300 border border-gray-700 relative overflow-hidden">
           {mainImage ? (
             <>
               {/* Main Image */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={mainImage}
                 alt={product.name}
@@ -136,6 +140,7 @@ export default function ProductCard({
                 <div className="absolute inset-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   <div className="grid grid-cols-2 gap-1 h-full">
                     {additionalImages.slice(0, 3).map((image, index) => (
+                      // eslint-disable-next-line @next/next/no-img-element
                       <img
                         key={index}
                         src={image}
@@ -175,12 +180,13 @@ export default function ProductCard({
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 flex flex-col h-full">
           {/* Brand and Category */}
           <div className="space-y-1">
             {brand && (
               <div className="flex items-center space-x-2">
                 {brand.logoUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={brand.logoUrl}
                     alt={brand.name}
@@ -207,8 +213,11 @@ export default function ProductCard({
             </p>
           )}
 
+          {/* Fixed height spacer instead of flexible - ensures consistent spacing */}
+          <div className="h-4"></div>
+
           <div className="flex items-center justify-between">
-            <div className="flex flex-col">
+            <div className="flex flex-col min-h-[60px] justify-end">
               {(product.discountPrice &&
                 product.discountPrice < product.price) ||
               (product.discountPercent && product.discountPercent > 0) ? (
@@ -256,7 +265,7 @@ export default function ProductCard({
           <button
             onClick={handleAddToCartClick}
             disabled={variantsLoading || !hasVariants || totalStock === 0}
-            className="w-full bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-black py-3 rounded-full font-semibold transition-colors duration-200"
+            className="w-full bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-600 disabled:cursor-not-allowed text-black py-3 rounded-full font-semibold transition-colors duration-200 mt-2"
           >
             {variantsLoading
               ? "Loading..."

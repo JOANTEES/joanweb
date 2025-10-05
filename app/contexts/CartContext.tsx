@@ -23,7 +23,7 @@ interface CartItem {
   hasDiscount: boolean;
   quantity: number;
   variantId: string;
-  sku: string;
+  // sku: string; // Temporarily disabled
   size: string;
   color: string;
   imageUrl?: string;
@@ -163,7 +163,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   >(null);
   const [selectedDeliveryAddress, setSelectedDeliveryAddress] =
     useState<SelectedDeliveryAddress | null>(null);
-  const { isAuthenticated, setRedirectUrl } = useAuth();
+  const { isAuthenticated, setRedirectUrl, user } = useAuth();
 
   const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -179,6 +179,57 @@ export function CartProvider({ children }: { children: ReactNode }) {
       Expires: "0",
     };
   };
+
+  // Key used to persist the selected delivery address per authenticated user
+  const storageKey =
+    typeof window !== "undefined" && user?.id
+      ? `cart:selectedAddress:${user.id}`
+      : null;
+
+  // Hydrate selected delivery address from localStorage when authenticated
+  useEffect(() => {
+    if (!isAuthenticated || !storageKey) return;
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as {
+        selectedDeliveryAddressId?: string | null;
+        selectedDeliveryAddress?: SelectedDeliveryAddress | null;
+      };
+      if (parsed.selectedDeliveryAddressId !== undefined) {
+        setSelectedDeliveryAddressId(parsed.selectedDeliveryAddressId);
+      }
+      if (parsed.selectedDeliveryAddress !== undefined) {
+        setSelectedDeliveryAddress(parsed.selectedDeliveryAddress);
+      }
+    } catch {
+      // ignore malformed storage
+    }
+  }, [
+    isAuthenticated,
+    storageKey,
+    setSelectedDeliveryAddressId,
+    setSelectedDeliveryAddress,
+  ]);
+
+  // Persist selection to localStorage when it changes (authenticated only)
+  useEffect(() => {
+    if (!isAuthenticated || !storageKey) return;
+    try {
+      const payload = JSON.stringify({
+        selectedDeliveryAddressId,
+        selectedDeliveryAddress,
+      });
+      localStorage.setItem(storageKey, payload);
+    } catch {
+      // ignore storage errors
+    }
+  }, [
+    isAuthenticated,
+    storageKey,
+    selectedDeliveryAddressId,
+    selectedDeliveryAddress,
+  ]);
 
   // Define refreshCart with useCallback to avoid recreation on each render
   const refreshCart = useCallback(async () => {
@@ -237,6 +288,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setSelectedPickupLocation(null);
       setSelectedDeliveryAddressId(null);
       setSelectedDeliveryAddress(null);
+      // Also clear any persisted selection keys
+      if (typeof window !== "undefined") {
+        try {
+          const keysToRemove: string[] = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.startsWith("cart:selectedAddress:")) {
+              keysToRemove.push(key);
+            }
+          }
+          keysToRemove.forEach((k) => localStorage.removeItem(k));
+        } catch {
+          // ignore storage errors
+        }
+      }
     }
   }, [isAuthenticated, refreshCart]);
 
@@ -258,6 +324,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       setError(null);
 
+      // Optimistic UI: increment the item count immediately
+      const previousItemCount = itemCount;
+      setItemCount((prev) => prev + quantity);
+      try {
+        // Fire a toast event for immediate UX feedback
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("app:toast", {
+              detail: { type: "success", message: "Added to cart" },
+            })
+          );
+        }
+      } catch {}
+
       const response = await fetch(`${API_BASE_URL}/cart/add`, {
         method: "POST",
         headers: getAuthHeaders(),
@@ -277,6 +357,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
       } else {
         const errorData = await response.json();
         setError(errorData.message || "Failed to add item to cart");
+        // Revert optimistic update on failure
+        setItemCount(previousItemCount);
+        try {
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(
+              new CustomEvent("app:toast", {
+                detail: {
+                  type: "error",
+                  message: errorData.message || "Failed to add to cart",
+                },
+              })
+            );
+          }
+        } catch {}
         return false;
       }
     } catch (err) {
@@ -284,6 +378,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setError(
         err instanceof Error ? err.message : "Failed to add item to cart"
       );
+      // Revert optimistic update on error
+      setItemCount((prev) => Math.max(0, prev - quantity));
+      try {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("app:toast", {
+              detail: { type: "error", message: "Failed to add to cart" },
+            })
+          );
+        }
+      } catch {}
       return false;
     } finally {
       setLoading(false);
@@ -294,6 +399,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const removeFromCart = async (itemId: string): Promise<boolean> => {
     if (!isAuthenticated) return false;
+
+    // Find the item being removed for optimistic update and rollback
+    const itemToRemove = items.find((item) => item.id === itemId);
+    if (!itemToRemove) return false;
+
+    // Optimistic update - immediately remove item from UI
+    const optimisticItems = items.filter((item) => item.id !== itemId);
+    const optimisticItemCount = Math.max(0, itemCount - itemToRemove.quantity);
+
+    setItems(optimisticItems);
+    setItemCount(optimisticItemCount);
+
+    // Show optimistic toast
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("app:toast", {
+          detail: { type: "success", message: "Item removed from cart" },
+        })
+      );
+    }
 
     try {
       setLoading(true);
@@ -307,6 +432,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
+          // Update with actual server response
           setItems(data.data.items || []);
           setTotals(
             data.data.totals || { subtotal: 0, tax: 0, shipping: 0, total: 0 }
@@ -315,15 +441,43 @@ export function CartProvider({ children }: { children: ReactNode }) {
           return true;
         }
       } else {
+        // Rollback optimistic update on failure
+        setItems(items);
+        setItemCount(itemCount);
+
         const errorData = await response.json();
         setError(errorData.message || "Failed to remove item from cart");
+
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("app:toast", {
+              detail: {
+                type: "error",
+                message: errorData.message || "Failed to remove item from cart",
+              },
+            })
+          );
+        }
         return false;
       }
     } catch (err) {
       console.error("Error removing from cart:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to remove item from cart"
-      );
+
+      // Rollback optimistic update on error
+      setItems(items);
+      setItemCount(itemCount);
+
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to remove item from cart";
+      setError(errorMessage);
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("app:toast", {
+            detail: { type: "error", message: errorMessage },
+          })
+        );
+      }
       return false;
     } finally {
       setLoading(false);
@@ -342,6 +496,31 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return removeFromCart(itemId);
     }
 
+    // Find the item being updated for optimistic update and rollback
+    const itemToUpdate = items.find((item) => item.id === itemId);
+    if (!itemToUpdate) return false;
+
+    const originalQuantity = itemToUpdate.quantity;
+    const quantityDiff = quantity - originalQuantity;
+
+    // Optimistic update - immediately update item quantity in UI
+    const optimisticItems = items.map((item) =>
+      item.id === itemId ? { ...item, quantity } : item
+    );
+    const optimisticItemCount = Math.max(0, itemCount + quantityDiff);
+
+    setItems(optimisticItems);
+    setItemCount(optimisticItemCount);
+
+    // Show optimistic toast
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("app:toast", {
+          detail: { type: "success", message: "Quantity updated" },
+        })
+      );
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -355,6 +534,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (response.ok) {
         const data = await response.json();
         if (data.success && data.data) {
+          // Update with actual server response
           setItems(data.data.items || []);
           setTotals(
             data.data.totals || { subtotal: 0, tax: 0, shipping: 0, total: 0 }
@@ -363,15 +543,43 @@ export function CartProvider({ children }: { children: ReactNode }) {
           return true;
         }
       } else {
+        // Rollback optimistic update on failure
+        setItems(items);
+        setItemCount(itemCount);
+
         const errorData = await response.json();
         setError(errorData.message || "Failed to update cart item");
+
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("app:toast", {
+              detail: {
+                type: "error",
+                message: errorData.message || "Failed to update quantity",
+              },
+            })
+          );
+        }
         return false;
       }
     } catch (err) {
       console.error("Error updating cart:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to update cart item"
-      );
+
+      // Rollback optimistic update on error
+      setItems(items);
+      setItemCount(itemCount);
+
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to update cart item";
+      setError(errorMessage);
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("app:toast", {
+            detail: { type: "error", message: errorMessage },
+          })
+        );
+      }
       return false;
     } finally {
       setLoading(false);

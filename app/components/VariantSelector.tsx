@@ -7,7 +7,7 @@ interface ProductVariant {
   id: string;
   productId: string;
   productName: string;
-  sku: string;
+  // sku: string; // Temporarily disabled
   size: string;
   color: string;
   stockQuantity: number;
@@ -177,10 +177,13 @@ export default function VariantSelector({
               {selectedVariant.size} - {selectedVariant.color}
             </span>
           </div>
+          {/** SKU temporarily hidden until SKU feature is enabled */}
+          {/** 
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-300">SKU:</span>
             <span className="text-sm text-gray-400">{selectedVariant.sku}</span>
           </div>
+          */}
           <div className="flex items-center justify-between">
             <span className="text-sm text-gray-300">Stock:</span>
             <span

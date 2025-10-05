@@ -18,7 +18,8 @@ import {
 import { useState } from "react";
 import { useCustomerAddresses } from "../hooks/useCustomerAddresses";
 import AddressForm from "../components/AddressForm";
-import { usePickupLocations } from "../hooks/usePickupLocations";
+// PICKUP_DISABLED: Temporarily disable pickup feature UI (keep code for future)
+// import { usePickupLocations } from "../hooks/usePickupLocations";
 
 export default function Cart() {
   const { isAuthenticated, loading, setRedirectUrl } = useAuth();
@@ -29,24 +30,27 @@ export default function Cart() {
     updateQuantity,
     removeFromCart,
     updateCartDeliveryMethod,
-    // selectedDeliveryAddressId, // Unused but kept for future use
-    setSelectedPickupLocation,
+    selectedDeliveryAddressId,
+    selectedPickupLocation,
   } = useCart();
   const { zones: deliveryZones, loading: zonesLoading } = useDeliveryZones();
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState<"delivery" | "pickup">(
-    (cart?.deliveryMethod as "delivery" | "pickup") || "delivery"
+    // PICKUP_DISABLED: Force delivery tab only
+    "delivery"
   );
   const [localSelectedAddressId, setLocalSelectedAddressId] = useState<
     number | null
   >(null);
-  const [localSelectedPickupId, setLocalSelectedPickupId] = useState<
-    string | null
-  >(null);
+  // PICKUP_DISABLED: Remove local pickup selection state
+  // const [localSelectedPickupId, setLocalSelectedPickupId] = useState<
+  //   string | null
+  // >(null);
   const [appliedSelection, setAppliedSelection] = useState<
     { type: "delivery"; id: number } | { type: "pickup"; id: string } | null
   >(null);
+  const [isApplying, setIsApplying] = useState(false);
   const [isAddressFormOpen, setIsAddressFormOpen] = useState(false);
 
   // Addresses hook utilities
@@ -58,8 +62,9 @@ export default function Cart() {
     refetch: refetchAddresses,
   } = useCustomerAddresses();
   // Pickup locations
-  const { locations: pickupLocations, loading: pickupsLoading } =
-    usePickupLocations();
+  // PICKUP_DISABLED: Temporarily disable pickup locations hook
+  // const { locations: pickupLocations, loading: pickupsLoading } =
+  //   usePickupLocations();
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {
@@ -104,18 +109,17 @@ export default function Cart() {
     }
   }, [addressesLoading, addresses, localSelectedAddressId]);
 
-  const handleSwitchToPickup = async () => {
-    try {
-      const success = await updateCartDeliveryMethod("pickup");
-      if (success) {
-        setDeliveryEligibilityIssues(null);
-        // setValidationError(null); // Commented out as variable is unused
-      }
-    } catch (error) {
-      console.error("Error switching to pickup:", error);
-      // setValidationError("Failed to switch to pickup"); // Commented out as variable is unused
-    }
-  };
+  // PICKUP_DISABLED: Temporarily disable switch to pickup action
+  // const handleSwitchToPickup = async () => {
+  //   try {
+  //     const success = await updateCartDeliveryMethod("pickup");
+  //     if (success) {
+  //       setDeliveryEligibilityIssues(null);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error switching to pickup:", error);
+  //   }
+  // };
 
   if (loading) {
     return (
@@ -170,15 +174,17 @@ export default function Cart() {
       <div className="min-h-screen bg-black py-8">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center space-x-4">
+          <div className="flex flex-wrap items-center justify-between mb-6 sm:mb-8 gap-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <button
                 onClick={() => router.back()}
                 className="text-gray-400 hover:text-white transition-colors"
               >
-                <ArrowLeft className="w-6 h-6" />
+                <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6" />
               </button>
-              <h1 className="text-3xl font-bold text-white">Shopping Cart</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-white">
+                Shopping Cart
+              </h1>
             </div>
             <div className="text-gray-400">
               {items.length} item{items.length !== 1 ? "s" : ""}
@@ -200,15 +206,14 @@ export default function Cart() {
                   </div>
                 ) : (deliveryZones ?? []).length === 0 ? (
                   <div className="text-gray-400 text-sm">
-                    No delivery zones available right now. You can still choose
-                    Pickup.
+                    No delivery zones available right now.
                   </div>
                 ) : (
                   <div className="text-gray-300 text-sm">
                     {(deliveryZones ?? []).map((z) => (
                       <span
                         key={z.id}
-                        className="inline-flex items-center px-2 py-0.5 mr-2 mb-2 rounded border border-gray-600 bg-gray-700/50"
+                        className="inline-flex items-center px-2 py-0.5 mr-2 mb-2 rounded border border-gray-600 bg-gray-700/50 text-xs sm:text-sm"
                         title={`${
                           z.description
                         } • Fee: ₵${z.deliveryFee.toFixed(2)} • ETA: ${
@@ -216,7 +221,7 @@ export default function Cart() {
                         }`}
                       >
                         {z.name}
-                        <span className="ml-2 text-xs text-gray-400">
+                        <span className="ml-1 text-xs text-gray-400">
                           ₵{z.deliveryFee.toFixed(2)}
                         </span>
                       </span>
@@ -225,14 +230,15 @@ export default function Cart() {
                 )}
                 <div className="text-gray-500 text-xs mt-2">
                   Pick an address that falls within one of these zones to enable
-                  Delivery, or switch to Pickup.
+                  Delivery.
                 </div>
               </div>
             </div>
           </div>
 
           {/* Simple delivery eligibility notice */}
-          {deliveryEligibilityIssues &&
+          {/* PICKUP_DISABLED: Hide pickup eligibility notice and CTA */}
+          {/* {deliveryEligibilityIssues &&
             deliveryEligibilityIssues.length > 0 && (
               <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-4 mb-6">
                 <div className="flex items-center justify-between">
@@ -250,25 +256,26 @@ export default function Cart() {
                   </button>
                 </div>
               </div>
-            )}
+            )} */}
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
             {/* Cart Items */}
             <div className="lg:col-span-2">
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {items.map((item) => (
                   <div
                     key={item.id}
-                    className={`rounded-lg p-6 ${
+                    className={`rounded-lg p-4 sm:p-6 ${
                       cart?.deliveryMethod === "delivery" &&
                       !item.deliveryEligible
                         ? "bg-blue-900/10 border border-blue-500/30"
                         : "bg-gray-800"
                     }`}
                   >
-                    <div className="flex items-start space-x-4">
+                    {/* Mobile-optimized layout */}
+                    <div className="flex flex-col sm:flex-row sm:items-start">
                       {/* Product Image */}
-                      <div className="w-24 h-24 bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <div className="w-full sm:w-24 h-32 sm:h-24 bg-gray-700 rounded-lg flex items-center justify-center flex-shrink-0 mb-3 sm:mb-0 sm:mr-6">
                         {item.imageUrl ? (
                           <>
                             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -285,9 +292,9 @@ export default function Cart() {
                         )}
                       </div>
 
-                      {/* Product Details */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2 mb-2">
+                      <div className="flex-1 min-w-0 sm:pl-2">
+                        {/* Product Details */}
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
                           <h3 className="text-lg font-semibold text-white">
                             {item.productName}
                           </h3>
@@ -299,9 +306,10 @@ export default function Cart() {
                               </div>
                             )}
                         </div>
+
                         <div className="text-gray-400 text-sm mb-2">
                           {item.hasDiscount ? (
-                            <div className="flex items-center space-x-2">
+                            <div className="flex flex-wrap items-center gap-2">
                               <span>
                                 ₵{item.effectivePrice.toFixed(2)} each
                               </span>
@@ -316,57 +324,58 @@ export default function Cart() {
                             <span>₵{item.effectivePrice.toFixed(2)} each</span>
                           )}
                         </div>
+
                         <div className="text-gray-500 text-sm space-y-1">
                           <p>Size: {item.size}</p>
                           <p>Color: {item.color}</p>
-                          <p>SKU: {item.sku}</p>
-                        </div>
-                        {/* Quantity Display */}
-                        <div className="mt-2">
-                          <p className="text-yellow-400 text-sm font-medium">
-                            Quantity: {item.quantity}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Controls Section */}
-                      <div className="flex items-center justify-between mt-3">
-                        {/* Quantity Controls */}
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() =>
-                              updateQuantity(item.id, item.quantity - 1)
-                            }
-                            className="p-2 bg-gray-700 hover:bg-gray-600 active:bg-gray-500 rounded-full transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
-                            aria-label="Decrease quantity"
-                          >
-                            <Minus className="w-4 h-4 text-white" />
-                          </button>
-                          <button
-                            onClick={() =>
-                              updateQuantity(item.id, item.quantity + 1)
-                            }
-                            className="p-2 bg-gray-700 hover:bg-gray-600 active:bg-gray-500 rounded-full transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center"
-                            aria-label="Increase quantity"
-                          >
-                            <Plus className="w-4 h-4 text-white" />
-                          </button>
+                          {/** SKU temporarily hidden until SKU feature is enabled */}
+                          {/** <p>SKU: {item.sku}</p> */}
                         </div>
 
-                        {/* Item Total and Remove */}
-                        <div className="flex items-center space-x-3">
-                          <div className="text-right">
-                            <div className="text-lg font-bold text-white">
-                              ₵{item.subtotal.toFixed(2)}
+                        {/* Mobile Controls Section */}
+                        <div className="flex items-center justify-between mt-4">
+                          {/* Quantity Controls */}
+                          <div className="flex items-center">
+                            <span className="text-yellow-400 text-sm font-medium mr-3">
+                              Qty: {item.quantity}
+                            </span>
+                            <div className="flex items-center space-x-2">
+                              <button
+                                onClick={() =>
+                                  updateQuantity(item.id, item.quantity - 1)
+                                }
+                                className="p-1.5 sm:p-2 bg-gray-700 hover:bg-gray-600 active:bg-gray-500 rounded-full transition-colors min-h-[32px] min-w-[32px] sm:min-h-[40px] sm:min-w-[40px] flex items-center justify-center"
+                                aria-label="Decrease quantity"
+                              >
+                                <Minus className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+                              </button>
+                              <button
+                                onClick={() =>
+                                  updateQuantity(item.id, item.quantity + 1)
+                                }
+                                className="p-1.5 sm:p-2 bg-gray-700 hover:bg-gray-600 active:bg-gray-500 rounded-full transition-colors min-h-[32px] min-w-[32px] sm:min-h-[40px] sm:min-w-[40px] flex items-center justify-center"
+                                aria-label="Increase quantity"
+                              >
+                                <Plus className="w-3 h-3 sm:w-4 sm:h-4 text-white" />
+                              </button>
                             </div>
                           </div>
-                          <button
-                            onClick={() => removeFromCart(item.id)}
-                            className="p-2 text-gray-400 hover:text-red-400 active:text-red-300 transition-colors min-h-[40px] min-w-[40px] flex items-center justify-center rounded-full hover:bg-red-400/10"
-                            aria-label="Remove item"
-                          >
-                            <X className="w-5 h-5" />
-                          </button>
+
+                          {/* Item Total and Remove */}
+                          <div className="flex items-center space-x-3">
+                            <div className="text-right">
+                              <div className="text-lg font-bold text-white">
+                                ₵{item.subtotal.toFixed(2)}
+                              </div>
+                            </div>
+                            <button
+                              onClick={() => removeFromCart(item.id)}
+                              className="p-1.5 sm:p-2 text-gray-400 hover:text-red-400 active:text-red-300 transition-colors min-h-[32px] min-w-[32px] sm:min-h-[40px] sm:min-w-[40px] flex items-center justify-center rounded-full hover:bg-red-400/10"
+                              aria-label="Remove item"
+                            >
+                              <X className="w-4 h-4 sm:w-5 sm:h-5" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -375,7 +384,7 @@ export default function Cart() {
               </div>
 
               {/* Delivery Options Card (New - Tabs Scaffold) */}
-              <div className="bg-gray-800 rounded-lg p-6 mt-8">
+              <div className="bg-gray-800 rounded-lg p-4 sm:p-6 mt-8">
                 <h2 className="text-xl font-semibold text-white mb-4">
                   Delivery Options
                 </h2>
@@ -391,28 +400,20 @@ export default function Cart() {
                   >
                     Delivery
                   </button>
-                  <button
-                    className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ml-2 ${
-                      activeTab === "pickup"
-                        ? "border-yellow-400 text-yellow-400"
-                        : "border-transparent text-gray-400 hover:text-gray-200"
-                    }`}
-                    onClick={() => setActiveTab("pickup")}
-                  >
-                    Pickup
-                  </button>
+                  {/* PICKUP_DISABLED: Hide pickup tab */}
+                  {/* <button ...>Pickup</button> */}
                 </div>
 
                 {/* Panel Content */}
                 <div className="grid grid-cols-1 gap-4">
                   {activeTab === "delivery" ? (
-                    <div className="bg-gray-700/50 rounded p-4">
-                      <div className="flex items-center justify-between mb-3">
+                    <div className="bg-gray-700/50 rounded p-3 sm:p-4">
+                      <div className="flex flex-wrap items-center justify-between mb-3 gap-2">
                         <div className="text-sm text-gray-300 font-medium">
                           Select a delivery address
                         </div>
                         <button
-                          className="text-yellow-400 hover:text-yellow-300 text-sm"
+                          className="text-yellow-400 hover:text-yellow-300 text-sm whitespace-nowrap"
                           onClick={() => setIsAddressFormOpen(true)}
                         >
                           + Add New
@@ -431,7 +432,7 @@ export default function Cart() {
                           (addresses ?? []).map((addr) => (
                             <label
                               key={addr.id}
-                              className={`flex items-start p-3 rounded border cursor-pointer transition-colors ${
+                              className={`flex items-start p-2 sm:p-3 rounded border cursor-pointer transition-colors ${
                                 localSelectedAddressId === Number(addr.id)
                                   ? "border-yellow-400 bg-yellow-400/5"
                                   : "border-gray-600 hover:border-gray-500"
@@ -440,7 +441,7 @@ export default function Cart() {
                               <input
                                 type="radio"
                                 name="deliveryAddress"
-                                className="mt-1 mr-3 accent-yellow-400"
+                                className="mt-1 mr-2 sm:mr-3 accent-yellow-400"
                                 checked={
                                   localSelectedAddressId === Number(addr.id)
                                 }
@@ -448,11 +449,11 @@ export default function Cart() {
                                   setLocalSelectedAddressId(Number(addr.id))
                                 }
                               />
-                              <div className="text-sm">
+                              <div className="text-xs sm:text-sm">
                                 <div className="text-white font-medium">
                                   {addr.areaName}
                                   {addr.isDefault && (
-                                    <span className="ml-2 text-xxs uppercase tracking-wide bg-gray-600 text-white px-1.5 py-0.5 rounded">
+                                    <span className="ml-1 sm:ml-2 text-xxs uppercase tracking-wide bg-gray-600 text-white px-1 py-0.5 rounded">
                                       Default
                                     </span>
                                   )}
@@ -477,69 +478,12 @@ export default function Cart() {
                         )}
                       </div>
                     </div>
-                  ) : (
-                    <div className="bg-gray-700/50 rounded p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="text-sm text-gray-300 font-medium">
-                          Select a pickup location
-                        </div>
-                      </div>
-                      <div className="max-h-60 overflow-auto pr-1 space-y-2">
-                        {pickupsLoading ? (
-                          <div className="text-gray-400 text-sm">
-                            Loading pickup locations...
-                          </div>
-                        ) : (pickupLocations ?? []).length === 0 ? (
-                          <div className="text-gray-400 text-sm">
-                            No pickup locations available.
-                          </div>
-                        ) : (
-                          (pickupLocations ?? []).map((loc) => (
-                            <label
-                              key={loc.id}
-                              className={`flex items-start p-3 rounded border cursor-pointer transition-colors ${
-                                localSelectedPickupId === String(loc.id)
-                                  ? "border-yellow-400 bg-yellow-400/5"
-                                  : "border-gray-600 hover:border-gray-500"
-                              }`}
-                            >
-                              <input
-                                type="radio"
-                                name="pickupLocation"
-                                className="mt-1 mr-3 accent-yellow-400"
-                                checked={
-                                  localSelectedPickupId === String(loc.id)
-                                }
-                                onChange={() =>
-                                  setLocalSelectedPickupId(String(loc.id))
-                                }
-                              />
-                              <div className="text-sm">
-                                <div className="text-white font-medium">
-                                  {loc.name}
-                                </div>
-                                <div className="text-gray-300">
-                                  {[loc.areaName, loc.cityName, loc.regionName]
-                                    .filter(Boolean)
-                                    .join(", ")}
-                                </div>
-                                {loc.landmark && (
-                                  <div className="text-gray-500 text-xs mt-0.5">
-                                    Near {loc.landmark}
-                                  </div>
-                                )}
-                              </div>
-                            </label>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  )}
+                  ) : // PICKUP_DISABLED: Hide pickup panel
+                  null}
                   <div className="flex justify-end">
                     <button
                       disabled={
-                        (activeTab === "delivery" && !localSelectedAddressId) ||
-                        (activeTab === "pickup" && !localSelectedPickupId)
+                        activeTab === "delivery" && !localSelectedAddressId
                       }
                       onClick={() => {
                         if (activeTab === "delivery") {
@@ -557,6 +501,7 @@ export default function Cart() {
                           });
 
                           // Update in background
+                          setIsApplying(true);
                           updateCartDeliveryMethod("delivery", undefined, {
                             addressId: addr.id,
                             regionId: addr.regionId,
@@ -565,50 +510,22 @@ export default function Cart() {
                             landmark: addr.landmark,
                             additionalInstructions: addr.additionalInstructions,
                             contactPhone: addr.contactPhone,
-                          }).catch((error) => {
-                            console.error(
-                              "Error updating delivery method:",
-                              error
-                            );
-                            // Reset selection if failed
-                            setAppliedSelection(null);
-                          });
-                        } else {
-                          if (!localSelectedPickupId) return;
-                          const loc = (pickupLocations ?? []).find(
-                            (p) =>
-                              String(p.id) === String(localSelectedPickupId)
-                          );
-                          if (loc) {
-                            // Show immediate feedback
-                            setAppliedSelection({
-                              type: "pickup",
-                              id: String(localSelectedPickupId),
-                            });
-
-                            try {
-                              setSelectedPickupLocation?.(
-                                loc as unknown as import("../hooks/usePickupLocations").PickupLocation
+                          })
+                            .catch((error) => {
+                              console.error(
+                                "Error updating delivery method:",
+                                error
                               );
-                            } catch {}
-
-                            // Update in background
-                            updateCartDeliveryMethod("pickup").catch(
-                              (error) => {
-                                console.error(
-                                  "Error updating pickup method:",
-                                  error
-                                );
-                                // Reset selection if failed
-                                setAppliedSelection(null);
-                              }
-                            );
-                          }
+                              // Reset selection if failed
+                              setAppliedSelection(null);
+                            })
+                            .finally(() => setIsApplying(false));
+                        } else {
+                          // PICKUP_DISABLED: Hide pickup apply branch
                         }
                       }}
                       className={`px-5 py-2 rounded-lg font-semibold transition-all duration-150 transform hover:scale-105 active:scale-95 ${
-                        (activeTab === "delivery" && !localSelectedAddressId) ||
-                        (activeTab === "pickup" && !localSelectedPickupId)
+                        activeTab === "delivery" && !localSelectedAddressId
                           ? "bg-gray-600 text-gray-300 cursor-not-allowed"
                           : "bg-yellow-400 hover:bg-yellow-500 text-black"
                       }`}
@@ -618,9 +535,6 @@ export default function Cart() {
                           appliedSelection.id === Number(localSelectedAddressId)
                           ? "Applied"
                           : "Apply"
-                        : appliedSelection?.type === "pickup" &&
-                          appliedSelection.id === String(localSelectedPickupId)
-                        ? "Applied"
                         : "Apply"}
                     </button>
                   </div>
@@ -697,7 +611,7 @@ export default function Cart() {
 
             {/* Order Summary */}
             <div className="lg:col-span-1">
-              <div className="bg-gray-800 rounded-lg p-6 sticky top-8">
+              <div className="bg-gray-800 rounded-lg p-4 sm:p-6 sticky top-8">
                 <h2 className="text-xl font-semibold text-white mb-6">
                   Order Summary
                 </h2>
@@ -715,34 +629,40 @@ export default function Cart() {
                     <span>₵{totals.tax.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between items-center text-gray-300">
-                    {cart?.deliveryMethod === "pickup" ? (
-                      <>
-                        <span className="flex items-center">
-                          <span>Pickup</span>
-                          <span className="ml-2 text-xs bg-green-900/30 text-green-400 px-2 py-0.5 rounded">
-                            Free
-                          </span>
+                    <span className="flex items-center">
+                      <span>Delivery</span>
+                      {cart?.deliveryZoneName && (
+                        <span className="ml-2 text-xs bg-blue-900/30 text-blue-400 px-2 py-0.5 rounded">
+                          {cart.deliveryZoneName}
                         </span>
-                        <span>₵0.00</span>
-                      </>
-                    ) : (
-                      <>
-                        <span className="flex items-center">
-                          <span>Delivery</span>
-                          {cart?.deliveryZoneName && (
-                            <span className="ml-2 text-xs bg-blue-900/30 text-blue-400 px-2 py-0.5 rounded">
-                              {cart.deliveryZoneName}
-                            </span>
-                          )}
-                        </span>
-                        <span>₵{totals.shipping.toFixed(2)}</span>
-                      </>
-                    )}
+                      )}
+                    </span>
+                    <span>₵{totals.shipping.toFixed(2)}</span>
                   </div>
+                  {cart?.deliveryMethod === "delivery" &&
+                    selectedDeliveryAddressId && (
+                      <div className="text-gray-500 text-xs -mt-2 mb-2">
+                        {(() => {
+                          const addr = (addresses ?? []).find(
+                            (a) =>
+                              Number(a.id) === Number(selectedDeliveryAddressId)
+                          );
+                          const parts = [
+                            addr?.areaName,
+                            addr?.cityName,
+                            addr?.regionName,
+                          ]
+                            .filter(Boolean)
+                            .join(", ");
+                          return parts ? `To: ${parts}` : null;
+                        })()}
+                      </div>
+                    )}
 
-                  {cart?.deliveryMethod === "pickup" && (
+                  {/* PICKUP_DISABLED: Hide pickup summary */}
+                  {/* {cart?.deliveryMethod === "pickup" && (
                     <PickupLocationSummary />
-                  )}
+                  )} */}
 
                   {/* Show special delivery notice if applicable */}
                   {totals.shipping > 0 &&
@@ -771,21 +691,39 @@ export default function Cart() {
                     router.replace("/checkout");
                   }}
                   disabled={
-                    !!(
-                      deliveryEligibilityIssues &&
-                      deliveryEligibilityIssues.length > 0
-                    )
+                    isApplying ||
+                    (deliveryEligibilityIssues &&
+                      deliveryEligibilityIssues.length > 0) ||
+                    (cart?.deliveryMethod === "delivery" &&
+                      !selectedDeliveryAddressId) ||
+                    (cart?.deliveryMethod === "pickup" &&
+                      !selectedPickupLocation)
                   }
                   className={`w-full mt-6 py-4 rounded-lg font-semibold transition-all duration-150 transform hover:scale-[1.02] active:scale-[0.98] ${
-                    deliveryEligibilityIssues &&
-                    deliveryEligibilityIssues.length > 0
+                    isApplying ||
+                    (deliveryEligibilityIssues &&
+                      deliveryEligibilityIssues.length > 0) ||
+                    (cart?.deliveryMethod === "delivery" &&
+                      !selectedDeliveryAddressId) ||
+                    (cart?.deliveryMethod === "pickup" &&
+                      !selectedPickupLocation)
                       ? "bg-gray-600 text-gray-400 cursor-not-allowed"
                       : "bg-yellow-400 hover:bg-yellow-500 text-black"
                   }`}
                 >
-                  {deliveryEligibilityIssues &&
-                  deliveryEligibilityIssues.length > 0
+                  {isApplying
+                    ? activeTab === "delivery"
+                      ? "Validating address..."
+                      : "Applying pickup location..."
+                    : deliveryEligibilityIssues &&
+                      deliveryEligibilityIssues.length > 0
                     ? "Resolve Delivery Issues First"
+                    : cart?.deliveryMethod === "delivery" &&
+                      !selectedDeliveryAddressId
+                    ? "Apply Delivery Address First"
+                    : cart?.deliveryMethod === "pickup" &&
+                      !selectedPickupLocation
+                    ? "Select Pickup Location First"
                     : "Proceed to Checkout"}
                 </button>
 
@@ -804,44 +742,5 @@ export default function Cart() {
   );
 }
 
-function PickupLocationSummary() {
-  const { selectedPickupLocation } = useCart();
-  if (!selectedPickupLocation) {
-    return (
-      <div className="mt-2 text-xs text-orange-400">
-        Please choose a pickup location.
-      </div>
-    );
-  }
-  return (
-    <div className="mt-3 p-3 bg-gray-700/50 rounded">
-      <div className="text-sm text-gray-300 font-medium">
-        {selectedPickupLocation.name}
-      </div>
-      <div className="text-xs text-gray-400">
-        {[
-          selectedPickupLocation.areaName,
-          selectedPickupLocation.cityName,
-          selectedPickupLocation.regionName,
-        ]
-          .filter(Boolean)
-          .join(", ")}
-      </div>
-      {selectedPickupLocation.landmark && (
-        <div className="text-xs text-gray-500 mt-1">
-          Near {selectedPickupLocation.landmark}
-        </div>
-      )}
-      {selectedPickupLocation.googleMapsLink && (
-        <a
-          href={selectedPickupLocation.googleMapsLink}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-yellow-400 hover:text-yellow-300 text-xs mt-2 inline-block"
-        >
-          View on Maps
-        </a>
-      )}
-    </div>
-  );
-}
+// PICKUP_DISABLED: Hide pickup summary component (kept for future use)
+// function PickupLocationSummary() { ... }

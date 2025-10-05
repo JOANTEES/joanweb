@@ -101,6 +101,7 @@ export default function ImageGallery({
             isZoomed ? "fixed inset-0 z-50 bg-black" : "aspect-square max-h-96"
           }`}
         >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={currentImage}
             alt={`Product image ${selectedImageIndex + 1}`}
@@ -173,6 +174,7 @@ export default function ImageGallery({
                   : "border-gray-200 hover:border-gray-300"
               }`}
             >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={image}
                 alt={`Thumbnail ${index + 1}`}

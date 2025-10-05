@@ -302,26 +302,13 @@ export default function Orders() {
   };
 
   // Enhanced status function that considers both order status and payment status
-  const getEnhancedStatus = (
-    orderStatus: string,
-    paymentStatus: string,
-    paymentMethod: string
-  ) => {
-    // For online payments that are paid, show success even if order is pending
-    if (paymentMethod === "online" && paymentStatus === "paid") {
-      if (orderStatus === "pending") {
-        return "paid_pending";
-      }
-    }
-
-    // For offline payments, show the order status
-    return orderStatus;
+  const getEnhancedStatus = (orderStatus: string) => {
+    // Business rule: show the real order status from backend (e.g., pending until admin confirms)
+    return orderStatus || "pending";
   };
 
   const getEnhancedStatusIcon = (status: string) => {
     switch (status) {
-      case "paid_pending":
-        return <CheckCircle className="w-5 h-5 text-green-400" />;
       case "completed":
         return <CheckCircle className="w-5 h-5 text-green-400" />;
       case "delivered":
@@ -339,8 +326,6 @@ export default function Orders() {
 
   const getEnhancedStatusText = (status: string) => {
     switch (status) {
-      case "paid_pending":
-        return "Success";
       case "completed":
         return "Completed";
       case "delivered":
@@ -367,8 +352,6 @@ export default function Orders() {
 
   const getEnhancedStatusColor = (status: string) => {
     switch (status) {
-      case "paid_pending":
-        return "text-green-400 bg-green-400/10 border-green-400/20";
       case "completed":
         return "text-green-400 bg-green-400/10 border-green-400/20";
       case "delivered":
@@ -453,27 +436,13 @@ export default function Orders() {
                     <div className="flex items-center space-x-4 mt-4 md:mt-0">
                       <div
                         className={`flex items-center space-x-2 px-3 py-1 rounded-full border ${getEnhancedStatusColor(
-                          getEnhancedStatus(
-                            order.status,
-                            order.paymentStatus,
-                            order.paymentMethod
-                          )
+                          getEnhancedStatus(order.status)
                         )}`}
                       >
-                        {getEnhancedStatusIcon(
-                          getEnhancedStatus(
-                            order.status,
-                            order.paymentStatus,
-                            order.paymentMethod
-                          )
-                        )}
+                        {getEnhancedStatusIcon(getEnhancedStatus(order.status))}
                         <span className="font-medium">
                           {getEnhancedStatusText(
-                            getEnhancedStatus(
-                              order.status,
-                              order.paymentStatus,
-                              order.paymentMethod
-                            )
+                            getEnhancedStatus(order.status)
                           )}
                         </span>
                       </div>

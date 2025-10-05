@@ -4,8 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { UserRound, LogOut, User, ShoppingCart } from "lucide-react";
-import { Home, ShoppingBag, ClipboardList, Truck } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { Home, ShoppingBag, ClipboardList } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
 
@@ -16,9 +16,13 @@ export default function Navigation({
 }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+  const [showLogoutNotice, setShowLogoutNotice] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
   const pathname = usePathname();
+  const router = useRouter();
   const { isAuthenticated, user, logout, setRedirectUrl } = useAuth();
-  const { itemCount } = useCart();
+  const { itemCount, addToCart } = useCart();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -38,11 +42,83 @@ export default function Navigation({
     };
   }, []);
 
+  // Cross-route toast: read from sessionStorage when route changes
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = sessionStorage.getItem("app:toast");
+      if (!raw) return;
+      const payload = JSON.parse(raw) as { type?: string; message?: string };
+      if (payload && payload.message) {
+        setToastMessage(payload.message);
+        setShowLogoutNotice(true);
+        // remove and auto-hide
+        sessionStorage.removeItem("app:toast");
+        const t = setTimeout(() => {
+          setShowLogoutNotice(false);
+          setToastMessage("");
+        }, 2500);
+        return () => clearTimeout(t);
+      }
+    } catch {}
+  }, [pathname]);
+
+  // Listen for in-app toast events (e.g., add-to-cart success/failure)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as
+        | { type?: string; message?: string }
+        | undefined;
+      if (!detail?.message) return;
+      setToastMessage(detail.message);
+      setShowLogoutNotice(true);
+      const t = setTimeout(() => {
+        setShowLogoutNotice(false);
+        setToastMessage("");
+      }, 2000);
+      return () => clearTimeout(t);
+    };
+    window.addEventListener("app:toast", handler as EventListener);
+    return () =>
+      window.removeEventListener("app:toast", handler as EventListener);
+  }, []);
+
+  // After auth redirection, auto-consume any pending add-to-cart intent
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    // Only attempt when authenticated
+    if (!isAuthenticated) return;
+    try {
+      const rawIntent = sessionStorage.getItem("cart:intent");
+      if (rawIntent) {
+        sessionStorage.removeItem("cart:intent");
+        const intent = JSON.parse(rawIntent) as {
+          variantId: string;
+          quantity: number;
+        };
+        if (intent?.variantId && intent?.quantity) {
+          // Add to cart in background
+          addToCart(intent.variantId, intent.quantity).catch(() => {});
+          // Raise a toast
+          setToastMessage("Item added to cart");
+          setShowLogoutNotice(true);
+          const t = setTimeout(() => {
+            setShowLogoutNotice(false);
+            setToastMessage("");
+          }, 2000);
+          return () => clearTimeout(t);
+        }
+      }
+    } catch {}
+  }, [isAuthenticated, addToCart]);
+
   const navItems = [
     { name: "Home", href: "/", Icon: Home, protected: false },
     { name: "Shop", href: "/shop", Icon: ShoppingBag, protected: false },
     { name: "Orders", href: "/orders", Icon: ClipboardList, protected: true },
-    { name: "Pick & Drop", href: "/pick-drop", Icon: Truck, protected: true },
+    // PICKUP_DISABLED: Temporarily hide Pick & Drop from navigation (keep route intact for future use)
+    // { name: "Pick & Drop", href: "/pick-drop", Icon: Truck, protected: true },
   ];
 
   const handleProtectedLinkClick = (href: string) => {
@@ -134,9 +210,20 @@ export default function Navigation({
                 </button>
 
                 {isDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-xl border border-gray-700 py-2 z-50">
+                  <div className="absolute right-0 mt-2 w-60 bg-gray-800 rounded-lg shadow-xl border border-gray-700 py-2 z-50">
                     <div className="px-4 py-2 border-b border-gray-700">
-                      <p className="text-sm text-gray-300">{user?.email}</p>
+                      <div
+                        className="text-white text-sm font-medium max-w-[13rem] truncate"
+                        title={user?.name || undefined}
+                      >
+                        {user?.name}
+                      </div>
+                      <p
+                        className="text-sm text-gray-300 max-w-[13rem] truncate"
+                        title={user?.email || undefined}
+                      >
+                        {user?.email}
+                      </p>
                     </div>
                     <Link
                       href="/profile"
@@ -147,9 +234,8 @@ export default function Navigation({
                       Profile
                     </Link>
                     <button
-                      onClick={async () => {
-                        await logout();
-                        setIsDropdownOpen(false);
+                      onClick={() => {
+                        setIsLogoutConfirmOpen(true);
                       }}
                       className="flex items-center w-full px-4 py-2 text-white hover:bg-gray-700 transition-colors"
                     >
@@ -209,7 +295,7 @@ export default function Navigation({
         {/* Mobile Navigation Menu */}
         {isMenuOpen && (
           <div className="md:hidden border-t border-gray-800 bg-black/90 backdrop-blur-sm shadow-xl ring-1 ring-gray-800/60 rounded-b-2xl py-3 px-3">
-            <div className="flex flex-col space-y-2">
+            <div className="flex flex-col space-y-1">
               {navItems.map((item) => {
                 const isActive = pathname === item.href;
                 const ItemIcon = item.Icon;
@@ -227,66 +313,49 @@ export default function Navigation({
                       isActive
                         ? "bg-gray-800/80 text-white ring-1 ring-gray-700"
                         : "text-white/90 hover:text-white hover:bg-gray-800/60"
-                    } transition-colors duration-150 font-medium px-3 py-3 rounded-lg inline-flex items-center gap-3 border border-transparent hover:border-gray-700`}
+                    } transition-colors duration-150 font-medium px-3 py-2.5 rounded-lg inline-flex items-center gap-3 border border-transparent hover:border-gray-700`}
                   >
-                    <ItemIcon className="w-5 h-5" />
-                    {item.name}
+                    <ItemIcon className="w-5 h-5 flex-shrink-0" />
+                    <span className="truncate">{item.name}</span>
                   </Link>
                 );
               })}
-              <div className="mt-1 pt-2 border-t border-gray-800/70" />
-
-              {/* Cart Link for Mobile */}
-              <Link
-                href="/cart"
-                className="text-white hover:text-yellow-300 transition-colors duration-150 font-medium px-3 py-3 rounded-lg inline-flex items-center hover:bg-gray-800/60 border border-transparent hover:border-gray-700 relative"
-                onClick={() => {
-                  if (!isAuthenticated) {
-                    setRedirectUrl("/cart", "cart");
-                  }
-                  setIsMenuOpen(false);
-                }}
-              >
-                <div className="relative">
-                  <ShoppingCart className="w-5 h-5 mr-2" />
-                  {itemCount > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-yellow-400 text-black text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center min-w-[16px]">
-                      {itemCount > 99 ? "99+" : itemCount}
-                    </span>
-                  )}
-                </div>
-                Cart
-              </Link>
+              <div className="my-2 border-t border-gray-800/70" />
 
               {isAuthenticated ? (
                 <>
-                  <div className="px-3 py-2 text-sm text-gray-300">
-                    <p className="font-medium">{user?.name}</p>
-                    <p className="text-xs">{user?.email}</p>
-                  </div>
                   <Link
                     href="/profile"
-                    className="text-white hover:text-yellow-300 transition-colors duration-150 font-medium px-3 py-3 rounded-lg inline-flex items-center hover:bg-gray-800/60 border border-transparent hover:border-gray-700"
+                    className="text-white hover:text-yellow-300 transition-colors duration-150 font-medium px-3 py-2.5 rounded-lg inline-flex items-center hover:bg-gray-800/60 border border-transparent hover:border-gray-700 gap-3"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    <User className="w-5 h-5 mr-2" />
-                    Profile
+                    <User className="w-5 h-5" />
+                    <span className="truncate">Profile</span>
                   </Link>
                   <button
-                    onClick={async () => {
-                      await logout();
-                      setIsMenuOpen(false);
+                    onClick={() => {
+                      setIsLogoutConfirmOpen(true);
                     }}
-                    className="w-full text-left text-white hover:text-yellow-300 transition-colors duration-150 font-medium px-3 py-3 rounded-lg inline-flex items-center hover:bg-gray-800/60 border border-transparent hover:border-gray-700"
+                    className="w-full text-left text-white hover:text-yellow-300 transition-colors duration-150 font-medium px-3 py-2.5 rounded-lg inline-flex items-center hover:bg-gray-800/60 border border-transparent hover:border-gray-700 gap-3"
                   >
-                    <LogOut className="w-5 h-5 mr-2" />
-                    Logout
+                    <LogOut className="w-5 h-5" />
+                    <span className="truncate">Logout</span>
                   </button>
+
+                  <div className="my-2 border-t border-gray-800/70" />
+                  <div className="px-3 py-2 rounded-md bg-gray-800/50 border border-gray-800/70">
+                    <p className="font-medium text-white truncate">
+                      {user?.name}
+                    </p>
+                    <p className="text-xs text-gray-400 truncate">
+                      {user?.email}
+                    </p>
+                  </div>
                 </>
               ) : (
                 <Link
                   href="/login"
-                  className="text-white hover:text-yellow-300 transition-colors duration-150 font-medium px-3 py-3 rounded-lg inline-flex items-center hover:bg-gray-800/60 border border-transparent hover:border-gray-700"
+                  className="text-white hover:text-yellow-300 transition-colors duration-150 font-medium px-3 py-2.5 rounded-lg inline-flex items-center hover:bg-gray-800/60 border border-transparent hover:border-gray-700 gap-3"
                   onClick={() => {
                     // Store current page for generic login
                     if (typeof window !== "undefined") {
@@ -295,14 +364,90 @@ export default function Navigation({
                     setIsMenuOpen(false);
                   }}
                 >
-                  <UserRound className="w-5 h-5 mr-2" />
-                  Login
+                  <UserRound className="w-5 h-5" />
+                  <span className="truncate">Login</span>
                 </Link>
               )}
             </div>
           </div>
         )}
       </div>
+      {/* Logout Confirmation Modal */}
+      {isLogoutConfirmOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60">
+          <div className="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-sm mx-4 shadow-xl">
+            <div className="px-5 py-4 border-b border-gray-800">
+              <h3 className="text-white text-lg font-semibold">Sign out</h3>
+              <p className="text-gray-400 text-sm mt-1">
+                Are you sure you want to sign out?
+              </p>
+            </div>
+            <div className="px-5 py-4 flex justify-end gap-3">
+              <button
+                onClick={() => setIsLogoutConfirmOpen(false)}
+                className="px-4 py-2 rounded-md bg-gray-700 hover:bg-gray-600 text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  // close UI immediately
+                  setIsDropdownOpen(false);
+                  setIsMenuOpen(false);
+                  setIsLogoutConfirmOpen(false);
+                  // show toast locally
+                  setToastMessage("You have been signed out.");
+                  setShowLogoutNotice(true);
+                  const hideTimer = setTimeout(() => {
+                    setShowLogoutNotice(false);
+                    setToastMessage("");
+                  }, 2500);
+                  // also queue for next route just in case
+                  try {
+                    sessionStorage.setItem(
+                      "app:toast",
+                      JSON.stringify({
+                        type: "success",
+                        message: "You have been signed out.",
+                      })
+                    );
+                  } catch {}
+                  // navigate to a public page first to avoid protected-page redirects
+                  router.push("/");
+                  // perform logout shortly after navigation starts
+                  setTimeout(() => {
+                    logout().catch(() => {});
+                    clearTimeout(hideTimer);
+                  }, 150);
+                }}
+                className="px-4 py-2 rounded-md bg-yellow-400 hover:bg-yellow-500 text-black font-semibold transition-colors"
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Logout Toast/Notice */}
+      {showLogoutNotice && (
+        <div className="fixed top-4 right-4 z-[70]">
+          <div className="bg-gray-900 border border-gray-700 text-white px-4 py-2 rounded-md shadow-lg flex items-center space-x-2">
+            <span className="text-sm">
+              {toastMessage || "You have been signed out."}
+            </span>
+            <button
+              onClick={() => {
+                setShowLogoutNotice(false);
+                setToastMessage("");
+              }}
+              className="text-gray-400 hover:text-white"
+              aria-label="Dismiss"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }

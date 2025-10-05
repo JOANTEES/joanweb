@@ -42,6 +42,11 @@ function AuthCallbackContent() {
           setStatus("success");
           setMessage("Authentication successful! Redirecting...");
 
+          // Signal app to hydrate auth state immediately (without requiring refresh)
+          try {
+            window.dispatchEvent(new Event("auth:token-set"));
+          } catch {}
+
           // Redirect to the appropriate page
           setTimeout(() => {
             // Check if there's a redirect URL stored
