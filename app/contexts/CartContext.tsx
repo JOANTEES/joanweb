@@ -324,6 +324,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setLoading(true);
       setError(null);
 
+      // Optimistic UI: increment the item count immediately
+      const previousItemCount = itemCount;
+      setItemCount((prev) => prev + quantity);
+      try {
+        // Fire a toast event for immediate UX feedback
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("app:toast", {
+              detail: { type: "success", message: "Added to cart" },
+            })
+          );
+        }
+      } catch {}
+
       const response = await fetch(`${API_BASE_URL}/cart/add`, {
         method: "POST",
         headers: getAuthHeaders(),
@@ -343,6 +357,20 @@ export function CartProvider({ children }: { children: ReactNode }) {
       } else {
         const errorData = await response.json();
         setError(errorData.message || "Failed to add item to cart");
+        // Revert optimistic update on failure
+        setItemCount(previousItemCount);
+        try {
+          if (typeof window !== "undefined") {
+            window.dispatchEvent(
+              new CustomEvent("app:toast", {
+                detail: {
+                  type: "error",
+                  message: errorData.message || "Failed to add to cart",
+                },
+              })
+            );
+          }
+        } catch {}
         return false;
       }
     } catch (err) {
@@ -350,6 +378,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setError(
         err instanceof Error ? err.message : "Failed to add item to cart"
       );
+      // Revert optimistic update on error
+      setItemCount((prev) => Math.max(0, prev - quantity));
+      try {
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("app:toast", {
+              detail: { type: "error", message: "Failed to add to cart" },
+            })
+          );
+        }
+      } catch {}
       return false;
     } finally {
       setLoading(false);

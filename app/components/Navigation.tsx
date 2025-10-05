@@ -63,6 +63,27 @@ export default function Navigation({
     } catch {}
   }, [pathname]);
 
+  // Listen for in-app toast events (e.g., add-to-cart success/failure)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as
+        | { type?: string; message?: string }
+        | undefined;
+      if (!detail?.message) return;
+      setToastMessage(detail.message);
+      setShowLogoutNotice(true);
+      const t = setTimeout(() => {
+        setShowLogoutNotice(false);
+        setToastMessage("");
+      }, 2000);
+      return () => clearTimeout(t);
+    };
+    window.addEventListener("app:toast", handler as EventListener);
+    return () =>
+      window.removeEventListener("app:toast", handler as EventListener);
+  }, []);
+
   // After auth redirection, auto-consume any pending add-to-cart intent
   useEffect(() => {
     if (typeof window === "undefined") return;
