@@ -8,6 +8,8 @@ import { useCart } from "../contexts/CartContext";
 import { useProductVariants } from "../hooks/useProductVariants";
 import { useBrands } from "../hooks/useBrands";
 import { useCategories } from "../hooks/useCategories";
+import { useAuth } from "../contexts/AuthContext";
+import { useRouter } from "next/navigation";
 
 interface ProductVariant {
   id: string;
@@ -70,6 +72,8 @@ export default function ProductDetailModal({
   onClose,
 }: ProductDetailModalProps) {
   const { addToCart } = useCart();
+  const { isAuthenticated, setRedirectUrl } = useAuth();
+  const router = useRouter();
   const { variants } = useProductVariants(product.id);
   const { brands } = useBrands();
   const { getCategoryPath } = useCategories();
@@ -78,6 +82,7 @@ export default function ProductDetailModal({
     null
   );
   const [quantity, setQuantity] = useState(1);
+  const [showLoginPrompt, setShowLoginPrompt] = useState(false);
 
   const variantRequired = variants.length > 0;
   const isVariantSelected = !!selectedVariant;
@@ -108,6 +113,19 @@ export default function ProductDetailModal({
   );
 
   const handleAddToCart = () => {
+    if (!isAuthenticated) {
+      // Persist pending add-to-cart intent if variant is selected
+      try {
+        if (selectedVariant) {
+          sessionStorage.setItem(
+            "cart:intent",
+            JSON.stringify({ variantId: selectedVariant.id, quantity })
+          );
+        }
+      } catch {}
+      setShowLoginPrompt(true);
+      return;
+    }
     if (variants.length > 0 && !selectedVariant) {
       // Show error - variant selection required
       return;
@@ -366,6 +384,40 @@ export default function ProductDetailModal({
           </div>
         </div>
       </div>
+      {/* Login Prompt Modal */}
+      {showLoginPrompt && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60">
+          <div className="bg-gray-900 border border-gray-700 rounded-lg w-full max-w-sm mx-4 shadow-xl">
+            <div className="px-5 py-4 border-b border-gray-800">
+              <h3 className="text-white text-lg font-semibold">
+                Sign in required
+              </h3>
+              <p className="text-gray-400 text-sm mt-1">
+                Please sign in to add items to your cart.
+              </p>
+            </div>
+            <div className="px-5 py-4 flex justify-end gap-3">
+              <button
+                onClick={() => setShowLoginPrompt(false)}
+                className="px-4 py-2 rounded-md bg-gray-700 hover:bg-gray-600 text-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    setRedirectUrl(window.location.pathname, "cart");
+                  }
+                  router.push("/login");
+                }}
+                className="px-4 py-2 rounded-md bg-yellow-400 hover:bg-yellow-500 text-black font-semibold transition-colors"
+              >
+                Sign in
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

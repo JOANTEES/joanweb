@@ -22,7 +22,7 @@ export default function Navigation({
   const pathname = usePathname();
   const router = useRouter();
   const { isAuthenticated, user, logout, setRedirectUrl } = useAuth();
-  const { itemCount } = useCart();
+  const { itemCount, addToCart } = useCart();
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown when clicking outside
@@ -62,6 +62,35 @@ export default function Navigation({
       }
     } catch {}
   }, [pathname]);
+
+  // After auth redirection, auto-consume any pending add-to-cart intent
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    // Only attempt when authenticated
+    if (!isAuthenticated) return;
+    try {
+      const rawIntent = sessionStorage.getItem("cart:intent");
+      if (rawIntent) {
+        sessionStorage.removeItem("cart:intent");
+        const intent = JSON.parse(rawIntent) as {
+          variantId: string;
+          quantity: number;
+        };
+        if (intent?.variantId && intent?.quantity) {
+          // Add to cart in background
+          addToCart(intent.variantId, intent.quantity).catch(() => {});
+          // Raise a toast
+          setToastMessage("Item added to cart");
+          setShowLogoutNotice(true);
+          const t = setTimeout(() => {
+            setShowLogoutNotice(false);
+            setToastMessage("");
+          }, 2000);
+          return () => clearTimeout(t);
+        }
+      }
+    } catch {}
+  }, [isAuthenticated]);
 
   const navItems = [
     { name: "Home", href: "/", Icon: Home, protected: false },
