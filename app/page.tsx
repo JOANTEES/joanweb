@@ -197,22 +197,6 @@ export default function Home() {
                     Shop
                   </Link>
                 </li>
-                <li>
-                  <Link
-                    href="/orders"
-                    className="text-gray-400 hover:text-yellow-400 transition-colors"
-                  >
-                    Orders
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/pick-drop"
-                    className="text-gray-400 hover:text-yellow-400 transition-colors"
-                  >
-                    Pick & Drop
-                  </Link>
-                </li>
               </ul>
             </div>
 
@@ -225,22 +209,6 @@ export default function Home() {
                     className="text-gray-400 hover:text-yellow-400 transition-colors"
                   >
                     Contact Us
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/help"
-                    className="text-gray-400 hover:text-yellow-400 transition-colors"
-                  >
-                    Help Center
-                  </Link>
-                </li>
-                <li>
-                  <Link
-                    href="/returns"
-                    className="text-gray-400 hover:text-yellow-400 transition-colors"
-                  >
-                    Returns
                   </Link>
                 </li>
               </ul>
