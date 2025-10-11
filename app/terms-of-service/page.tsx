@@ -24,7 +24,7 @@ export default function TermsOfService() {
                 1. Acceptance of Terms
               </h2>
               <p className="text-gray-300 leading-relaxed">
-                By accessing and using JoanTees (&quot;the Service&quot;), you
+                By accessing and using JoanTee (&quot;the Service&quot;), you
                 accept and agree to be bound by the terms and provision of this
                 agreement. If you do not agree to abide by the above, please do
                 not use this service.
@@ -36,7 +36,7 @@ export default function TermsOfService() {
                 2. Description of Service
               </h2>
               <p className="text-gray-300 leading-relaxed">
-                JoanTees is an online clothing store that provides premium
+                JoanTee is an online clothing store that provides premium
                 clothing with fast delivery service. We offer a platform for
                 customers to browse, purchase, and receive clothing items
                 through our website and delivery network.
@@ -143,7 +143,7 @@ export default function TermsOfService() {
               <p className="text-gray-300 leading-relaxed">
                 The service and its original content, features, and
                 functionality are and will remain the exclusive property of
-                JoanTees and its licensors. The service is protected by
+                JoanTee and its licensors. The service is protected by
                 copyright, trademark, and other laws.
               </p>
             </section>
@@ -153,7 +153,7 @@ export default function TermsOfService() {
                 9. Limitation of Liability
               </h2>
               <p className="text-gray-300 leading-relaxed">
-                In no event shall JoanTees, nor its directors, employees,
+                In no event shall JoanTee, nor its directors, employees,
                 partners, agents, suppliers, or affiliates, be liable for any
                 indirect, incidental, special, consequential, or punitive
                 damages, including without limitation, loss of profits, data,

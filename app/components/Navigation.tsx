@@ -158,7 +158,7 @@ export default function Navigation({
           >
             <Image
               src="/logo.png"
-              alt="JoanTees logo"
+              alt="JoanTee logo"
               width={150}
               height={150}
               className="rounded-lg object-contain"

@@ -16,8 +16,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "JoanTees - Premium Clothing",
-  description: "Discover the latest in fashion with JoanTees. Premium clothing with fast delivery service.",
+  title: "JoanTee - Premium Clothing",
+  description: "Discover the latest in fashion with JoanTee. Premium clothing with fast delivery service.",
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({
