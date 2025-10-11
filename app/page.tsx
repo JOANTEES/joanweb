@@ -40,7 +40,7 @@ export default function Home() {
                 </h1>
                 <p className="text-xl text-gray-300 max-w-lg">
                   Discover the latest trends in fashion with JoanTee. Quality
-                  clothing with fast delivery service right to your doorstep.
+                  clothing with fast delivery service right at your doorstep.
                 </p>
               </div>
 
