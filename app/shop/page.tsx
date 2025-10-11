@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import Navigation from "../components/Navigation";
 import { useCart } from "../contexts/CartContext";
 import { useProducts } from "../hooks/useProducts";
@@ -335,27 +337,104 @@ export default function Shop() {
         </div>
       </section>
 
-      {/* Newsletter Section 
-     <section className="py-16 bg-black text-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold mb-4">
-            Stay Updated with New Arrivals
-          </h2>
-          <p className="text-xl text-gray-300 mb-8">
-            Be the first to know about new products and exclusive offers.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="flex-1 px-6 py-4 rounded-full text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-400"
-            />
-            <button className="bg-yellow-400 hover:bg-yellow-500 text-black px-8 py-4 rounded-full font-semibold transition-colors duration-200">
-              Subscribe
-            </button>
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-4 gap-8">
+            <div>
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center overflow-hidden">
+                  <Image
+                    src="/logo.png"
+                    alt="Joan Tees Logo"
+                    width={32}
+                    height={32}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <span className="text-2xl font-bold">JoanTee</span>
+              </div>
+              <p className="text-gray-400">
+                Premium clothing with fast delivery service.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link
+                    href="/shop"
+                    className="text-gray-400 hover:text-yellow-400 transition-colors"
+                  >
+                    Shop
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Support</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link
+                    href="/contact"
+                    className="text-gray-400 hover:text-yellow-400 transition-colors"
+                  >
+                    Contact Us
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Connect</h3>
+              <div className="flex space-x-4">
+                <a
+                  href="https://www.instagram.com/p/DOEN1PBCEM0/?igsh=MW5lYjJ1YmZqaWxsOA=="
+                  className="text-gray-400 hover:text-yellow-400 transition-colors"
+                >
+                  Instagram
+                </a>
+                <a
+                  href="https://vm.tiktok.com/ZMAhGntUb/0"
+                  className="text-gray-400 hover:text-yellow-400 transition-colors"
+                >
+                  TikTok
+                </a>
+                <a
+                  href="https://snapchat.com/t/B1sJXJdX"
+                  className="text-gray-400 hover:text-yellow-400 transition-colors"
+                >
+                  Snapchat
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-800 mt-8 pt-8">
+            <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+              <div className="flex flex-wrap justify-center md:justify-start space-x-6 text-sm">
+                <Link
+                  href="/privacy-policy"
+                  className="text-gray-400 hover:text-yellow-400 transition-colors"
+                >
+                  Privacy Policy
+                </Link>
+                <Link
+                  href="/terms-of-service"
+                  className="text-gray-400 hover:text-yellow-400 transition-colors"
+                >
+                  Terms of Service
+                </Link>
+              </div>
+              <p className="text-gray-400 text-sm">
+                &copy; {new Date().getFullYear()} JoanTee. All rights reserved.
+              </p>
+            </div>
           </div>
         </div>
-      </section> */}
+      </footer>
 
       {/* Add to Cart Modal */}
       {selectedProduct && (
