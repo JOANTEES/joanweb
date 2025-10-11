@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "./contexts/AuthContext";
 import { CartProvider } from "./contexts/CartContext";
 import MaintenanceMode from "./components/MaintenanceMode";
+import { Analytics } from "@vercel/analytics/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,10 +18,11 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "JoanTee - Premium Clothing",
-  description: "Discover the latest in fashion with JoanTee. Premium clothing with fast delivery service.",
+  description:
+    "Discover the latest in fashion with JoanTee. Premium clothing with fast delivery service.",
   icons: {
-    icon: '/favicon.ico',
-    apple: '/favicon.ico',
+    icon: "/favicon.ico",
+    apple: "/favicon.ico",
   },
 };
 
@@ -30,7 +32,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   // Check if maintenance mode is enabled
-  const isMaintenanceMode = process.env.NEXT_PUBLIC_MAINTENANCE_MODE === 'true';
+  const isMaintenanceMode = process.env.NEXT_PUBLIC_MAINTENANCE_MODE === "true";
 
   return (
     <html lang="en">
@@ -42,12 +44,11 @@ export default function RootLayout({
         ) : (
           <AuthProvider>
             <CartProvider>
-              <div className="min-h-screen flex flex-col">
-                {children}
-              </div>
+              <div className="min-h-screen flex flex-col">{children}</div>
             </CartProvider>
           </AuthProvider>
         )}
+        <Analytics />
       </body>
     </html>
   );
