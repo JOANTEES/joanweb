@@ -10,7 +10,6 @@ import AddToCartModal from "../components/AddToCartModal";
 import ProductCard from "../components/ProductCard";
 import FilterSidebar from "../components/FilterSidebar";
 import TrendingPills from "../components/TrendingPills";
-import ReviewModal from "../components/ReviewModal";
 import { api } from "../utils/api";
 
 // Import types from ProductCard component
@@ -99,7 +98,6 @@ export default function Shop() {
   const [selectedProduct, setSelectedProduct] =
     useState<ProductForModal | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
   const handleAddToCartClick = (
     product: Product & { variants?: ProductVariant[] }
@@ -123,37 +121,8 @@ export default function Shop() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedProduct(null);
-    // Show review modal after successful purchase
-    setTimeout(() => {
-      setIsReviewModalOpen(true);
-    }, 1000);
   };
 
-  const handleReviewSubmit = async (rating: number, comment: string) => {
-    try {
-      const result = await api.post('/reviews', {
-        rating,
-        comment,
-        productId: selectedProduct?.id,
-        // User ID will be automatically included via authentication token
-      });
-
-      if (result.success) {
-        console.log("Review submitted successfully:", result);
-        // You could add a toast notification here
-        // toast.success("Thank you for your review!");
-      } else {
-        throw new Error(result.message || 'Failed to submit review');
-      }
-    } catch (error) {
-      console.error("Error submitting review:", error);
-      throw error;
-    }
-  };
-
-  const handleCloseReviewModal = () => {
-    setIsReviewModalOpen(false);
-  };
 
   const handleBrandChange = (brands: string[]) => {
     setSelectedBrands(brands);
@@ -512,12 +481,6 @@ export default function Shop() {
         />
       )}
 
-      {/* Review Modal */}
-      <ReviewModal
-        isOpen={isReviewModalOpen}
-        onClose={handleCloseReviewModal}
-        onSubmit={handleReviewSubmit}
-      />
     </>
   );
 }

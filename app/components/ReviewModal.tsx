@@ -57,10 +57,10 @@ export default function ReviewModal({ isOpen, onClose, onSubmit }: ReviewModalPr
             <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Heart className="w-8 h-8 text-yellow-500" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <h2 className="text-2xl font-bold text-black mb-2">
               How was your experience?
             </h2>
-            <p className="text-gray-600">
+            <p className="text-black">
               Your feedback helps us improve our service
             </p>
           </div>
@@ -90,7 +90,7 @@ export default function ReviewModal({ isOpen, onClose, onSubmit }: ReviewModalPr
             </div>
             
             {rating > 0 && (
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-black">
                 {rating === 1 && "Poor"}
                 {rating === 2 && "Fair"}
                 {rating === 3 && "Good"}
@@ -102,18 +102,18 @@ export default function ReviewModal({ isOpen, onClose, onSubmit }: ReviewModalPr
 
           {/* Comment Section */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-black mb-2">
               Tell us more (optional)
             </label>
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               placeholder="Share your thoughts about your purchase..."
-              className="w-full px-4 py-3 border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent transition-all text-black"
               rows={3}
               maxLength={500}
             />
-            <div className="text-right text-xs text-gray-500 mt-1">
+            <div className="text-right text-xs text-black mt-1">
               {comment.length}/500
             </div>
           </div>
@@ -137,7 +137,7 @@ export default function ReviewModal({ isOpen, onClose, onSubmit }: ReviewModalPr
             
             <button
               onClick={handleClose}
-              className="w-full text-gray-500 hover:text-gray-700 font-medium py-3 px-6 rounded-xl transition-colors"
+              className="w-full text-black hover:text-gray-700 font-medium py-3 px-6 rounded-xl transition-colors"
             >
               Maybe later
             </button>

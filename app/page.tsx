@@ -1,8 +1,44 @@
+"use client";
+
+import { useState } from "react";
 import Navigation from "./components/Navigation";
 import Link from "next/link";
 import Image from "next/image";
+import ReviewModal from "./components/ReviewModal";
+import { api } from "./utils/api";
 
 export default function Home() {
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+
+  const handleReviewSubmit = async (rating: number, comment: string) => {
+    try {
+      const result = await api.post('/reviews', {
+        rating,
+        comment,
+        // User ID will be automatically included via authentication token
+      });
+
+      if (result.success) {
+        console.log("Review submitted successfully:", result);
+        // You could add a toast notification here
+        // toast.success("Thank you for your review!");
+      } else {
+        throw new Error(result.message || 'Failed to submit review');
+      }
+    } catch (error) {
+      console.error("Error submitting review:", error);
+      throw error;
+    }
+  };
+
+  const handleCloseReviewModal = () => {
+    setIsReviewModalOpen(false);
+  };
+
+  const handleOpenReviewModal = () => {
+    setIsReviewModalOpen(true);
+  };
+
   return (
     <>
       {/* Hero Section with Background Video and Overlaid Navigation */}
@@ -167,6 +203,16 @@ export default function Home() {
           >
             Start Shopping
           </Link>
+          
+          {/* Review Button */}
+          <div className="mt-8">
+            <button
+              onClick={handleOpenReviewModal}
+              className="bg-transparent border-2 border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 transform hover:scale-105"
+            >
+              Share Your Experience
+            </button>
+          </div>
         </div>
       </section>
 
@@ -275,6 +321,13 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Review Modal */}
+      <ReviewModal
+        isOpen={isReviewModalOpen}
+        onClose={handleCloseReviewModal}
+        onSubmit={handleReviewSubmit}
+      />
     </>
   );
 }
