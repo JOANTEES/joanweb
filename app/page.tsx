@@ -1,8 +1,44 @@
+"use client";
+
+import { useState } from "react";
 import Navigation from "./components/Navigation";
 import Link from "next/link";
 import Image from "next/image";
+import ReviewModal from "./components/ReviewModal";
+import { api } from "./utils/api";
 
 export default function Home() {
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+
+  const handleReviewSubmit = async (rating: number, comment: string) => {
+    try {
+      const result = await api.post('/reviews', {
+        rating,
+        comment,
+        // User ID will be automatically included via authentication token
+      });
+
+      if (result.success) {
+        console.log("Review submitted successfully:", result);
+        // You could add a toast notification here
+        // toast.success("Thank you for your review!");
+      } else {
+        throw new Error(result.message || 'Failed to submit review');
+      }
+    } catch (error) {
+      console.error("Error submitting review:", error);
+      throw error;
+    }
+  };
+
+  const handleCloseReviewModal = () => {
+    setIsReviewModalOpen(false);
+  };
+
+  const handleOpenReviewModal = () => {
+    setIsReviewModalOpen(true);
+  };
+
   return (
     <>
       {/* Hero Section with Background Video and Overlaid Navigation */}
@@ -40,7 +76,7 @@ export default function Home() {
                 </h1>
                 <p className="text-xl text-gray-300 max-w-lg">
                   Discover the latest trends in fashion with JoanTee. Quality
-                  clothing with fast delivery service right at your doorstep.
+                  clothing with 24-48 hours delivery right at your doorstep.
                 </p>
               </div>
 
@@ -117,8 +153,14 @@ export default function Home() {
             </div>
 
             <div className="text-center p-8 rounded-2xl hover:shadow-lg transition-shadow duration-300 bg-gray-800 border border-gray-700">
-              <div className="w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-2xl">✨</span>
+              <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center mx-auto mb-6 overflow-hidden">
+                <Image
+                  src="/logo.png"
+                  alt="JoanTee Logo"
+                  width={40}
+                  height={40}
+                  className="w-full h-full object-contain"
+                />
               </div>
               <h3 className="text-2xl font-semibold text-white mb-4">
                 Premium Quality
@@ -161,6 +203,16 @@ export default function Home() {
           >
             Start Shopping
           </Link>
+          
+          {/* Review Button */}
+          <div className="mt-8">
+            <button
+              onClick={handleOpenReviewModal}
+              className="bg-transparent border-2 border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 transform hover:scale-105"
+            >
+              Share Your Experience
+            </button>
+          </div>
         </div>
       </section>
 
@@ -182,7 +234,7 @@ export default function Home() {
                 <span className="text-2xl font-bold">JoanTee</span>
               </div>
               <p className="text-gray-400">
-                Premium clothing with fast delivery service.
+                Premium clothing with 24-48 hours delivery service.
               </p>
             </div>
 
@@ -235,6 +287,13 @@ export default function Home() {
                 >
                   Snapchat
                 </a>
+                <a
+                  href="https://chat.whatsapp.com/FC3C47wb7wk6Op4XeNkECc?mode=wwc
+"
+                  className="text-gray-400 hover:text-yellow-400 transition-colors"
+                >
+                  WhatsApp
+                </a>
               </div>
             </div>
           </div>
@@ -262,6 +321,13 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Review Modal */}
+      <ReviewModal
+        isOpen={isReviewModalOpen}
+        onClose={handleCloseReviewModal}
+        onSubmit={handleReviewSubmit}
+      />
     </>
   );
 }

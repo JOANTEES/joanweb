@@ -10,6 +10,7 @@ import AddToCartModal from "../components/AddToCartModal";
 import ProductCard from "../components/ProductCard";
 import FilterSidebar from "../components/FilterSidebar";
 import TrendingPills from "../components/TrendingPills";
+import { api } from "../utils/api";
 
 // Import types from ProductCard component
 interface Product {
@@ -121,6 +122,7 @@ export default function Shop() {
     setIsModalOpen(false);
     setSelectedProduct(null);
   };
+
 
   const handleBrandChange = (brands: string[]) => {
     setSelectedBrands(brands);
@@ -408,6 +410,12 @@ export default function Shop() {
                 >
                   Snapchat
                 </a>
+                <a
+                  href="https://chat.whatsapp.com/FC3C47wb7wk6Op4XeNkECc?mode=wwc"
+                  className="text-gray-400 hover:text-yellow-400 transition-colors"
+                >
+                  WhatsApp
+                </a>
               </div>
             </div>
           </div>
@@ -472,6 +480,7 @@ export default function Shop() {
           onClose={handleCloseModal}
         />
       )}
+
     </>
   );
 }
