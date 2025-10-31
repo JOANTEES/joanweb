@@ -12,7 +12,7 @@ export default function Home() {
 
   const handleReviewSubmit = async (rating: number, comment: string) => {
     try {
-      const result = await api.post('/reviews', {
+      const result = await api.post("/reviews", {
         rating,
         comment,
         // User ID will be automatically included via authentication token
@@ -23,7 +23,7 @@ export default function Home() {
         // You could add a toast notification here
         // toast.success("Thank you for your review!");
       } else {
-        throw new Error(result.message || 'Failed to submit review');
+        throw new Error(result.message || "Failed to submit review");
       }
     } catch (error) {
       console.error("Error submitting review:", error);
@@ -66,7 +66,7 @@ export default function Home() {
             <div className="space-y-8">
               <div className="space-y-4">
                 <h1 className="text-5xl lg:text-7xl font-bold text-white leading-tight">
-                  Premium
+                  Premium{" "}
                   <span className="block text-yellow-400">
                     Clothing & Apparel
                   </span>
@@ -203,7 +203,7 @@ export default function Home() {
           >
             Start Shopping
           </Link>
-          
+
           {/* Review Button */}
           <div className="mt-8">
             <button

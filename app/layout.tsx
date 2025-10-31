@@ -20,7 +20,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "JoanTee - Premium Clothing",
   description:
-    "Discover the latest in fashion with JoanTee. Premium clothing with fast delivery service.",
+    "Premium Clothing & Apparel for Everyone. Discover the latest trends in fashion with JoanTee. Quality clothing with 24-48 hours delivery right at your doorstep.",
   icons: {
     icon: "/favicon.ico",
     apple: "/favicon.ico",
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     url: "https://joantee.com",
     title: "JoanTee - Premium Clothing",
     description:
-      "Discover the latest in fashion with JoanTee. Premium clothing with fast delivery service.",
+      "Premium Clothing & Apparel for Everyone. Discover the latest trends in fashion with JoanTee. Quality clothing with 24-48 hours delivery right at your doorstep.",
     siteName: "JoanTee",
     images: [
       {
@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "JoanTee - Premium Clothing",
     description:
-      "Discover the latest in fashion with JoanTee. Premium clothing with fast delivery service.",
+      "Premium Clothing & Apparel for Everyone. Discover the latest trends in fashion with JoanTee. Quality clothing with 24-48 hours delivery right at your doorstep.",
     images: ["https://joantee.com/logo.png"],
   },
   metadataBase: new URL("https://joantee.com"),
