@@ -22,8 +22,10 @@ export default function ReviewModal({ isOpen, onClose, onSubmit }: ReviewModalPr
     setIsSubmitting(true);
     try {
       await onSubmit(rating, comment);
-      // Show success message
+      // Set success state first
       setIsSuccess(true);
+      // Then set submitting to false so toast can show
+      setIsSubmitting(false);
       // Wait 2 seconds then close modal
       setTimeout(() => {
         setRating(0);
@@ -33,13 +35,12 @@ export default function ReviewModal({ isOpen, onClose, onSubmit }: ReviewModalPr
       }, 2000);
     } catch (error) {
       console.error("Error submitting review:", error);
-    } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Show toast notification on success
-  const showToast = isSuccess && !isSubmitting;
+  // Show toast notification on success (submission is complete)
+  const showToast = isSuccess;
 
   const handleClose = () => {
     setRating(0);
@@ -49,16 +50,12 @@ export default function ReviewModal({ isOpen, onClose, onSubmit }: ReviewModalPr
     onClose();
   };
 
-  if (!isOpen) return null;
-  
-  console.log("ReviewModal isOpen:", isOpen);
-
   return (
     <>
-      {/* Success Toast Pop-up */}
+      {/* Success Toast Pop-up - Always rendered when showing */}
       {showToast && (
-        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[60] animate-slide-down">
-          <div className="bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center space-x-3 min-w-[300px] max-w-md">
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[60] animate-slide-down pointer-events-none">
+          <div className="bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center space-x-3 min-w-[300px] max-w-md pointer-events-auto">
             <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -72,6 +69,7 @@ export default function ReviewModal({ isOpen, onClose, onSubmit }: ReviewModalPr
         </div>
       )}
 
+      {isOpen && (
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-auto transform transition-all duration-300 scale-100">
         {/* Header */}
@@ -199,6 +197,7 @@ export default function ReviewModal({ isOpen, onClose, onSubmit }: ReviewModalPr
         <div className="h-2 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-b-3xl"></div>
       </div>
     </div>
+      )}
     </>
   );
 }
