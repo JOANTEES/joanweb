@@ -14,6 +14,7 @@ export default function ReviewModal({ isOpen, onClose, onSubmit }: ReviewModalPr
   const [comment, setComment] = useState("");
   const [hoveredStar, setHoveredStar] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const handleSubmit = async () => {
     if (rating === 0) return;
@@ -21,10 +22,15 @@ export default function ReviewModal({ isOpen, onClose, onSubmit }: ReviewModalPr
     setIsSubmitting(true);
     try {
       await onSubmit(rating, comment);
-      // Reset form
-      setRating(0);
-      setComment("");
-      onClose();
+      // Show success message
+      setIsSuccess(true);
+      // Wait 2 seconds then close modal
+      setTimeout(() => {
+        setRating(0);
+        setComment("");
+        setIsSuccess(false);
+        onClose();
+      }, 2000);
     } catch (error) {
       console.error("Error submitting review:", error);
     } finally {
@@ -32,18 +38,42 @@ export default function ReviewModal({ isOpen, onClose, onSubmit }: ReviewModalPr
     }
   };
 
+  // Show toast notification on success
+  const showToast = isSuccess && !isSubmitting;
+
   const handleClose = () => {
     setRating(0);
     setComment("");
     setHoveredStar(0);
+    setIsSuccess(false);
     onClose();
   };
 
   if (!isOpen) return null;
+  
+  console.log("ReviewModal isOpen:", isOpen);
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-auto transform transition-all duration-300 scale-100">
+    <>
+      {/* Success Toast Pop-up */}
+      {showToast && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-[60] animate-slide-down">
+          <div className="bg-green-500 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center space-x-3 min-w-[300px] max-w-md">
+            <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-sm">Submitted Successfully!</p>
+              <p className="text-xs text-white/90 mt-0.5">Your review has been submitted.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md mx-auto transform transition-all duration-300 scale-100">
         {/* Header */}
         <div className="relative p-6 pb-4">
           <button
@@ -66,7 +96,27 @@ export default function ReviewModal({ isOpen, onClose, onSubmit }: ReviewModalPr
           </div>
         </div>
 
+        {/* Success Message */}
+        {isSuccess && (
+          <div className="px-6 pb-4">
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <svg className="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-green-800 mb-1">
+                Review Submitted Successfully!
+              </h3>
+              <p className="text-sm text-green-600">
+                Thank you for your feedback. It will help us improve our service.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Rating Section */}
+        {!isSuccess && (
         <div className="px-6 pb-6">
           <div className="text-center mb-6">
             <div className="flex justify-center space-x-1 mb-3">
@@ -143,10 +193,12 @@ export default function ReviewModal({ isOpen, onClose, onSubmit }: ReviewModalPr
             </button>
           </div>
         </div>
+        )}
 
         {/* Bottom decoration */}
         <div className="h-2 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-b-3xl"></div>
       </div>
     </div>
+    </>
   );
 }

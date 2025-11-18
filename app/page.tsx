@@ -36,7 +36,10 @@ export default function Home() {
   };
 
   const handleOpenReviewModal = () => {
+    console.log("Opening review modal...");
+    console.log("Current isReviewModalOpen state:", isReviewModalOpen);
     setIsReviewModalOpen(true);
+    console.log("Setting isReviewModalOpen to true");
   };
 
   return (
@@ -205,12 +208,29 @@ export default function Home() {
           </Link>
 
           {/* Review Button */}
-          <div className="mt-8">
+          <div className="mt-8 space-y-4">
             <button
-              onClick={handleOpenReviewModal}
-              className="bg-transparent border-2 border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 transform hover:scale-105"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log("Button clicked!");
+                handleOpenReviewModal();
+              }}
+              className="bg-transparent border-2 border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 transform hover:scale-105 cursor-pointer"
+              style={{ pointerEvents: 'auto' }}
             >
               Share Your Experience
+            </button>
+            
+            {/* Test Button */}
+            <button
+              onClick={() => {
+                console.log("Test button clicked!");
+                alert("Test button works!");
+              }}
+              className="bg-red-500 text-white px-4 py-2 rounded"
+            >
+              TEST BUTTON
             </button>
           </div>
         </div>
