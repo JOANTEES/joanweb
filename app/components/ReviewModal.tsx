@@ -6,7 +6,7 @@ import { X, Star, Heart, Send } from "lucide-react";
 interface ReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (rating: number, comment: string) => void;
+  onSubmit: (rating: number, comment: string) => Promise<void> | void;
 }
 
 export default function ReviewModal({ isOpen, onClose, onSubmit }: ReviewModalProps) {
@@ -16,12 +16,26 @@ export default function ReviewModal({ isOpen, onClose, onSubmit }: ReviewModalPr
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const handleSubmit = async () => {
-    if (rating === 0) return;
+  const handleSubmit = async (e?: React.MouseEvent<HTMLButtonElement>) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    
+    if (rating === 0) {
+      alert("Please select a rating before submitting.");
+      return;
+    }
     
     setIsSubmitting(true);
     try {
-      await onSubmit(rating, comment);
+      console.log("ReviewModal: Submitting review with rating:", rating, "comment:", comment);
+      const result = onSubmit(rating, comment);
+      
+      // Handle both Promise and void returns
+      if (result instanceof Promise) {
+        await result;
+      }
+      
+      console.log("ReviewModal: Review submitted successfully");
       // Set success state first
       setIsSuccess(true);
       // Then set submitting to false so toast can show
@@ -34,8 +48,11 @@ export default function ReviewModal({ isOpen, onClose, onSubmit }: ReviewModalPr
         onClose();
       }, 2000);
     } catch (error) {
-      console.error("Error submitting review:", error);
+      console.error("ReviewModal: Error submitting review:", error);
       setIsSubmitting(false);
+      setIsSuccess(false);
+      // Show an error message to the user
+      alert(error instanceof Error ? error.message : "Failed to submit review. Please try again.");
     }
   };
 
@@ -169,6 +186,7 @@ export default function ReviewModal({ isOpen, onClose, onSubmit }: ReviewModalPr
           {/* Action Buttons */}
           <div className="flex flex-col space-y-3">
             <button
+              type="button"
               onClick={handleSubmit}
               disabled={rating === 0 || isSubmitting}
               className="w-full bg-yellow-400 hover:bg-yellow-500 disabled:bg-gray-300 disabled:cursor-not-allowed text-black font-semibold py-4 px-6 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-[1.02] disabled:hover:scale-100"

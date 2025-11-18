@@ -10,24 +10,40 @@ import { api } from "./utils/api";
 export default function Home() {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
-  const handleReviewSubmit = async (rating: number, comment: string) => {
+  const handleReviewSubmit = async (rating: number, comment: string): Promise<void> => {
     try {
+<<<<<<< HEAD
       const result = await api.post("/reviews", {
+=======
+      console.log("Submitting review:", { rating, comment });
+      const result = await api.post('/reviews', {
+>>>>>>> 0a312ad (updates)
         rating,
         comment,
         // User ID will be automatically included via authentication token
       });
 
+      console.log("Review API response:", result);
+
       if (result.success) {
         console.log("Review submitted successfully:", result);
-        // You could add a toast notification here
-        // toast.success("Thank you for your review!");
+        return;
       } else {
+<<<<<<< HEAD
         throw new Error(result.message || "Failed to submit review");
+=======
+        const errorMessage = result.message || 'Failed to submit review';
+        console.error("Review submission failed:", errorMessage);
+        throw new Error(errorMessage);
+>>>>>>> 0a312ad (updates)
       }
     } catch (error) {
       console.error("Error submitting review:", error);
-      throw error;
+      // If it's an Error object, rethrow it; otherwise create a new Error
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("Failed to submit review. Please try again.");
     }
   };
 
@@ -220,17 +236,6 @@ export default function Home() {
               style={{ pointerEvents: 'auto' }}
             >
               Share Your Experience
-            </button>
-            
-            {/* Test Button */}
-            <button
-              onClick={() => {
-                console.log("Test button clicked!");
-                alert("Test button works!");
-              }}
-              className="bg-red-500 text-white px-4 py-2 rounded"
-            >
-              TEST BUTTON
             </button>
           </div>
         </div>
