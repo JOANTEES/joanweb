@@ -6,19 +6,37 @@ import Link from "next/link";
 import Image from "next/image";
 import ReviewModal from "./components/ReviewModal";
 import { api } from "./utils/api";
+import { useAuth } from "./contexts/AuthContext";
 
 export default function Home() {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const { isAuthenticated } = useAuth();
 
-  const handleReviewSubmit = async (rating: number, comment: string): Promise<void> => {
+  const handleReviewSubmit = async (
+    rating: number,
+    comment: string
+  ): Promise<void> => {
     try {
       console.log("Submitting review:", { rating, comment });
 
-      const result = await api.post("/reviews", {
+      // Prepare review data - backend expects review_text, not comment
+      const reviewData: {
+        rating: number;
+        review_text: string;
+        guest_name?: string;
+      } = {
         rating,
-        comment,
-        // User ID will be automatically included via authentication token
-      });
+        review_text: comment,
+      };
+
+      // If user is not authenticated, include guest_name
+      // For now, use a default guest name if not authenticated
+      // You may want to add a name field to the ReviewModal later
+      if (!isAuthenticated) {
+        reviewData.guest_name = "Guest User";
+      }
+
+      const result = await api.post("/reviews", reviewData);
 
       console.log("Review API response:", result);
 
@@ -63,11 +81,16 @@ export default function Home() {
               <div className="space-y-4">
                 <h1 className="text-5xl lg:text-7xl font-bold text-white leading-tight">
                   Premium{" "}
-                  <span className="block text-yellow-400">Clothing & Apparel</span>
-                  <span className="block text-4xl lg:text-5xl font-light">for Everyone</span>
+                  <span className="block text-yellow-400">
+                    Clothing & Apparel
+                  </span>
+                  <span className="block text-4xl lg:text-5xl font-light">
+                    for Everyone
+                  </span>
                 </h1>
                 <p className="text-xl text-gray-300 max-w-lg">
-                  Discover the latest trends in fashion with JoanTee. Quality clothing with 24-48 hours delivery right at your doorstep.
+                  Discover the latest trends in fashion with JoanTee. Quality
+                  clothing with 24-48 hours delivery right at your doorstep.
                 </p>
               </div>
 
@@ -82,10 +105,31 @@ export default function Home() {
             </div>
 
             <div className="relative h-96 flex items-center justify-center">
-              <div className="relative w-80 h-80" style={{ perspective: "1000px" }}>
-                <Image src="/1.jpg" alt="Clothing 1" width={320} height={320} className="absolute inset-0 w-full h-full object-contain shadow-2xl animate-flip-carousel-1" />
-                <Image src="/2.jpg" alt="Clothing 2" width={320} height={320} className="absolute inset-0 w-full h-full object-contain shadow-2xl animate-flip-carousel-2" />
-                <Image src="/3.jpg" alt="Clothing 3" width={320} height={320} className="absolute inset-0 w-full h-full object-contain shadow-2xl animate-flip-carousel-3" />
+              <div
+                className="relative w-80 h-80"
+                style={{ perspective: "1000px" }}
+              >
+                <Image
+                  src="/1.jpg"
+                  alt="Clothing 1"
+                  width={320}
+                  height={320}
+                  className="absolute inset-0 w-full h-full object-contain shadow-2xl animate-flip-carousel-1"
+                />
+                <Image
+                  src="/2.jpg"
+                  alt="Clothing 2"
+                  width={320}
+                  height={320}
+                  className="absolute inset-0 w-full h-full object-contain shadow-2xl animate-flip-carousel-2"
+                />
+                <Image
+                  src="/3.jpg"
+                  alt="Clothing 3"
+                  width={320}
+                  height={320}
+                  className="absolute inset-0 w-full h-full object-contain shadow-2xl animate-flip-carousel-3"
+                />
               </div>
             </div>
           </div>
@@ -96,8 +140,12 @@ export default function Home() {
       <section className="py-20 bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-white mb-4">Why Choose JoanTee?</h2>
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto">We deliver anyday, anytime, anywhere.</p>
+            <h2 className="text-4xl font-bold text-white mb-4">
+              Why Choose JoanTee?
+            </h2>
+            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
+              We deliver anyday, anytime, anywhere.
+            </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
@@ -106,24 +154,45 @@ export default function Home() {
               <div className="w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-2xl">🚚</span>
               </div>
-              <h3 className="text-2xl font-semibold text-white mb-4">Fast Delivery</h3>
-              <p className="text-gray-300">Get your orders delivered quickly with our reliable pick & drop service.</p>
+              <h3 className="text-2xl font-semibold text-white mb-4">
+                Fast Delivery
+              </h3>
+              <p className="text-gray-300">
+                Get your orders delivered quickly with our reliable pick & drop
+                service.
+              </p>
             </div>
 
             <div className="text-center p-8 rounded-2xl hover:shadow-lg transition-shadow duration-300 bg-gray-800 border border-gray-700">
               <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center mx-auto mb-6 overflow-hidden">
-                <Image src="/logo.png" alt="JoanTee Logo" width={40} height={40} className="w-full h-full object-contain" />
+                <Image
+                  src="/logo.png"
+                  alt="JoanTee Logo"
+                  width={40}
+                  height={40}
+                  className="w-full h-full object-contain"
+                />
               </div>
-              <h3 className="text-2xl font-semibold text-white mb-4">Premium Quality</h3>
-              <p className="text-gray-300">Every piece is carefully selected for quality, comfort, and style.</p>
+              <h3 className="text-2xl font-semibold text-white mb-4">
+                Premium Quality
+              </h3>
+              <p className="text-gray-300">
+                Every piece is carefully selected for quality, comfort, and
+                style.
+              </p>
             </div>
 
             <div className="text-center p-8 rounded-2xl hover:shadow-lg transition-shadow duration-300 bg-gray-800 border border-gray-700">
               <div className="w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span className="text-2xl">💳</span>
               </div>
-              <h3 className="text-2xl font-semibold text-white mb-4">Easy Tracking</h3>
-              <p className="text-gray-300">Track your orders and manage your purchases with our simple interface.</p>
+              <h3 className="text-2xl font-semibold text-white mb-4">
+                Easy Tracking
+              </h3>
+              <p className="text-gray-300">
+                Track your orders and manage your purchases with our simple
+                interface.
+              </p>
             </div>
           </div>
         </div>
@@ -132,9 +201,12 @@ export default function Home() {
       {/* CTA Section */}
       <section className="py-20 bg-black text-white border-t border-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold mb-6">Ready to Upgrade Your Wardrobe?</h2>
+          <h2 className="text-4xl font-bold mb-6">
+            Ready to Upgrade Your Wardrobe?
+          </h2>
           <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            Join thousands of satisfied customers who trust JoanTee for their fashion needs.
+            Join thousands of satisfied customers who trust JoanTee for their
+            fashion needs.
           </p>
           <Link
             href="/shop"
@@ -146,7 +218,10 @@ export default function Home() {
           {/* Review Button */}
           <div className="mt-8 space-y-4">
             <button
-              onClick={(e) => { e.preventDefault(); handleOpenReviewModal(); }}
+              onClick={(e) => {
+                e.preventDefault();
+                handleOpenReviewModal();
+              }}
               className="bg-transparent border-2 border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 transform hover:scale-105 cursor-pointer"
             >
               Share Your Experience

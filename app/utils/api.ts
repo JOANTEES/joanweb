@@ -156,11 +156,13 @@ class ApiClient {
     const token = this.getToken();
 
     // If no token and this is an authenticated endpoint, return error
+    // Note: /reviews endpoint allows guest submissions (optional auth)
     if (
       !token &&
       !endpoint.includes("/auth/login") &&
       !endpoint.includes("/auth/register") &&
-      !endpoint.includes("/auth/forgot-password")
+      !endpoint.includes("/auth/forgot-password") &&
+      !endpoint.includes("/reviews")
     ) {
       return {
         success: false,
