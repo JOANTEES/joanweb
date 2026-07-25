@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Cormorant_Garamond, Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "./contexts/AuthContext";
 import { CartProvider } from "./contexts/CartContext";
@@ -17,10 +17,16 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const display = Cormorant_Garamond({
+  variable: "--font-display",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
 export const metadata: Metadata = {
-  title: "JoanTee - Premium Clothing",
+  title: "JoanTee — Premium Clothing & Sash",
   description:
-    "Premium Clothing & Apparel for Everyone. Discover the latest trends in fashion with JoanTee. Quality clothing with 24-48 hours delivery right at your doorstep.",
+    "JoanTee — premium clothing and sash. Clean style, quiet luxury, and 24–48 hour delivery.",
   icons: {
     icon: "/favicon.ico",
     apple: "/favicon.ico",
@@ -29,9 +35,9 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "https://joantee.com",
-    title: "JoanTee - Premium Clothing",
+    title: "JoanTee — Premium Clothing & Sash",
     description:
-      "Premium Clothing & Apparel for Everyone. Discover the latest trends in fashion with JoanTee. Quality clothing with 24-48 hours delivery right at your doorstep.",
+      "JoanTee — premium clothing and sash. Clean style, quiet luxury, and 24–48 hour delivery.",
     siteName: "JoanTee",
     images: [
       {
@@ -44,9 +50,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "JoanTee - Premium Clothing",
+    title: "JoanTee — Premium Clothing & Sash",
     description:
-      "Premium Clothing & Apparel for Everyone. Discover the latest trends in fashion with JoanTee. Quality clothing with 24-48 hours delivery right at your doorstep.",
+      "JoanTee — premium clothing and sash. Clean style, quiet luxury, and 24–48 hour delivery.",
     images: ["https://joantee.com/logo.png"],
   },
   metadataBase: new URL("https://joantee.com"),
@@ -68,7 +74,7 @@ export default function RootLayout({
     "@type": "Store",
     name: "JoanTee",
     description:
-      "Premium clothing with fast delivery service. Discover the latest in fashion with JoanTee.",
+      "Premium clothing and sash with fast delivery. Discover JoanTee.",
     url: "https://joantee.com",
     logo: "https://joantee.com/logo.png",
     contactPoint: {
@@ -99,7 +105,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-black text-white`}
+        className={`${geistSans.variable} ${geistMono.variable} ${display.variable} antialiased bg-black text-white`}
       >
         {isMaintenanceMode ? (
           <MaintenanceMode />

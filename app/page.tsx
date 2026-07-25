@@ -1,12 +1,55 @@
 "use client";
 
 import { useState } from "react";
-import Navigation from "./components/Navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { motion } from "motion/react";
+import Navigation from "./components/Navigation";
 import ReviewModal from "./components/ReviewModal";
+import { Spotlight } from "./components/ui/spotlight-new";
+import { TextGenerateEffect } from "./components/ui/text-generate-effect";
+import { HoverEffect } from "./components/ui/hover-effect";
+import { Button as MovingBorderButton } from "./components/ui/moving-border";
 import { api } from "./utils/api";
 import { useAuth } from "./contexts/AuthContext";
+
+const collections = [
+  {
+    title: "Shop",
+    description:
+      "Premium clothing and apparel — curated pieces for every day and every occasion.",
+    link: "/shop",
+    image: "/1.jpg",
+  },
+  {
+    title: "Sash",
+    description:
+      "Elegant sashes for celebrations, graduations, and moments that deserve a statement.",
+    link: "/sash",
+    image: "/3.jpg",
+  },
+];
+
+const reasons = [
+  {
+    title: "Fast Delivery",
+    description:
+      "Orders arrive in 24–48 hours — anytime, anywhere you need them.",
+    link: "/shop",
+  },
+  {
+    title: "Premium Quality",
+    description:
+      "Every piece is chosen for craft, comfort, and lasting style.",
+    link: "/shop",
+  },
+  {
+    title: "Easy Tracking",
+    description:
+      "Follow your order from checkout to doorstep in one simple place.",
+    link: "/orders",
+  },
+];
 
 export default function Home() {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -17,9 +60,6 @@ export default function Home() {
     comment: string
   ): Promise<void> => {
     try {
-      console.log("Submitting review:", { rating, comment });
-
-      // Prepare review data - backend expects review_text, not comment
       const reviewData: {
         rating: number;
         review_text: string;
@@ -29,27 +69,18 @@ export default function Home() {
         review_text: comment,
       };
 
-      // If user is not authenticated, include guest_name
-      // For now, use a default guest name if not authenticated
-      // You may want to add a name field to the ReviewModal later
       if (!isAuthenticated) {
         reviewData.guest_name = "Guest User";
       }
 
       const result = await api.post("/reviews", reviewData);
 
-      console.log("Review API response:", result);
-
       if (result.success) {
-        console.log("Review submitted successfully:", result);
         return;
       } else {
-        const errorMessage = result.message || "Failed to submit review";
-        console.error("Review submission failed:", errorMessage);
-        throw new Error(errorMessage);
+        throw new Error(result.message || "Failed to submit review");
       }
     } catch (error) {
-      console.error("Error submitting review:", error);
       if (error instanceof Error) {
         throw error;
       }
@@ -57,190 +88,272 @@ export default function Home() {
     }
   };
 
-  const handleCloseReviewModal = () => setIsReviewModalOpen(false);
-  const handleOpenReviewModal = () => setIsReviewModalOpen(true);
-
   return (
     <>
-      {/* Hero Section */}
+      {/* Hero — brand, headline, support, CTAs, full-bleed video */}
       <section className="relative min-h-screen flex items-center overflow-hidden">
         <video
-          className="absolute inset-0 w-full h-full object-cover blur-none sm:blur-sm"
+          className="absolute inset-0 w-full h-full object-cover"
           src="/hero.mp4"
           autoPlay
           loop
           muted
           playsInline
         />
-        <div className="absolute inset-0 bg-black/50" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/55 to-black" />
+        <Spotlight />
         <Navigation transparent />
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-8">
-              <div className="space-y-4">
-                <h1 className="text-5xl lg:text-7xl font-bold text-white leading-tight">
-                  Premium{" "}
-                  <span className="block text-yellow-400">
-                    Clothing & Apparel
-                  </span>
-                  <span className="block text-4xl lg:text-5xl font-light">
-                    for Everyone
-                  </span>
-                </h1>
-                <p className="text-xl text-gray-300 max-w-lg">
-                  Discover the latest trends in fashion with JoanTee. Quality
-                  clothing with 24-48 hours delivery right at your doorstep.
-                </p>
-              </div>
+        <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-24 text-center">
+          <motion.p
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7 }}
+            className="font-[family-name:var(--font-display)] text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-white tracking-tight mb-6"
+          >
+            JoanTee
+          </motion.p>
 
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link
-                  href="/shop"
-                  className="bg-yellow-400 hover:bg-yellow-500 text-black px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-                >
-                  Shop Now
-                </Link>
-              </div>
-            </div>
+          <TextGenerateEffect
+            words="Clothing & sash, crafted with quiet luxury."
+            className="text-lg sm:text-xl md:text-2xl font-light text-neutral-200 max-w-2xl mx-auto mb-4 [&_span]:text-neutral-200"
+            duration={0.4}
+          />
 
-            <div className="relative h-96 flex items-center justify-center">
-              <div
-                className="relative w-80 h-80"
-                style={{ perspective: "1000px" }}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.2, duration: 0.8 }}
+            className="text-neutral-400 text-base sm:text-lg max-w-md mx-auto mb-10"
+          >
+            Clean style. Fast delivery. Made for every occasion.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.5, duration: 0.6 }}
+            className="flex flex-col sm:flex-row items-center justify-center gap-4"
+          >
+            <Link href="/shop">
+              <MovingBorderButton
+                as="div"
+                borderRadius="9999px"
+                containerClassName="h-14 w-44"
+                className="bg-yellow-400/95 text-black font-semibold border-none hover:bg-yellow-300 transition-colors"
+                duration={2500}
               >
-                <Image
-                  src="/1.jpg"
-                  alt="Clothing 1"
-                  width={320}
-                  height={320}
-                  className="absolute inset-0 w-full h-full object-contain shadow-2xl animate-flip-carousel-1"
-                />
-                <Image
-                  src="/2.jpg"
-                  alt="Clothing 2"
-                  width={320}
-                  height={320}
-                  className="absolute inset-0 w-full h-full object-contain shadow-2xl animate-flip-carousel-2"
-                />
-                <Image
-                  src="/3.jpg"
-                  alt="Clothing 3"
-                  width={320}
-                  height={320}
-                  className="absolute inset-0 w-full h-full object-contain shadow-2xl animate-flip-carousel-3"
-                />
-              </div>
-            </div>
-          </div>
+                Shop Clothing
+              </MovingBorderButton>
+            </Link>
+            <Link href="/sash">
+              <MovingBorderButton
+                as="div"
+                borderRadius="9999px"
+                containerClassName="h-14 w-44"
+                className="bg-transparent text-white font-semibold border border-white/20 hover:border-yellow-400/50 transition-colors"
+                duration={2500}
+              >
+                Explore Sash
+              </MovingBorderButton>
+            </Link>
+          </motion.div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section className="py-20 bg-gray-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-white mb-4">
-              Why Choose JoanTee?
+      {/* Collections — Shop + Sash */}
+      <section className="relative py-24 bg-black border-t border-white/5 overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(255,215,0,0.06),_transparent_55%)]" />
+        <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-4">
+            <h2 className="font-[family-name:var(--font-display)] text-4xl md:text-5xl text-white mb-3">
+              Two collections. One house.
             </h2>
-            <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-              We deliver anyday, anytime, anywhere.
+            <p className="text-neutral-400 text-lg max-w-xl mx-auto">
+              Browse clothing or sash — each curated with the same care.
             </p>
           </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Feature cards */}
-            <div className="text-center p-8 rounded-2xl hover:shadow-lg transition-shadow duration-300 bg-gray-800 border border-gray-700">
-              <div className="w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-2xl">🚚</span>
-              </div>
-              <h3 className="text-2xl font-semibold text-white mb-4">
-                Fast Delivery
-              </h3>
-              <p className="text-gray-300">
-                Get your orders delivered quickly with our reliable pick & drop
-                service.
-              </p>
-            </div>
-
-            <div className="text-center p-8 rounded-2xl hover:shadow-lg transition-shadow duration-300 bg-gray-800 border border-gray-700">
-              <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center mx-auto mb-6 overflow-hidden">
-                <Image
-                  src="/logo.png"
-                  alt="JoanTee Logo"
-                  width={40}
-                  height={40}
-                  className="w-full h-full object-contain"
-                />
-              </div>
-              <h3 className="text-2xl font-semibold text-white mb-4">
-                Premium Quality
-              </h3>
-              <p className="text-gray-300">
-                Every piece is carefully selected for quality, comfort, and
-                style.
-              </p>
-            </div>
-
-            <div className="text-center p-8 rounded-2xl hover:shadow-lg transition-shadow duration-300 bg-gray-800 border border-gray-700">
-              <div className="w-16 h-16 bg-yellow-400 rounded-full flex items-center justify-center mx-auto mb-6">
-                <span className="text-2xl">💳</span>
-              </div>
-              <h3 className="text-2xl font-semibold text-white mb-4">
-                Easy Tracking
-              </h3>
-              <p className="text-gray-300">
-                Track your orders and manage your purchases with our simple
-                interface.
-              </p>
-            </div>
-          </div>
+          <HoverEffect
+            items={collections}
+            className="max-w-4xl mx-auto md:grid-cols-2 lg:grid-cols-2"
+          />
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-black text-white border-t border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold mb-6">
-            Ready to Upgrade Your Wardrobe?
-          </h2>
-          <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-            Join thousands of satisfied customers who trust JoanTee for their
-            fashion needs.
-          </p>
-          <Link
-            href="/shop"
-            className="bg-yellow-400 hover:bg-yellow-500 text-black px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 transform hover:scale-105 inline-block"
-          >
-            Start Shopping
-          </Link>
-
-          {/* Review Button */}
-          <div className="mt-8 space-y-4">
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                handleOpenReviewModal();
-              }}
-              className="bg-transparent border-2 border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black px-8 py-4 rounded-full font-semibold text-lg transition-all duration-300 transform hover:scale-105 cursor-pointer"
-            >
-              Share Your Experience
-            </button>
+      {/* Why JoanTee */}
+      <section className="py-20 bg-neutral-950 border-t border-white/5">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-4">
+            <h2 className="font-[family-name:var(--font-display)] text-4xl md:text-5xl text-white mb-3">
+              Why JoanTee
+            </h2>
+            <p className="text-neutral-400 text-lg max-w-xl mx-auto">
+              Simple service. Thoughtful pieces. Delivered with care.
+            </p>
           </div>
+          <HoverEffect items={reasons} className="max-w-5xl mx-auto" />
+        </div>
+      </section>
+
+      {/* CTA */}
+      <section className="relative py-28 bg-black text-white border-t border-white/5 overflow-hidden">
+        <Spotlight
+          gradientFirst="radial-gradient(68.54% 68.72% at 55.02% 31.46%, hsla(45, 100%, 70%, .08) 0, hsla(45, 100%, 55%, .02) 50%, hsla(45, 100%, 45%, 0) 80%)"
+          duration={9}
+        />
+        <div className="relative z-10 max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="font-[family-name:var(--font-display)] text-4xl md:text-5xl mb-5">
+            Ready when you are
+          </h2>
+          <p className="text-lg text-neutral-400 mb-10 max-w-lg mx-auto">
+            Clothing for everyday. Sash for the moments that matter.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              href="/shop"
+              className="inline-flex items-center justify-center bg-yellow-400 hover:bg-yellow-300 text-black px-8 py-3.5 rounded-full font-semibold transition-colors"
+            >
+              Start Shopping
+            </Link>
+            <Link
+              href="/sash"
+              className="inline-flex items-center justify-center border border-white/25 hover:border-yellow-400/60 text-white px-8 py-3.5 rounded-full font-semibold transition-colors"
+            >
+              View Sash
+            </Link>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsReviewModalOpen(true)}
+            className="mt-10 text-sm text-neutral-500 hover:text-yellow-400 transition-colors underline-offset-4 hover:underline"
+          >
+            Share your experience
+          </button>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Footer content simplified for brevity */}
+      <footer className="bg-neutral-950 text-white py-14 border-t border-white/5">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid md:grid-cols-4 gap-10">
+            <div>
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="w-8 h-8 rounded-lg overflow-hidden">
+                  <Image
+                    src="/logo.png"
+                    alt="JoanTee Logo"
+                    width={32}
+                    height={32}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                <span className="font-[family-name:var(--font-display)] text-2xl">
+                  JoanTee
+                </span>
+              </div>
+              <p className="text-neutral-500 text-sm leading-relaxed">
+                Premium clothing and sash with fast delivery.
+              </p>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold tracking-wide uppercase text-neutral-300 mb-4">
+                Collections
+              </h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link
+                    href="/shop"
+                    className="text-neutral-500 hover:text-yellow-400 transition-colors text-sm"
+                  >
+                    Shop
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/sash"
+                    className="text-neutral-500 hover:text-yellow-400 transition-colors text-sm"
+                  >
+                    Sash
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold tracking-wide uppercase text-neutral-300 mb-4">
+                Support
+              </h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link
+                    href="/contact"
+                    className="text-neutral-500 hover:text-yellow-400 transition-colors text-sm"
+                  >
+                    Contact Us
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold tracking-wide uppercase text-neutral-300 mb-4">
+                Connect
+              </h3>
+              <div className="flex flex-wrap gap-4">
+                <a
+                  href="https://www.instagram.com/p/DOEN1PBCEM0/?igsh=MW5lYjJ1YmZqaWxsOA=="
+                  className="text-neutral-500 hover:text-yellow-400 transition-colors text-sm"
+                >
+                  Instagram
+                </a>
+                <a
+                  href="https://vm.tiktok.com/ZMAhGntUb/0"
+                  className="text-neutral-500 hover:text-yellow-400 transition-colors text-sm"
+                >
+                  TikTok
+                </a>
+                <a
+                  href="https://snapchat.com/t/B1sJXJdX"
+                  className="text-neutral-500 hover:text-yellow-400 transition-colors text-sm"
+                >
+                  Snapchat
+                </a>
+                <a
+                  href="https://chat.whatsapp.com/FC3C47wb7wk6Op4XeNkECc?mode=wwc"
+                  className="text-neutral-500 hover:text-yellow-400 transition-colors text-sm"
+                >
+                  WhatsApp
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-white/5 mt-10 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex flex-wrap justify-center md:justify-start gap-6 text-sm">
+              <Link
+                href="/privacy-policy"
+                className="text-neutral-500 hover:text-yellow-400 transition-colors"
+              >
+                Privacy Policy
+              </Link>
+              <Link
+                href="/terms-of-service"
+                className="text-neutral-500 hover:text-yellow-400 transition-colors"
+              >
+                Terms of Service
+              </Link>
+            </div>
+            <p className="text-neutral-600 text-sm">
+              &copy; {new Date().getFullYear()} JoanTee. All rights reserved.
+            </p>
+          </div>
         </div>
       </footer>
 
-      {/* Review Modal */}
       <ReviewModal
         isOpen={isReviewModalOpen}
-        onClose={handleCloseReviewModal}
+        onClose={() => setIsReviewModalOpen(false)}
         onSubmit={handleReviewSubmit}
       />
     </>
