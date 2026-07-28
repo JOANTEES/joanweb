@@ -14,17 +14,18 @@ import { api } from "./utils/api";
 import { useAuth } from "./contexts/AuthContext";
 
 const collections = [
-  {
-    title: "Shop",
-    description:
-      "Premium clothing and apparel — curated pieces for every day and every occasion.",
-    link: "/shop",
-    image: "/1.jpg",
-  },
+  // SHOP_DISABLED: Temporarily hide Shop collection card
+  // {
+  //   title: "Shop",
+  //   description:
+  //     "Premium clothing and apparel — curated pieces for every day and every occasion.",
+  //   link: "/shop",
+  //   image: "/1.jpg",
+  // },
   {
     title: "Sash",
     description:
-      "Elegant sashes for celebrations, graduations, and moments that deserve a statement.",
+      "Elegant Sash designs for celebrations, graduations, and moments that deserve a statement.",
     link: "/sash",
     image: "/3.jpg",
   },
@@ -35,13 +36,13 @@ const reasons = [
     title: "Fast Delivery",
     description:
       "Orders arrive in 24–48 hours — anytime, anywhere you need them.",
-    link: "/shop",
+    link: "/sash",
   },
   {
     title: "Premium Quality",
     description:
-      "Every piece is chosen for craft, comfort, and lasting style.",
-    link: "/shop",
+      "Every Sash is chosen for craft, comfort, and lasting style.",
+    link: "/sash",
   },
   {
     title: "Easy Tracking",
@@ -115,7 +116,7 @@ export default function Home() {
           </motion.p>
 
           <TextGenerateEffect
-            words="Clothing & sash, crafted with quiet luxury."
+            words="Design your perfect Sash in minutes"
             className="text-lg sm:text-xl md:text-2xl font-light text-neutral-200 max-w-2xl mx-auto mb-4 [&_span]:text-neutral-200"
             duration={0.4}
           />
@@ -135,6 +136,7 @@ export default function Home() {
             transition={{ delay: 1.5, duration: 0.6 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
+            {/* SHOP_DISABLED: Temporarily hide Shop Clothing CTA
             <Link href="/shop">
               <MovingBorderButton
                 as="div"
@@ -146,12 +148,13 @@ export default function Home() {
                 Shop Clothing
               </MovingBorderButton>
             </Link>
+            */}
             <Link href="/sash">
               <MovingBorderButton
                 as="div"
                 borderRadius="9999px"
                 containerClassName="h-14 w-44"
-                className="bg-transparent text-white font-semibold border border-white/20 hover:border-yellow-400/50 transition-colors"
+                className="bg-yellow-400/95 text-black font-semibold border-none hover:bg-yellow-300 transition-colors"
                 duration={2500}
               >
                 Explore Sash
@@ -161,21 +164,21 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Collections — Shop + Sash */}
+      {/* Collections — Sash focused */}
       <section className="relative py-24 bg-black border-t border-white/5 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(255,215,0,0.06),_transparent_55%)]" />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-4">
             <h2 className="font-[family-name:var(--font-display)] text-4xl md:text-5xl text-white mb-3">
-              Two collections. One house.
+              The Sash collection
             </h2>
             <p className="text-neutral-400 text-lg max-w-xl mx-auto">
-              Browse clothing or sash — each curated with the same care.
+              Browse Sash designs curated with care for every celebration.
             </p>
           </div>
           <HoverEffect
             items={collections}
-            className="max-w-4xl mx-auto md:grid-cols-2 lg:grid-cols-2"
+            className="max-w-xl mx-auto md:grid-cols-1 lg:grid-cols-1"
           />
         </div>
       </section>
@@ -188,7 +191,7 @@ export default function Home() {
               Why JoanTee
             </h2>
             <p className="text-neutral-400 text-lg max-w-xl mx-auto">
-              Simple service. Thoughtful pieces. Delivered with care.
+              Simple service. Thoughtful Sash pieces. Delivered with care.
             </p>
           </div>
           <HoverEffect items={reasons} className="max-w-5xl mx-auto" />
@@ -206,20 +209,22 @@ export default function Home() {
             Ready when you are
           </h2>
           <p className="text-lg text-neutral-400 mb-10 max-w-lg mx-auto">
-            Clothing for everyday. Sash for the moments that matter.
+            Sash for the moments that matter.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            {/* SHOP_DISABLED: Temporarily hide Start Shopping CTA
             <Link
               href="/shop"
               className="inline-flex items-center justify-center bg-yellow-400 hover:bg-yellow-300 text-black px-8 py-3.5 rounded-full font-semibold transition-colors"
             >
               Start Shopping
             </Link>
+            */}
             <Link
               href="/sash"
-              className="inline-flex items-center justify-center border border-white/25 hover:border-yellow-400/60 text-white px-8 py-3.5 rounded-full font-semibold transition-colors"
+              className="inline-flex items-center justify-center bg-yellow-400 hover:bg-yellow-300 text-black px-8 py-3.5 rounded-full font-semibold transition-colors"
             >
-              View Sash
+              Explore Sash
             </Link>
           </div>
           <button
@@ -252,7 +257,7 @@ export default function Home() {
                 </span>
               </div>
               <p className="text-neutral-500 text-sm leading-relaxed">
-                Premium clothing and sash with fast delivery.
+                Premium Sash with fast delivery.
               </p>
             </div>
 
@@ -261,6 +266,7 @@ export default function Home() {
                 Collections
               </h3>
               <ul className="space-y-2">
+                {/* SHOP_DISABLED: Temporarily hide Shop footer link
                 <li>
                   <Link
                     href="/shop"
@@ -269,6 +275,7 @@ export default function Home() {
                     Shop
                   </Link>
                 </li>
+                */}
                 <li>
                   <Link
                     href="/sash"

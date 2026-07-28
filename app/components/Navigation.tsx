@@ -4,7 +4,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect, useRef } from "react";
 import { UserRound, LogOut, User, ShoppingCart } from "lucide-react";
-import { Home, ShoppingBag, ClipboardList, Ribbon } from "lucide-react";
+import { Home, ClipboardList, Ribbon } from "lucide-react";
+// SHOP_DISABLED: import { ShoppingBag } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
@@ -115,7 +116,8 @@ export default function Navigation({
 
   const navItems = [
     { name: "Home", href: "/", Icon: Home, protected: false },
-    { name: "Shop", href: "/shop", Icon: ShoppingBag, protected: false },
+    // SHOP_DISABLED: Temporarily hide Shop from navigation (keep route intact for future use)
+    // { name: "Shop", href: "/shop", Icon: ShoppingBag, protected: false },
     { name: "Sash", href: "/sash", Icon: Ribbon, protected: false },
     { name: "Orders", href: "/orders", Icon: ClipboardList, protected: true },
     // PICKUP_DISABLED: Temporarily hide Pick & Drop from navigation (keep route intact for future use)
