@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import Navigation from "./components/Navigation";
 import ReviewModal from "./components/ReviewModal";
 import { Spotlight } from "./components/ui/spotlight-new";
@@ -13,21 +13,27 @@ import { Button as MovingBorderButton } from "./components/ui/moving-border";
 import { api } from "./utils/api";
 import { useAuth } from "./contexts/AuthContext";
 
-const collections = [
-  // SHOP_DISABLED: Temporarily hide Shop collection card
-  // {
-  //   title: "Shop",
-  //   description:
-  //     "Premium clothing and apparel — curated pieces for every day and every occasion.",
-  //   link: "/shop",
-  //   image: "/1.jpg",
-  // },
+const heroImages = [
+  { src: "/sash-1.jpeg", alt: "Custom graduation Sash — Class of 2026" },
+  { src: "/sash-2.jpeg", alt: "Custom graduation Sash — God Did" },
+  { src: "/sash-3.jpeg", alt: "Custom graduation Sash — University of Ghana" },
+];
+
+const gallery = [
   {
-    title: "Sash",
-    description:
-      "Elegant Sash designs for celebrations, graduations, and moments that deserve a statement.",
-    link: "/sash",
-    image: "/3.jpg",
+    src: "/sash-1.jpeg",
+    alt: "Birmingham City University graduation Sash",
+    caption: "Class of 2026",
+  },
+  {
+    src: "/sash-2.jpeg",
+    alt: "University of Ghana graduation Sash",
+    caption: "God Did",
+  },
+  {
+    src: "/sash-3.jpeg",
+    alt: "Custom embroidered graduation Sash",
+    caption: "Made for you",
   },
 ];
 
@@ -54,7 +60,15 @@ const reasons = [
 
 export default function Home() {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [heroIndex, setHeroIndex] = useState(0);
   const { isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setHeroIndex((i) => (i + 1) % heroImages.length);
+    }, 5000);
+    return () => clearInterval(id);
+  }, []);
 
   const handleReviewSubmit = async (
     rating: number,
@@ -91,17 +105,28 @@ export default function Home() {
 
   return (
     <>
-      {/* Hero — brand, headline, support, CTAs, full-bleed video */}
+      {/* Hero — brand, headline, support, CTAs, full-bleed sash photos */}
       <section className="relative min-h-screen flex items-center overflow-hidden">
-        <video
-          className="absolute inset-0 w-full h-full object-cover"
-          src="/hero.mp4"
-          autoPlay
-          loop
-          muted
-          playsInline
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/55 to-black" />
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={heroImages[heroIndex].src}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.1 }}
+            className="absolute inset-0"
+          >
+            <Image
+              src={heroImages[heroIndex].src}
+              alt={heroImages[heroIndex].alt}
+              fill
+              priority
+              sizes="100vw"
+              className="object-cover object-[center_20%]"
+            />
+          </motion.div>
+        </AnimatePresence>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/60 to-black" />
         <Spotlight />
         <Navigation transparent />
 
@@ -116,24 +141,25 @@ export default function Home() {
           </motion.p>
 
           <TextGenerateEffect
-            words="Design your perfect Sash in minutes"
-            className="text-lg sm:text-xl md:text-2xl font-light text-neutral-200 max-w-2xl mx-auto mb-4 [&_span]:text-neutral-200"
-            duration={0.4}
+            words="DESIGN YOUR PERFECT SASH IN MINUTES"
+            className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold tracking-wide text-white max-w-4xl mx-auto mb-6 [&_span]:text-white"
+            duration={0.35}
           />
 
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 1.2, duration: 0.8 }}
-            className="text-neutral-400 text-base sm:text-lg max-w-md mx-auto mb-10"
+            transition={{ delay: 1.4, duration: 0.8 }}
+            className="text-neutral-300 text-base sm:text-lg max-w-2xl mx-auto mb-10 leading-relaxed"
           >
-            Clean style. Fast delivery. Made for every occasion.
+            Choose your background, personalize your design and let Sashup with
+            JoanTee create a premium custom sash for your special moment
           </motion.p>
 
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1.5, duration: 0.6 }}
+            transition={{ delay: 1.7, duration: 0.6 }}
             className="flex flex-col sm:flex-row items-center justify-center gap-4"
           >
             {/* SHOP_DISABLED: Temporarily hide Shop Clothing CTA
@@ -153,33 +179,59 @@ export default function Home() {
               <MovingBorderButton
                 as="div"
                 borderRadius="9999px"
-                containerClassName="h-14 w-44"
-                className="bg-yellow-400/95 text-black font-semibold border-none hover:bg-yellow-300 transition-colors"
+                containerClassName="h-14 w-52"
+                className="bg-yellow-400/95 text-black font-semibold border-none hover:bg-yellow-300 transition-colors tracking-wide"
                 duration={2500}
               >
-                Explore Sash
+                CREATE MY SASH
               </MovingBorderButton>
             </Link>
           </motion.div>
         </div>
       </section>
 
-      {/* Collections — Sash focused */}
+      {/* Gallery — new Sash photos */}
       <section className="relative py-24 bg-black border-t border-white/5 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(255,215,0,0.06),_transparent_55%)]" />
         <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-4">
+          <div className="text-center mb-12">
             <h2 className="font-[family-name:var(--font-display)] text-4xl md:text-5xl text-white mb-3">
               The Sash collection
             </h2>
             <p className="text-neutral-400 text-lg max-w-xl mx-auto">
-              Browse Sash designs curated with care for every celebration.
+              Real designs. Real moments. Made for every celebration.
             </p>
           </div>
-          <HoverEffect
-            items={collections}
-            className="max-w-xl mx-auto md:grid-cols-1 lg:grid-cols-1"
-          />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
+            {gallery.map((item, idx) => (
+              <Link
+                key={item.src}
+                href="/sash"
+                className="group relative aspect-[3/4] overflow-hidden bg-neutral-900"
+              >
+                <Image
+                  src={item.src}
+                  alt={item.alt}
+                  fill
+                  sizes="(max-width: 640px) 100vw, 33vw"
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                  priority={idx === 0}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-80" />
+                <p className="absolute bottom-4 left-4 right-4 font-[family-name:var(--font-display)] text-white text-xl tracking-wide">
+                  {item.caption}
+                </p>
+              </Link>
+            ))}
+          </div>
+          <div className="mt-10 text-center">
+            <Link
+              href="/sash"
+              className="inline-flex items-center justify-center bg-yellow-400 hover:bg-yellow-300 text-black px-8 py-3.5 rounded-full font-semibold transition-colors"
+            >
+              Explore Sash
+            </Link>
+          </div>
         </div>
       </section>
 
