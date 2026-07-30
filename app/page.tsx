@@ -17,6 +17,11 @@ const heroImages = [
   { src: "/sash-1.jpeg", alt: "Custom graduation Sash — Class of 2026" },
   { src: "/sash-2.jpeg", alt: "Custom graduation Sash — God Did" },
   { src: "/sash-3.jpeg", alt: "Custom graduation Sash — University of Ghana" },
+  { src: "/sash-4.jpeg", alt: "Custom graduation Sash design" },
+  { src: "/sash-5.jpeg", alt: "Premium custom Sash" },
+  { src: "/sash-6.jpeg", alt: "Personalized graduation Sash" },
+  { src: "/sash-7.jpeg", alt: "JoanTee custom Sash" },
+  { src: "/sash-8.jpeg", alt: "Custom graduation Sash — This Far By Grace" },
 ];
 
 const gallery = [
@@ -34,6 +39,31 @@ const gallery = [
     src: "/sash-3.jpeg",
     alt: "Custom embroidered graduation Sash",
     caption: "Made for you",
+  },
+  {
+    src: "/sash-4.jpeg",
+    alt: "Custom graduation Sash design",
+    caption: "Your story",
+  },
+  {
+    src: "/sash-5.jpeg",
+    alt: "Premium custom Sash",
+    caption: "Premium finish",
+  },
+  {
+    src: "/sash-6.jpeg",
+    alt: "Personalized graduation Sash",
+    caption: "Personalize it",
+  },
+  {
+    src: "/sash-7.jpeg",
+    alt: "JoanTee custom Sash",
+    caption: "Celebrate",
+  },
+  {
+    src: "/sash-8.jpeg",
+    alt: "Custom graduation Sash — This Far By Grace",
+    caption: "This Far By Grace",
   },
 ];
 
@@ -202,7 +232,7 @@ export default function Home() {
               Real designs. Real moments. Made for every celebration.
             </p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {gallery.map((item, idx) => (
               <Link
                 key={item.src}
