@@ -165,9 +165,9 @@ export default function Home() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
-            className="font-[family-name:var(--font-display)] text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-white tracking-tight mb-6"
+            className="font-[family-name:var(--font-display)] text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-white tracking-tight mb-6"
           >
-            JoanTee
+            Sash with JoanTee
           </motion.p>
 
           <TextGenerateEffect
@@ -270,7 +270,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-4">
             <h2 className="font-[family-name:var(--font-display)] text-4xl md:text-5xl text-white mb-3">
-              Why JoanTee
+              Why Sash with JoanTee
             </h2>
             <p className="text-neutral-400 text-lg max-w-xl mx-auto">
               Simple service. Thoughtful Sash pieces. Delivered with care.
@@ -328,18 +328,18 @@ export default function Home() {
                 <div className="w-8 h-8 rounded-lg overflow-hidden">
                   <Image
                     src="/logo.png"
-                    alt="JoanTee Logo"
+                    alt="Sash with JoanTee Logo"
                     width={32}
                     height={32}
                     className="w-full h-full object-contain"
                   />
                 </div>
                 <span className="font-[family-name:var(--font-display)] text-2xl">
-                  JoanTee
+                  Sash with JoanTee
                 </span>
               </div>
               <p className="text-neutral-500 text-sm leading-relaxed">
-                Premium Sash with fast delivery.
+                Premium custom Sash with fast delivery.
               </p>
             </div>
 
@@ -434,7 +434,8 @@ export default function Home() {
               </Link>
             </div>
             <p className="text-neutral-600 text-sm">
-              &copy; {new Date().getFullYear()} JoanTee. All rights reserved.
+              &copy; {new Date().getFullYear()} Sash with JoanTee. All rights
+              reserved.
             </p>
           </div>
         </div>

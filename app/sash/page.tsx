@@ -353,10 +353,10 @@ export default function Sash() {
                     className="w-full h-full object-contain"
                   />
                 </div>
-                <span className="text-2xl font-bold">JoanTee</span>
+                <span className="text-2xl font-bold">Sash with JoanTee</span>
               </div>
               <p className="text-gray-400">
-                Premium clothing with fast delivery service.
+                Premium custom Sash with fast delivery service.
               </p>
             </div>
 
@@ -444,7 +444,8 @@ export default function Sash() {
                 </Link>
               </div>
               <p className="text-gray-400 text-sm">
-                &copy; {new Date().getFullYear()} JoanTee. All rights reserved.
+                &copy; {new Date().getFullYear()} Sash with JoanTee. All rights
+                reserved.
               </p>
             </div>
           </div>

@@ -24,9 +24,9 @@ const display = Cormorant_Garamond({
 });
 
 export const metadata: Metadata = {
-  title: "JoanTee — Premium Clothing & Sash",
+  title: "Sash with JoanTee — Premium Custom Sash",
   description:
-    "JoanTee — premium clothing and sash. Clean style, quiet luxury, and 24–48 hour delivery.",
+    "Sash with JoanTee — design your perfect custom sash in minutes. Choose your background, personalize your design, and get premium delivery.",
   icons: {
     icon: "/favicon.ico",
     apple: "/favicon.ico",
@@ -35,24 +35,24 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "https://joantee.com",
-    title: "JoanTee — Premium Clothing & Sash",
+    title: "Sash with JoanTee — Premium Custom Sash",
     description:
-      "JoanTee — premium clothing and sash. Clean style, quiet luxury, and 24–48 hour delivery.",
-    siteName: "JoanTee",
+      "Sash with JoanTee — design your perfect custom sash in minutes. Choose your background, personalize your design, and get premium delivery.",
+    siteName: "Sash with JoanTee",
     images: [
       {
         url: "https://joantee.com/logo.png",
         width: 1200,
         height: 630,
-        alt: "JoanTee Logo",
+        alt: "Sash with JoanTee Logo",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "JoanTee — Premium Clothing & Sash",
+    title: "Sash with JoanTee — Premium Custom Sash",
     description:
-      "JoanTee — premium clothing and sash. Clean style, quiet luxury, and 24–48 hour delivery.",
+      "Sash with JoanTee — design your perfect custom sash in minutes. Choose your background, personalize your design, and get premium delivery.",
     images: ["https://joantee.com/logo.png"],
   },
   metadataBase: new URL("https://joantee.com"),
@@ -72,9 +72,9 @@ export default function RootLayout({
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Store",
-    name: "JoanTee",
+    name: "Sash with JoanTee",
     description:
-      "Premium clothing and sash with fast delivery. Discover JoanTee.",
+      "Premium custom sash with fast delivery. Design yours with Sash with JoanTee.",
     url: "https://joantee.com",
     logo: "https://joantee.com/logo.png",
     contactPoint: {
