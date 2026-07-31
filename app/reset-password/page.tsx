@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import Navigation from "../components/Navigation";
+import SashBackground from "../components/SashBackground";
 import { useAuth } from "../contexts/AuthContext";
 
 function ResetPasswordContent() {
@@ -93,20 +94,9 @@ function ResetPasswordContent() {
   if (success) {
     return (
       <>
-        {/* Hero Section with Background Video and Overlaid Navigation */}
+        {/* Hero Section with Sash background and Overlaid Navigation */}
         <section className="relative min-h-screen flex items-center overflow-hidden">
-          {/* Background video */}
-          <video
-            className="absolute inset-0 w-full h-full object-cover blur-none sm:blur-sm"
-            src="/hero.mp4"
-            autoPlay
-            loop
-            muted
-            playsInline
-          />
-
-          {/* Dark overlay for readability */}
-          <div className="absolute inset-0 bg-black/60" />
+          <SashBackground />
 
           {/* Navigation overlaid */}
           <Navigation transparent />
@@ -119,13 +109,15 @@ function ResetPasswordContent() {
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden">
                     <Image
                       src="/logo.png"
-                      alt="Joan Tees Logo"
+                      alt="Sash with JoanTee Logo"
                       width={40}
                       height={40}
                       className="w-full h-full object-contain"
                     />
                   </div>
-                  <span className="text-3xl font-bold text-white">JoanTee</span>
+                  <span className="text-2xl sm:text-3xl font-bold text-white">
+                    Sash with JoanTee
+                  </span>
                 </div>
 
                 <div className="rounded-full h-16 w-16 bg-green-500 flex items-center justify-center mx-auto mb-6">
@@ -164,20 +156,9 @@ function ResetPasswordContent() {
 
   return (
     <>
-      {/* Hero Section with Background Video and Overlaid Navigation */}
+      {/* Hero Section with Sash background and Overlaid Navigation */}
       <section className="relative min-h-screen flex items-center overflow-hidden">
-        {/* Background video */}
-        <video
-          className="absolute inset-0 w-full h-full object-cover blur-none sm:blur-sm"
-          src="/hero.mp4"
-          autoPlay
-          loop
-          muted
-          playsInline
-        />
-
-        {/* Dark overlay for readability */}
-        <div className="absolute inset-0 bg-black/60" />
+        <SashBackground />
 
         {/* Navigation overlaid */}
         <Navigation transparent />
@@ -190,13 +171,15 @@ function ResetPasswordContent() {
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden">
                   <Image
                     src="/logo.png"
-                    alt="Joan Tees Logo"
+                    alt="Sash with JoanTee Logo"
                     width={40}
                     height={40}
                     className="w-full h-full object-contain"
                   />
                 </div>
-                <span className="text-3xl font-bold text-white">JoanTee</span>
+                <span className="text-2xl sm:text-3xl font-bold text-white">
+                  Sash with JoanTee
+                </span>
               </div>
               <h1 className="text-2xl font-bold text-white mb-2">
                 Reset Your Password
