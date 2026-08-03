@@ -160,14 +160,14 @@ export default function Login() {
                 <div className="w-10 h-10 rounded-lg flex items-center justify-center overflow-hidden">
                   <Image
                     src="/logo.png"
-                    alt="Sash with JoanTee Logo"
+                    alt="Sashup with JoanTee Logo"
                     width={40}
                     height={40}
                     className="w-full h-full object-contain"
                   />
                 </div>
                 <span className="text-2xl sm:text-3xl font-bold text-white">
-                  Sash with JoanTee
+                  Sashup with JoanTee
                 </span>
               </div>
               <h1 className="text-2xl font-bold text-white mb-2">

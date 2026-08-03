@@ -161,7 +161,7 @@ export default function Navigation({
           >
             <Image
               src="/logo.png"
-              alt="Sash with JoanTee logo"
+              alt="Sashup with JoanTee logo"
               width={150}
               height={150}
               className="rounded-lg object-contain"

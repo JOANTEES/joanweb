@@ -354,7 +354,7 @@ export default function Shop() {
                     className="w-full h-full object-contain"
                   />
                 </div>
-                <span className="text-2xl font-bold">Sash with JoanTee</span>
+                <span className="text-2xl font-bold">Sashup with JoanTee</span>
               </div>
               <p className="text-gray-400">
                 Premium custom Sash with fast delivery service.
@@ -393,7 +393,7 @@ export default function Shop() {
               <h3 className="text-lg font-semibold mb-4">Connect</h3>
               <div className="flex space-x-4">
                 <a
-                  href="https://www.instagram.com/p/DOEN1PBCEM0/?igsh=MW5lYjJ1YmZqaWxsOA=="
+                  href="https://www.instagram.com/sashup_with_joantee/"
                   className="text-gray-400 hover:text-yellow-400 transition-colors"
                 >
                   Instagram
@@ -437,7 +437,7 @@ export default function Shop() {
                 </Link>
               </div>
               <p className="text-gray-400 text-sm">
-                &copy; {new Date().getFullYear()} Sash with JoanTee. All rights
+                &copy; {new Date().getFullYear()} Sashup with JoanTee. All rights
                 reserved.
               </p>
             </div>

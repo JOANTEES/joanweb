@@ -79,7 +79,7 @@ export default function Contact() {
           <h2 className="text-2xl font-bold text-white mb-8">Follow Us</h2>
           <div className="flex justify-center space-x-6">
             <a
-              href="https://www.instagram.com/p/DOEN1PBCEM0/?igsh=MW5lYjJ1YmZqaWxsOA=="
+              href="https://www.instagram.com/sashup_with_joantee/"
               className="text-gray-400 hover:text-yellow-400 transition-colors text-lg"
               target="_blank"
               rel="noopener noreferrer"
@@ -121,7 +121,7 @@ export default function Contact() {
                     className="w-full h-full object-contain"
                   />
                 </div>
-                <span className="text-2xl font-bold">Sash with JoanTee</span>
+                <span className="text-2xl font-bold">Sashup with JoanTee</span>
               </div>
               <p className="text-gray-400">
                 Premium custom Sash with fast delivery service.
@@ -169,7 +169,7 @@ export default function Contact() {
               <ul className="space-y-2">
                 <li>
                   <a
-                    href="https://www.instagram.com/p/DOEN1PBCEM0/?igsh=MW5lYjJ1YmZqaWxsOA=="
+                    href="https://www.instagram.com/sashup_with_joantee/"
                     className="text-gray-400 hover:text-yellow-400 transition-colors"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -218,7 +218,7 @@ export default function Contact() {
                 </Link>
               </div>
               <p className="text-gray-400 text-sm">
-                &copy; {new Date().getFullYear()} Sash with JoanTee. All rights
+                &copy; {new Date().getFullYear()} Sashup with JoanTee. All rights
                 reserved.
               </p>
             </div>

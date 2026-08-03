@@ -165,14 +165,14 @@ export default function Home() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7 }}
-            className="font-[family-name:var(--font-display)] text-4xl sm:text-5xl md:text-6xl lg:text-7xl text-white tracking-tight mb-6"
+            className="font-[family-name:var(--font-script)] text-5xl sm:text-6xl md:text-7xl lg:text-8xl text-yellow-400 tracking-normal mb-8 leading-tight"
           >
-            Sash with JoanTee
+            Sashup with JoanTee
           </motion.p>
 
           <TextGenerateEffect
             words="DESIGN YOUR PERFECT SASH IN MINUTES"
-            className="font-[family-name:var(--font-display)] text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold tracking-wide text-white max-w-4xl mx-auto mb-6 [&_span]:text-white"
+            className="font-sans text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold tracking-[0.12em] uppercase text-white max-w-4xl mx-auto mb-6 [&_span]:text-white"
             duration={0.35}
           />
 
@@ -180,7 +180,7 @@ export default function Home() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.4, duration: 0.8 }}
-            className="text-neutral-300 text-base sm:text-lg max-w-2xl mx-auto mb-10 leading-relaxed"
+            className="font-sans text-neutral-300 text-base sm:text-lg max-w-2xl mx-auto mb-10 leading-relaxed"
           >
             Choose your background, personalize your design and let Sashup with
             JoanTee create a premium custom sash for your special moment
@@ -270,7 +270,7 @@ export default function Home() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-4">
             <h2 className="font-[family-name:var(--font-display)] text-4xl md:text-5xl text-white mb-3">
-              Why Sash with JoanTee
+              Why Sashup with JoanTee
             </h2>
             <p className="text-neutral-400 text-lg max-w-xl mx-auto">
               Simple service. Thoughtful Sash pieces. Delivered with care.
@@ -328,14 +328,14 @@ export default function Home() {
                 <div className="w-8 h-8 rounded-lg overflow-hidden">
                   <Image
                     src="/logo.png"
-                    alt="Sash with JoanTee Logo"
+                    alt="Sashup with JoanTee Logo"
                     width={32}
                     height={32}
                     className="w-full h-full object-contain"
                   />
                 </div>
                 <span className="font-[family-name:var(--font-display)] text-2xl">
-                  Sash with JoanTee
+                  Sashup with JoanTee
                 </span>
               </div>
               <p className="text-neutral-500 text-sm leading-relaxed">
@@ -391,7 +391,7 @@ export default function Home() {
               </h3>
               <div className="flex flex-wrap gap-4">
                 <a
-                  href="https://www.instagram.com/p/DOEN1PBCEM0/?igsh=MW5lYjJ1YmZqaWxsOA=="
+                  href="https://www.instagram.com/sashup_with_joantee/"
                   className="text-neutral-500 hover:text-yellow-400 transition-colors text-sm"
                 >
                   Instagram
@@ -434,7 +434,7 @@ export default function Home() {
               </Link>
             </div>
             <p className="text-neutral-600 text-sm">
-              &copy; {new Date().getFullYear()} Sash with JoanTee. All rights
+              &copy; {new Date().getFullYear()} Sashup with JoanTee. All rights
               reserved.
             </p>
           </div>
