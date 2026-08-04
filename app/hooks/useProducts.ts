@@ -6,7 +6,6 @@ interface ProductVariant {
   id: string;
   productId: string;
   productName: string;
-  // sku: string; // Temporarily disabled
   size: string;
   color: string;
   stockQuantity: number;
@@ -20,7 +19,6 @@ interface Product {
   id: string;
   name: string;
   description?: string;
-  // sku?: string; // Temporarily disabled
   costPrice?: number;
   price: number;
   discountPrice?: number;
@@ -42,7 +40,7 @@ interface Product {
   };
   legacyCategory?: string;
   imageUrl?: string;
-  images?: string[]; // NEW: Array of all product and variant images
+  images?: string[];
   requiresSpecialDelivery: boolean;
   deliveryEligible: boolean;
   pickupEligible: boolean;
@@ -65,57 +63,87 @@ interface UseProductsReturn {
   refetch: () => void;
 }
 
+const CACHE_TTL_MS = 60_000;
+let productsCache: { data: Product[]; fetchedAt: number } | null = null;
+let productsInflight: Promise<Product[]> | null = null;
+
+async function fetchProductsFromApi(apiBaseUrl: string): Promise<Product[]> {
+  const response = await fetch(`${apiBaseUrl}/products`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch products: ${response.status}`);
+  }
+
+  const data: ProductsResponse = await response.json();
+
+  if (data.success && data.products) {
+    return data.products;
+  }
+
+  throw new Error(data.message || "Invalid response format");
+}
+
 export function useProducts(): UseProductsReturn {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [products, setProducts] = useState<Product[]>(
+    () => productsCache?.data ?? []
+  );
+  const [loading, setLoading] = useState(() => !productsCache);
   const [error, setError] = useState<string | null>(null);
 
   const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
-  const fetchProducts = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  const fetchProducts = useCallback(
+    async (force = false) => {
+      try {
+        const now = Date.now();
+        if (
+          !force &&
+          productsCache &&
+          now - productsCache.fetchedAt < CACHE_TTL_MS
+        ) {
+          setProducts(productsCache.data);
+          setLoading(false);
+          setError(null);
+          return;
+        }
 
-      const response = await fetch(`${API_BASE_URL}/products`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          Pragma: "no-cache",
-          Expires: "0",
-        },
-      });
+        setLoading(true);
+        setError(null);
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch products: ${response.status}`);
+        if (!productsInflight || force) {
+          productsInflight = fetchProductsFromApi(API_BASE_URL).finally(() => {
+            productsInflight = null;
+          });
+        }
+
+        const data = await productsInflight;
+        productsCache = { data, fetchedAt: Date.now() };
+        setProducts(data);
+      } catch (err) {
+        console.error("Error fetching products:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch products"
+        );
+        if (!productsCache) setProducts([]);
+      } finally {
+        setLoading(false);
       }
-
-      const data: ProductsResponse = await response.json();
-
-      if (data.success && data.products) {
-        setProducts(data.products);
-      } else {
-        throw new Error(data.message || "Invalid response format");
-      }
-    } catch (err) {
-      console.error("Error fetching products:", err);
-      setError(err instanceof Error ? err.message : "Failed to fetch products");
-      setProducts([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [API_BASE_URL]);
+    },
+    [API_BASE_URL]
+  );
 
   useEffect(() => {
     fetchProducts();
-  }, [API_BASE_URL, fetchProducts]);
+  }, [fetchProducts]);
 
   return {
     products,
     loading,
     error,
-    refetch: fetchProducts,
+    refetch: () => fetchProducts(true),
   };
 }

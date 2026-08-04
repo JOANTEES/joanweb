@@ -26,48 +26,70 @@ interface UseBrandsReturn {
   refetch: () => void;
 }
 
+const CACHE_TTL_MS = 5 * 60_000;
+let brandsCache: { data: Brand[]; fetchedAt: number } | null = null;
+let brandsInflight: Promise<Brand[]> | null = null;
+
+async function fetchBrandsFromApi(apiBaseUrl: string): Promise<Brand[]> {
+  const response = await fetch(`${apiBaseUrl}/brands`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch brands: ${response.status}`);
+  }
+
+  const data: BrandsResponse = await response.json();
+
+  if (data.success && data.brands) {
+    return data.brands;
+  }
+
+  throw new Error(data.message || "Invalid response format");
+}
+
 export function useBrands(): UseBrandsReturn {
-  const [brands, setBrands] = useState<Brand[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [brands, setBrands] = useState<Brand[]>(() => brandsCache?.data ?? []);
+  const [loading, setLoading] = useState(() => !brandsCache);
   const [error, setError] = useState<string | null>(null);
 
   const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
-  const fetchBrands = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  const fetchBrands = useCallback(
+    async (force = false) => {
+      try {
+        const now = Date.now();
+        if (!force && brandsCache && now - brandsCache.fetchedAt < CACHE_TTL_MS) {
+          setBrands(brandsCache.data);
+          setLoading(false);
+          setError(null);
+          return;
+        }
 
-      const response = await fetch(`${API_BASE_URL}/brands`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          Pragma: "no-cache",
-          Expires: "0",
-        },
-      });
+        setLoading(true);
+        setError(null);
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch brands: ${response.status}`);
+        if (!brandsInflight || force) {
+          brandsInflight = fetchBrandsFromApi(API_BASE_URL).finally(() => {
+            brandsInflight = null;
+          });
+        }
+
+        const data = await brandsInflight;
+        brandsCache = { data, fetchedAt: Date.now() };
+        setBrands(data);
+      } catch (err) {
+        console.error("Error fetching brands:", err);
+        setError(err instanceof Error ? err.message : "Failed to fetch brands");
+        if (!brandsCache) setBrands([]);
+      } finally {
+        setLoading(false);
       }
-
-      const data: BrandsResponse = await response.json();
-
-      if (data.success && data.brands) {
-        setBrands(data.brands);
-      } else {
-        throw new Error(data.message || "Invalid response format");
-      }
-    } catch (err) {
-      console.error("Error fetching brands:", err);
-      setError(err instanceof Error ? err.message : "Failed to fetch brands");
-      setBrands([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [API_BASE_URL]);
+    },
+    [API_BASE_URL]
+  );
 
   useEffect(() => {
     fetchBrands();
@@ -77,6 +99,6 @@ export function useBrands(): UseBrandsReturn {
     brands,
     loading,
     error,
-    refetch: fetchBrands,
+    refetch: () => fetchBrands(true),
   };
 }

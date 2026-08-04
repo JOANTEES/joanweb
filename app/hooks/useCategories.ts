@@ -31,52 +31,83 @@ interface UseCategoriesReturn {
   getCategoryById: (categoryId: string) => Category | null;
 }
 
+const CACHE_TTL_MS = 5 * 60_000;
+let categoriesCache: { data: Category[]; fetchedAt: number } | null = null;
+let categoriesInflight: Promise<Category[]> | null = null;
+
+async function fetchCategoriesFromApi(
+  apiBaseUrl: string
+): Promise<Category[]> {
+  const response = await fetch(`${apiBaseUrl}/categories`, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch categories: ${response.status}`);
+  }
+
+  const data: CategoriesResponse = await response.json();
+
+  if (data.success && data.categories) {
+    return data.categories;
+  }
+
+  throw new Error(data.message || "Invalid response format");
+}
+
 export function useCategories(): UseCategoriesReturn {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<Category[]>(
+    () => categoriesCache?.data ?? []
+  );
+  const [loading, setLoading] = useState(() => !categoriesCache);
   const [error, setError] = useState<string | null>(null);
 
   const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
-  const fetchCategories = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  const fetchCategories = useCallback(
+    async (force = false) => {
+      try {
+        const now = Date.now();
+        if (
+          !force &&
+          categoriesCache &&
+          now - categoriesCache.fetchedAt < CACHE_TTL_MS
+        ) {
+          setCategories(categoriesCache.data);
+          setLoading(false);
+          setError(null);
+          return;
+        }
 
-      const response = await fetch(`${API_BASE_URL}/categories`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-cache, no-store, must-revalidate",
-          Pragma: "no-cache",
-          Expires: "0",
-        },
-      });
+        setLoading(true);
+        setError(null);
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch categories: ${response.status}`);
+        if (!categoriesInflight || force) {
+          categoriesInflight = fetchCategoriesFromApi(API_BASE_URL).finally(
+            () => {
+              categoriesInflight = null;
+            }
+          );
+        }
+
+        const data = await categoriesInflight;
+        categoriesCache = { data, fetchedAt: Date.now() };
+        setCategories(data);
+      } catch (err) {
+        console.error("Error fetching categories:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch categories"
+        );
+        if (!categoriesCache) setCategories([]);
+      } finally {
+        setLoading(false);
       }
+    },
+    [API_BASE_URL]
+  );
 
-      const data: CategoriesResponse = await response.json();
-
-      if (data.success && data.categories) {
-        setCategories(data.categories);
-      } else {
-        throw new Error(data.message || "Invalid response format");
-      }
-    } catch (err) {
-      console.error("Error fetching categories:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to fetch categories"
-      );
-      setCategories([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [API_BASE_URL]);
-
-  // Helper function to get category by ID (searches through all levels)
   const getCategoryById = useCallback(
     (categoryId: string): Category | null => {
       const findCategory = (cats: Category[]): Category | null => {
@@ -94,7 +125,6 @@ export function useCategories(): UseCategoriesReturn {
     [categories]
   );
 
-  // Helper function to build category path (e.g., "Men's Clothing / T-Shirts")
   const getCategoryPath = useCallback(
     (categoryId: string): string => {
       const category = getCategoryById(categoryId);
@@ -124,7 +154,7 @@ export function useCategories(): UseCategoriesReturn {
     categories,
     loading,
     error,
-    refetch: fetchCategories,
+    refetch: () => fetchCategories(true),
     getCategoryPath,
     getCategoryById,
   };

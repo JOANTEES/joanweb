@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useProductVariants } from "../hooks/useProductVariants";
 import { useBrands } from "../hooks/useBrands";
 import { useCategories } from "../hooks/useCategories";
@@ -66,12 +66,38 @@ export default function ProductCard({
   onAddToCartClick,
 }: ProductCardProps) {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [shouldLoadVariants, setShouldLoadVariants] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // Only fetch variants when the card is near the viewport (stops N+1 on page load)
+  useEffect(() => {
+    const node = cardRef.current;
+    if (!node || shouldLoadVariants) return;
+
+    if (typeof IntersectionObserver === "undefined") {
+      setShouldLoadVariants(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setShouldLoadVariants(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "200px" }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [shouldLoadVariants]);
 
   const {
     variants,
     loading: variantsLoading,
     error: variantsError,
-  } = useProductVariants(product.id);
+  } = useProductVariants(product.id, { enabled: shouldLoadVariants });
   const { brands } = useBrands();
   const { getCategoryPath } = useCategories();
 
@@ -116,6 +142,7 @@ export default function ProductCard({
   return (
     <>
       <div
+        ref={cardRef}
         className="group cursor-pointer flex flex-col w-full"
         onClick={handleCardClick}
       >
@@ -127,6 +154,8 @@ export default function ProductCard({
               <img
                 src={mainImage}
                 alt={product.name}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover rounded-lg transition-transform duration-300 group-hover:scale-105"
                 onError={(e) => {
                   // Fallback for broken images
@@ -145,6 +174,8 @@ export default function ProductCard({
                         key={index}
                         src={image}
                         alt={`${product.name} view ${index + 2}`}
+                        loading="lazy"
+                        decoding="async"
                         className="w-full h-full object-cover rounded"
                         onError={(e) => {
                           // Fallback for broken images

@@ -6,7 +6,6 @@ interface ProductVariant {
   id: string;
   productId: string;
   productName: string;
-  // sku: string; // Temporarily disabled
   size: string;
   color: string;
   stockQuantity: number;
@@ -34,58 +33,102 @@ interface UseProductVariantsReturn {
   refetch: () => void;
 }
 
+const CACHE_TTL_MS = 60_000;
+const variantsCache = new Map<
+  string,
+  { data: ProductVariant[]; fetchedAt: number }
+>();
+const variantsInflight = new Map<string, Promise<ProductVariant[]>>();
+
+async function fetchVariantsFromApi(
+  apiBaseUrl: string,
+  productId: string
+): Promise<ProductVariant[]> {
+  const response = await fetch(
+    `${apiBaseUrl}/product-variants/product/${productId}`,
+    {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch variants: ${response.status}`);
+  }
+
+  const data: ProductVariantsResponse = await response.json();
+
+  if (data.success && data.variants) {
+    return data.variants;
+  }
+
+  throw new Error(data.message || "Invalid response format");
+}
+
 export function useProductVariants(
-  productId: string | null
+  productId: string | null,
+  options: { enabled?: boolean } = {}
 ): UseProductVariantsReturn {
-  const [variants, setVariants] = useState<ProductVariant[]>([]);
-  const [loading, setLoading] = useState(false);
+  const enabled = options.enabled ?? true;
+  const cached = productId ? variantsCache.get(productId) : undefined;
+
+  const [variants, setVariants] = useState<ProductVariant[]>(
+    () => cached?.data ?? []
+  );
+  const [loading, setLoading] = useState(
+    () => Boolean(productId && enabled && !cached)
+  );
   const [error, setError] = useState<string | null>(null);
 
   const API_BASE_URL =
     process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
-  const fetchVariants = useCallback(async () => {
-    if (!productId) {
-      setVariants([]);
-      return;
-    }
+  const fetchVariants = useCallback(
+    async (force = false) => {
+      if (!productId || !enabled) {
+        if (!productId) setVariants([]);
+        setLoading(false);
+        return;
+      }
 
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await fetch(
-        `${API_BASE_URL}/product-variants/product/${productId}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            "Cache-Control": "no-cache, no-store, must-revalidate",
-            Pragma: "no-cache",
-            Expires: "0",
-          },
+      try {
+        const now = Date.now();
+        const hit = variantsCache.get(productId);
+        if (!force && hit && now - hit.fetchedAt < CACHE_TTL_MS) {
+          setVariants(hit.data);
+          setLoading(false);
+          setError(null);
+          return;
         }
-      );
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch variants: ${response.status}`);
+        setLoading(true);
+        setError(null);
+
+        let inflight = variantsInflight.get(productId);
+        if (!inflight || force) {
+          inflight = fetchVariantsFromApi(API_BASE_URL, productId).finally(
+            () => {
+              variantsInflight.delete(productId);
+            }
+          );
+          variantsInflight.set(productId, inflight);
+        }
+
+        const data = await inflight;
+        variantsCache.set(productId, { data, fetchedAt: Date.now() });
+        setVariants(data);
+      } catch (err) {
+        console.error("Error fetching variants:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch variants"
+        );
+        if (!variantsCache.has(productId)) setVariants([]);
+      } finally {
+        setLoading(false);
       }
-
-      const data: ProductVariantsResponse = await response.json();
-
-      if (data.success && data.variants) {
-        setVariants(data.variants);
-      } else {
-        throw new Error(data.message || "Invalid response format");
-      }
-    } catch (err) {
-      console.error("Error fetching variants:", err);
-      setError(err instanceof Error ? err.message : "Failed to fetch variants");
-      setVariants([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [API_BASE_URL, productId]);
+    },
+    [API_BASE_URL, productId, enabled]
+  );
 
   useEffect(() => {
     fetchVariants();
@@ -95,6 +138,6 @@ export function useProductVariants(
     variants,
     loading,
     error,
-    refetch: fetchVariants,
+    refetch: () => fetchVariants(true),
   };
 }

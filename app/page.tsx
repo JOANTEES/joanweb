@@ -1,71 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion, AnimatePresence } from "motion/react";
+import { motion } from "motion/react";
 import Navigation from "./components/Navigation";
 import ReviewModal from "./components/ReviewModal";
 import { Spotlight } from "./components/ui/spotlight-new";
 import { TextGenerateEffect } from "./components/ui/text-generate-effect";
 import { HoverEffect } from "./components/ui/hover-effect";
 import { Button as MovingBorderButton } from "./components/ui/moving-border";
+import SashImageCarousel from "./components/SashImageCarousel";
+import { SASH_IMAGES } from "./lib/sash-images";
 import { api } from "./utils/api";
 import { useAuth } from "./contexts/AuthContext";
 
-const heroImages = [
-  { src: "/sash-1.jpeg", alt: "Custom graduation Sash — Class of 2026" },
-  { src: "/sash-2.jpeg", alt: "Custom graduation Sash — God Did" },
-  { src: "/sash-3.jpeg", alt: "Custom graduation Sash — University of Ghana" },
-  { src: "/sash-4.jpeg", alt: "Custom graduation Sash design" },
-  { src: "/sash-5.jpeg", alt: "Premium custom Sash" },
-  { src: "/sash-6.jpeg", alt: "Personalized graduation Sash" },
-  { src: "/sash-7.jpeg", alt: "JoanTee custom Sash" },
-  { src: "/sash-8.jpeg", alt: "Custom graduation Sash — This Far By Grace" },
-];
-
-const gallery = [
-  {
-    src: "/sash-1.jpeg",
-    alt: "Birmingham City University graduation Sash",
-    caption: "Class of 2026",
-  },
-  {
-    src: "/sash-2.jpeg",
-    alt: "University of Ghana graduation Sash",
-    caption: "God Did",
-  },
-  {
-    src: "/sash-3.jpeg",
-    alt: "Custom embroidered graduation Sash",
-    caption: "Made for you",
-  },
-  {
-    src: "/sash-4.jpeg",
-    alt: "Custom graduation Sash design",
-    caption: "Your story",
-  },
-  {
-    src: "/sash-5.jpeg",
-    alt: "Premium custom Sash",
-    caption: "Premium finish",
-  },
-  {
-    src: "/sash-6.jpeg",
-    alt: "Personalized graduation Sash",
-    caption: "Personalize it",
-  },
-  {
-    src: "/sash-7.jpeg",
-    alt: "JoanTee custom Sash",
-    caption: "Celebrate",
-  },
-  {
-    src: "/sash-8.jpeg",
-    alt: "Custom graduation Sash — This Far By Grace",
-    caption: "This Far By Grace",
-  },
-];
+const gallery = SASH_IMAGES.map((img) => ({
+  src: img.src,
+  alt: img.alt,
+  caption: img.caption,
+}));
 
 const reasons = [
   {
@@ -90,15 +44,7 @@ const reasons = [
 
 export default function Home() {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
-  const [heroIndex, setHeroIndex] = useState(0);
   const { isAuthenticated } = useAuth();
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      setHeroIndex((i) => (i + 1) % heroImages.length);
-    }, 5000);
-    return () => clearInterval(id);
-  }, []);
 
   const handleReviewSubmit = async (
     rating: number,
@@ -137,26 +83,9 @@ export default function Home() {
     <>
       {/* Hero — brand, headline, support, CTAs, full-bleed sash photos */}
       <section className="relative min-h-screen flex items-center overflow-hidden">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={heroImages[heroIndex].src}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 1.1 }}
-            className="absolute inset-0"
-          >
-            <Image
-              src={heroImages[heroIndex].src}
-              alt={heroImages[heroIndex].alt}
-              fill
-              priority
-              sizes="100vw"
-              className="object-cover object-[center_20%]"
-            />
-          </motion.div>
-        </AnimatePresence>
-        <div className="absolute inset-0 bg-gradient-to-b from-black/75 via-black/60 to-black" />
+        <SashImageCarousel
+          overlayClassName="absolute inset-0 bg-gradient-to-b from-black/75 via-black/60 to-black"
+        />
         <Spotlight />
         <Navigation transparent />
 
@@ -243,9 +172,11 @@ export default function Home() {
                   src={item.src}
                   alt={item.alt}
                   fill
-                  sizes="(max-width: 640px) 100vw, 33vw"
-                  className="object-cover transition-transform duration-700 group-hover:scale-105"
-                  priority={idx === 0}
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                  quality={65}
+                  loading={idx < 2 ? "eager" : "lazy"}
+                  priority={idx < 2}
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-80" />
                 <p className="absolute bottom-4 left-4 right-4 font-[family-name:var(--font-display)] text-white text-xl tracking-wide">
